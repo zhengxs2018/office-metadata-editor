@@ -13,14 +13,24 @@ import { PageLayout } from "@/layouts/page-layout"
 import { OmBatchToolbar } from "@/components/om/om-batch-toolbar"
 import { type FileStatus, useFileContext } from "@/contexts/file-context"
 import { useMetadata } from "@/contexts/metadata-context"
+import { useFileStore } from "@/stores/v2-stores"
 import { formatFileSize } from "@/lib/utils"
+import { DirectoryFileBrowser } from "@/components/v2/directory-file-browser"
+import { TemplateManager } from "@/components/v2/template-manager"
+import { ExportCenter } from "@/components/v2/export-center"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { FolderOpen, Settings, FileSpreadsheet } from "lucide-react"
 
 export const BatchPage: React.FC = () => {
   const { files, openFiles, removeFile, clearFiles } = useFileContext()
   const { documents, saveDocument, clearAndSaveDocument, batchSaveAll, batchClearAndSave } =
     useMetadata()
+  const { importSelectedFiles } = useFileStore()
 
   const [actionStatus, setActionStatus] = useState<string | null>(null)
+  const [showDirectoryBrowser, setShowDirectoryBrowser] = useState(false)
+  const [showTemplateManager, setShowTemplateManager] = useState(false)
+  const [showExportCenter, setShowExportCenter] = useState(false)
 
   useEffect(() => {
     clearFiles()
@@ -87,6 +97,10 @@ export const BatchPage: React.FC = () => {
     await openFiles()
   }
 
+  const handleDirectoryImportComplete = async () => {
+    setShowDirectoryBrowser(false)
+  }
+
   const handleSaveOne = async (id: string) => {
     await runAction("正在保存文件...", async () => {
       await saveDocument(id)
@@ -132,15 +146,44 @@ export const BatchPage: React.FC = () => {
         </div>
       }
       actions={
-        <OmBatchToolbar
-          hasFiles={rows.length > 0}
-          isBusy={isBusy}
-          busyText={actionStatus ?? (isBusy ? "后台处理中..." : undefined)}
-          onAddFiles={handleOpenFiles}
-          onBatchSave={handleBatchSave}
-          onBatchClearAndSave={handleBatchClearAndSave}
-          onClearAll={handleClearAll}
-        />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDirectoryBrowser(true)}
+            className="gap-2"
+          >
+            <FolderOpen className="h-4 w-4" />
+            目录导入
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTemplateManager(true)}
+            className="gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            模板
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowExportCenter(true)}
+            className="gap-2"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            导出
+          </Button>
+          <OmBatchToolbar
+            hasFiles={rows.length > 0}
+            isBusy={isBusy}
+            busyText={actionStatus ?? (isBusy ? "后台处理中..." : undefined)}
+            onAddFiles={handleOpenFiles}
+            onBatchSave={handleBatchSave}
+            onBatchClearAndSave={handleBatchClearAndSave}
+            onClearAll={handleClearAll}
+          />
+        </div>
       }
     >
       <div className="flex h-full w-full flex-col gap-4 p-4">
@@ -229,6 +272,51 @@ export const BatchPage: React.FC = () => {
           </TableBody>
         </Table>
       </div>
+
+      {/* 目录浏览器对话框 */}
+      <Dialog open={showDirectoryBrowser} onOpenChange={setShowDirectoryBrowser}>
+        <DialogContent className="max-w-5xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>选择目录批量导入</DialogTitle>
+            <DialogDescription>
+              扫描指定目录下的所有支持文档，勾选后批量导入到工作区
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 -mx-6 -mb-6">
+            <DirectoryFileBrowser onImportComplete={handleDirectoryImportComplete} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 模板管理器对话框 */}
+      <Dialog open={showTemplateManager} onOpenChange={setShowTemplateManager}>
+        <DialogContent className="max-w-4xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>元数据模板管理</DialogTitle>
+            <DialogDescription>
+              创建、编辑、导入导出元数据模板，一键应用到多个文件
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 -mx-6 -mb-6">
+            <TemplateManager />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 导出中心对话框 */}
+      <Dialog open={showExportCenter} onOpenChange={setShowExportCenter}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>导出元数据</DialogTitle>
+            <DialogDescription>
+              将当前工作区的元数据导出为 JSON、Excel、CSV 或 XML 格式
+            </DialogDescription>
+          </DialogHeader>
+          <div className="-mx-6 -mb-6">
+            <ExportCenter />
+          </div>
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   )
 }
