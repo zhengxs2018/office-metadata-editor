@@ -1,7 +1,11 @@
 // cspell:ignore cdtf
+use std::collections::HashMap;
 use std::fs;
+use std::hash::{Hash, Hasher};
 use std::io::{Cursor, Read, Write};
 use std::path::PathBuf;
+use std::sync::{Mutex, OnceLock};
+use std::time::UNIX_EPOCH;
 
 use lopdf::{Dictionary as PdfDictionary, Document as PdfDocument, Object as PdfObject, ObjectId, StringFormat};
 use serde::{Deserialize, Serialize};
@@ -86,6 +90,403 @@ struct BatchSaveResultItem {
 struct BatchSaveRequestItem {
     file_path: String,
     metadata: DocumentMetadata,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+struct BatchClearOptions {
+    template_id: Option<String>,
+    metadata_overrides: Option<DocumentMetadataOverrides>,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+struct DocumentMetadataOverrides {
+    document_properties: Option<DocumentPropertiesOverrides>,
+    core_properties: Option<CorePropertiesOverrides>,
+    app_properties: Option<AppPropertiesOverrides>,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+struct DocumentPropertiesOverrides {
+    title: Option<String>,
+    subject: Option<String>,
+    creator: Option<String>,
+    keywords: Option<String>,
+    description: Option<String>,
+    last_modified_by: Option<String>,
+    revision: Option<String>,
+    created: Option<String>,
+    modified: Option<String>,
+    category: Option<String>,
+    content_status: Option<String>,
+    version: Option<String>,
+    language: Option<String>,
+    identifier: Option<String>,
+    source: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+struct CorePropertiesOverrides {
+    dc_title: Option<String>,
+    dc_subject: Option<String>,
+    dc_creator: Option<String>,
+    dc_description: Option<String>,
+    dc_keywords: Option<String>,
+    dc_language: Option<String>,
+    dc_identifier: Option<String>,
+    dc_source: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+struct AppPropertiesOverrides {
+    application: Option<String>,
+    app_version: Option<String>,
+    company: Option<String>,
+    manager: Option<String>,
+    template: Option<String>,
+    total_time: Option<String>,
+    pages: Option<u32>,
+    words: Option<u32>,
+    characters: Option<u32>,
+    characters_with_spaces: Option<u32>,
+    paragraphs: Option<u32>,
+    lines: Option<u32>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DirectoryScanOptions {
+    recursive: bool,
+    extensions: Option<Vec<String>>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DirectoryInfo {
+    path: String,
+    name: String,
+    extension: String,
+    size: u64,
+    modified_at: u64,
+    selected: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DirectoryScanResult {
+    path: String,
+    files: Vec<DirectoryInfo>,
+    total_found: usize,
+    scanned_at: u64,
+}
+
+#[derive(Debug, Clone)]
+struct AutomationRequestState {
+    file_paths: Vec<String>,
+    source: String,
+    status: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AutomationRequestStatus {
+    request_id: String,
+    source: String,
+    status: String,
+    file_paths: Vec<String>,
+}
+
+#[derive(Debug, Default)]
+struct AutomationRequestRegistry {
+    requests: HashMap<String, AutomationRequestState>,
+    file_to_request: HashMap<String, String>,
+}
+
+static AUTOMATION_REQUEST_REGISTRY: OnceLock<Mutex<AutomationRequestRegistry>> = OnceLock::new();
+
+fn automation_registry() -> &'static Mutex<AutomationRequestRegistry> {
+    AUTOMATION_REQUEST_REGISTRY.get_or_init(|| Mutex::new(AutomationRequestRegistry::default()))
+}
+
+fn normalize_file_path_for_request(path: &str) -> Option<String> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    Some(PathBuf::from(trimmed).to_string_lossy().to_string())
+}
+
+fn create_request_id_by_paths(source: &str, file_paths: &[String]) -> String {
+    let mut normalized = file_paths.to_vec();
+    normalized.sort();
+
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    source.hash(&mut hasher);
+    normalized.iter().for_each(|path| path.hash(&mut hasher));
+    format!("req_{:016x}", hasher.finish())
+}
+
+fn validate_request_for_paths(request_id: Option<&str>, file_paths: &[String]) -> Result<(), String> {
+    let Some(request_id) = request_id else {
+        return Ok(());
+    };
+
+    let registry = automation_registry()
+        .lock()
+        .map_err(|_| "任务注册表被锁定".to_string())?;
+
+    let request = registry
+        .requests
+        .get(request_id)
+        .ok_or_else(|| format!("requestId 不存在: {}", request_id))?;
+
+    if request.status != "running" {
+        return Err(format!("requestId {} 状态为 {}，无法继续", request_id, request.status));
+    }
+
+    for file_path in file_paths {
+        let Some(normalized) = normalize_file_path_for_request(file_path) else {
+            return Err("存在空文件路径".to_string());
+        };
+
+        if !request.file_paths.contains(&normalized) {
+            return Err(format!("文件不属于该任务: {}", normalized));
+        }
+
+        let occupied = registry
+            .file_to_request
+            .get(&normalized)
+            .ok_or_else(|| format!("文件未被任务锁定: {}", normalized))?;
+
+        if occupied != request_id {
+            return Err(format!("文件由其他任务占用: {}", normalized));
+        }
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+fn create_automation_request(file_paths: Vec<String>, source: String) -> Result<String, String> {
+    let source = source.trim().to_string();
+    if source.is_empty() {
+        return Err("source 为必填参数".to_string());
+    }
+
+    let mut normalized_paths = file_paths
+        .iter()
+        .filter_map(|path| normalize_file_path_for_request(path))
+        .collect::<Vec<_>>();
+    normalized_paths.sort();
+    normalized_paths.dedup();
+
+    if normalized_paths.is_empty() {
+        return Err("filePaths 不能为空".to_string());
+    }
+
+    let request_id = create_request_id_by_paths(&source, &normalized_paths);
+    let mut registry = automation_registry()
+        .lock()
+        .map_err(|_| "任务注册表被锁定".to_string())?;
+
+    if let Some(existing) = registry.requests.get(&request_id) {
+        if existing.status == "running" {
+            return Err(format!(
+                "请求 {} 正在执行中。请先 cancel 或等待完成",
+                request_id
+            ));
+        }
+    }
+
+    let conflict = normalized_paths
+        .iter()
+        .find_map(|path| registry.file_to_request.get(path).map(|rid| (path.clone(), rid.clone())));
+
+    if let Some((path, running_request)) = conflict {
+        return Err(format!(
+            "文件已被任务占用: {} (requestId: {})。请先取消或等待完成",
+            path, running_request
+        ));
+    }
+
+    normalized_paths.iter().for_each(|path| {
+        registry
+            .file_to_request
+            .insert(path.clone(), request_id.clone());
+    });
+
+    registry.requests.insert(
+        request_id.clone(),
+        AutomationRequestState {
+            file_paths: normalized_paths,
+            source,
+            status: "running".to_string(),
+        },
+    );
+
+    Ok(request_id)
+}
+
+#[tauri::command]
+fn cancel_automation_request(request_id: String) -> Result<(), String> {
+    let mut registry = automation_registry()
+        .lock()
+        .map_err(|_| "任务注册表被锁定".to_string())?;
+
+    let Some(existing) = registry.requests.get_mut(&request_id) else {
+        return Err(format!("requestId 不存在: {}", request_id));
+    };
+
+    let file_paths = existing.file_paths.clone();
+    existing.status = "cancelled".to_string();
+
+    file_paths.into_iter().for_each(|path| {
+        if registry
+            .file_to_request
+            .get(&path)
+            .map(|rid| rid == &request_id)
+            .unwrap_or(false)
+        {
+            registry.file_to_request.remove(&path);
+        }
+    });
+
+    Ok(())
+}
+
+#[tauri::command]
+fn finish_automation_request(request_id: String, status: String) -> Result<(), String> {
+    let mut registry = automation_registry()
+        .lock()
+        .map_err(|_| "任务注册表被锁定".to_string())?;
+
+    let Some(existing) = registry.requests.get_mut(&request_id) else {
+        return Err(format!("requestId 不存在: {}", request_id));
+    };
+
+    let next_status = match status.as_str() {
+        "completed" | "failed" | "cancelled" => status,
+        _ => "failed".to_string(),
+    };
+    let file_paths = existing.file_paths.clone();
+    existing.status = next_status;
+
+    file_paths.into_iter().for_each(|path| {
+        if registry
+            .file_to_request
+            .get(&path)
+            .map(|rid| rid == &request_id)
+            .unwrap_or(false)
+        {
+            registry.file_to_request.remove(&path);
+        }
+    });
+
+    Ok(())
+}
+
+#[tauri::command]
+fn get_automation_request_status(request_id: String) -> Result<AutomationRequestStatus, String> {
+    let registry = automation_registry()
+        .lock()
+        .map_err(|_| "任务注册表被锁定".to_string())?;
+
+    let state = registry
+        .requests
+        .get(&request_id)
+        .ok_or_else(|| format!("requestId 不存在: {}", request_id))?;
+
+    Ok(AutomationRequestStatus {
+        request_id,
+        source: state.source.clone(),
+        status: state.status.clone(),
+        file_paths: state.file_paths.clone(),
+    })
+}
+
+#[tauri::command]
+fn scan_directory(path: String, options: DirectoryScanOptions) -> Result<DirectoryScanResult, String> {
+    let root = PathBuf::from(&path);
+    if !root.exists() {
+        return Err(format!("目录不存在: {}", path));
+    }
+    if !root.is_dir() {
+        return Err(format!("不是有效目录: {}", path));
+    }
+
+    let mut files = Vec::new();
+    let mut queue = vec![root.clone()];
+    let extension_filter: Option<Vec<String>> = options.extensions.map(|exts| {
+        exts.into_iter()
+            .map(|ext| ext.trim_start_matches('.').to_ascii_lowercase())
+            .collect()
+    });
+
+    while let Some(dir) = queue.pop() {
+        let entries = fs::read_dir(&dir).map_err(|err| format!("读取目录失败: {}", err))?;
+        for entry in entries.flatten() {
+            let entry_path = entry.path();
+            if entry_path.is_dir() {
+                if options.recursive {
+                    queue.push(entry_path);
+                }
+                continue;
+            }
+
+            let extension = entry_path
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .map(|ext| ext.to_ascii_lowercase())
+                .unwrap_or_default();
+
+            if extension.is_empty() {
+                continue;
+            }
+
+            let is_allowed = extension_filter
+                .as_ref()
+                .map(|filters| filters.contains(&extension))
+                .unwrap_or_else(|| matches!(extension.as_str(), "doc" | "docx" | "xlsx" | "pdf"));
+
+            if !is_allowed {
+                continue;
+            }
+
+            let metadata = fs::metadata(&entry_path).map_err(|err| format!("读取文件信息失败: {}", err))?;
+            let modified_at = metadata
+                .modified()
+                .ok()
+                .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+                .map(|duration| duration.as_millis() as u64)
+                .unwrap_or(0);
+
+            files.push(DirectoryInfo {
+                path: entry_path.to_string_lossy().to_string(),
+                name: entry
+                    .file_name()
+                    .to_string_lossy()
+                    .to_string(),
+                extension,
+                size: metadata.len(),
+                modified_at,
+                selected: false,
+            });
+        }
+    }
+
+    Ok(DirectoryScanResult {
+        path,
+        total_found: files.len(),
+        files,
+        scanned_at: std::time::SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|duration| duration.as_millis() as u64)
+            .unwrap_or(0),
+    })
 }
 
 impl DocumentMetadata {
@@ -210,7 +611,12 @@ fn save_docx_metadata(
 }
 
 #[tauri::command]
-fn save_docx_metadata_to_source(file_path: String, metadata: DocumentMetadata) -> Result<String, String> {
+fn save_docx_metadata_to_source(
+    file_path: String,
+    metadata: DocumentMetadata,
+    request_id: Option<String>,
+) -> Result<String, String> {
+    validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))?;
     let file_bytes = fs::read(&file_path).map_err(|err| err.to_string())?;
     let updated_file_bytes = build_updated_docx_bytes(file_bytes, &metadata)?;
     fs::write(&file_path, updated_file_bytes).map_err(|err| err.to_string())?;
@@ -218,11 +624,14 @@ fn save_docx_metadata_to_source(file_path: String, metadata: DocumentMetadata) -
 }
 
 #[tauri::command]
-fn batch_save_docx_metadata_to_source(items: Vec<BatchSaveRequestItem>) -> Vec<BatchSaveResultItem> {
+fn batch_save_docx_metadata_to_source(
+    items: Vec<BatchSaveRequestItem>,
+    request_id: Option<String>,
+) -> Vec<BatchSaveResultItem> {
     items
         .into_iter()
         .map(|item| {
-            match save_docx_metadata_to_source(item.file_path.clone(), item.metadata) {
+            match save_docx_metadata_to_source(item.file_path.clone(), item.metadata, request_id.clone()) {
                 Ok(path) => BatchSaveResultItem {
                     file_path: path,
                     success: true,
@@ -276,10 +685,14 @@ fn save_docx_metadata_as(
 }
 
 #[tauri::command]
-fn batch_clear_and_save_docx_metadata(file_paths: Vec<String>) -> Vec<BatchSaveResultItem> {
+fn batch_clear_and_save_docx_metadata(
+    file_paths: Vec<String>,
+    options: Option<BatchClearOptions>,
+    request_id: Option<String>,
+) -> Vec<BatchSaveResultItem> {
     file_paths
         .into_iter()
-        .map(|file_path| match process_single_batch_clear(&file_path) {
+        .map(|file_path| match process_single_batch_clear(&file_path, options.as_ref(), request_id.as_deref()) {
             Ok(()) => BatchSaveResultItem {
                 file_path,
                 success: true,
@@ -308,7 +721,12 @@ fn parse_xlsx_metadata_from_path(file_path: String) -> Result<DocumentMetadata, 
 }
 
 #[tauri::command]
-fn save_xlsx_metadata_to_source(file_path: String, metadata: DocumentMetadata) -> Result<String, String> {
+fn save_xlsx_metadata_to_source(
+    file_path: String,
+    metadata: DocumentMetadata,
+    request_id: Option<String>,
+) -> Result<String, String> {
+    validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))?;
     let file_bytes = fs::read(&file_path).map_err(|err| err.to_string())?;
     let updated_file_bytes = build_updated_docx_bytes(file_bytes, &metadata)?;
     fs::write(&file_path, updated_file_bytes).map_err(|err| err.to_string())?;
@@ -316,10 +734,13 @@ fn save_xlsx_metadata_to_source(file_path: String, metadata: DocumentMetadata) -
 }
 
 #[tauri::command]
-fn batch_save_xlsx_metadata_to_source(items: Vec<BatchSaveRequestItem>) -> Vec<BatchSaveResultItem> {
+fn batch_save_xlsx_metadata_to_source(
+    items: Vec<BatchSaveRequestItem>,
+    request_id: Option<String>,
+) -> Vec<BatchSaveResultItem> {
     items
         .into_iter()
-        .map(|item| match save_xlsx_metadata_to_source(item.file_path.clone(), item.metadata) {
+        .map(|item| match save_xlsx_metadata_to_source(item.file_path.clone(), item.metadata, request_id.clone()) {
             Ok(path) => BatchSaveResultItem {
                 file_path: path,
                 success: true,
@@ -372,10 +793,14 @@ fn save_xlsx_metadata_as(
 }
 
 #[tauri::command]
-fn batch_clear_and_save_xlsx_metadata(file_paths: Vec<String>) -> Vec<BatchSaveResultItem> {
+fn batch_clear_and_save_xlsx_metadata(
+    file_paths: Vec<String>,
+    options: Option<BatchClearOptions>,
+    request_id: Option<String>,
+) -> Vec<BatchSaveResultItem> {
     file_paths
         .into_iter()
-        .map(|file_path| match process_single_batch_clear(&file_path) {
+        .map(|file_path| match process_single_batch_clear(&file_path, options.as_ref(), request_id.as_deref()) {
             Ok(()) => BatchSaveResultItem {
                 file_path,
                 success: true,
@@ -422,7 +847,12 @@ fn parse_pdf_metadata_from_path(file_path: String) -> Result<DocumentMetadata, S
 }
 
 #[tauri::command]
-fn save_pdf_metadata_to_source(file_path: String, metadata: DocumentMetadata) -> Result<String, String> {
+fn save_pdf_metadata_to_source(
+    file_path: String,
+    metadata: DocumentMetadata,
+    request_id: Option<String>,
+) -> Result<String, String> {
+    validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))?;
     let mut loaded = PdfDocument::load(&file_path).map_err(|err| err.to_string())?;
     let info = ensure_pdf_info_dict_mut(&mut loaded)?;
 
@@ -446,10 +876,13 @@ fn save_pdf_metadata_to_source(file_path: String, metadata: DocumentMetadata) ->
 }
 
 #[tauri::command]
-fn batch_save_pdf_metadata_to_source(items: Vec<BatchSaveRequestItem>) -> Vec<BatchSaveResultItem> {
+fn batch_save_pdf_metadata_to_source(
+    items: Vec<BatchSaveRequestItem>,
+    request_id: Option<String>,
+) -> Vec<BatchSaveResultItem> {
     items
         .into_iter()
-        .map(|item| match save_pdf_metadata_to_source(item.file_path.clone(), item.metadata) {
+        .map(|item| match save_pdf_metadata_to_source(item.file_path.clone(), item.metadata, request_id.clone()) {
             Ok(path) => BatchSaveResultItem {
                 file_path: path,
                 success: true,
@@ -495,15 +928,27 @@ fn save_pdf_metadata_as(
     };
 
     fs::copy(&source_path, &path).map_err(|err| err.to_string())?;
-    save_pdf_metadata_to_source(path.to_string_lossy().to_string(), metadata)?;
+    save_pdf_metadata_to_source(path.to_string_lossy().to_string(), metadata, None)?;
     Ok(Some(path.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
-fn batch_clear_and_save_pdf_metadata(file_paths: Vec<String>) -> Vec<BatchSaveResultItem> {
+fn batch_clear_and_save_pdf_metadata(
+    file_paths: Vec<String>,
+    options: Option<BatchClearOptions>,
+    request_id: Option<String>,
+) -> Vec<BatchSaveResultItem> {
     file_paths
         .into_iter()
         .map(|file_path| {
+            if let Err(err) = validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path)) {
+                return BatchSaveResultItem {
+                    file_path,
+                    success: false,
+                    error: Some(err),
+                };
+            }
+
             let mut metadata = match parse_pdf_metadata_from_path(file_path.clone()) {
                 Ok(value) => value,
                 Err(err) => {
@@ -521,8 +966,9 @@ fn batch_clear_and_save_pdf_metadata(file_paths: Vec<String>) -> Vec<BatchSaveRe
             metadata.document_properties.keywords.clear();
             metadata.document_properties.description.clear();
             metadata.document_properties.last_modified_by.clear();
+            apply_batch_metadata_options(&mut metadata, options.as_ref());
 
-            match save_pdf_metadata_to_source(file_path.clone(), metadata) {
+            match save_pdf_metadata_to_source(file_path.clone(), metadata, request_id.clone()) {
                 Ok(path) => BatchSaveResultItem {
                     file_path: path,
                     success: true,
@@ -566,7 +1012,12 @@ fn parse_doc_metadata_from_path(file_path: String) -> Result<DocumentMetadata, S
 }
 
 #[tauri::command]
-fn save_doc_metadata_to_source(file_path: String, metadata: DocumentMetadata) -> Result<String, String> {
+fn save_doc_metadata_to_source(
+    file_path: String,
+    metadata: DocumentMetadata,
+    request_id: Option<String>,
+) -> Result<String, String> {
+    validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))?;
     let sidecar_path = format!("{}.metadata.json", file_path);
     let content = serde_json::to_string_pretty(&metadata).map_err(|err| err.to_string())?;
     fs::write(sidecar_path, content).map_err(|err| err.to_string())?;
@@ -574,10 +1025,13 @@ fn save_doc_metadata_to_source(file_path: String, metadata: DocumentMetadata) ->
 }
 
 #[tauri::command]
-fn batch_save_doc_metadata_to_source(items: Vec<BatchSaveRequestItem>) -> Vec<BatchSaveResultItem> {
+fn batch_save_doc_metadata_to_source(
+    items: Vec<BatchSaveRequestItem>,
+    request_id: Option<String>,
+) -> Vec<BatchSaveResultItem> {
     items
         .into_iter()
-        .map(|item| match save_doc_metadata_to_source(item.file_path.clone(), item.metadata) {
+        .map(|item| match save_doc_metadata_to_source(item.file_path.clone(), item.metadata, request_id.clone()) {
             Ok(path) => BatchSaveResultItem {
                 file_path: path,
                 success: true,
@@ -623,15 +1077,27 @@ fn save_doc_metadata_as(
     };
 
     fs::copy(&source_path, &path).map_err(|err| err.to_string())?;
-    save_doc_metadata_to_source(path.to_string_lossy().to_string(), metadata)?;
+    save_doc_metadata_to_source(path.to_string_lossy().to_string(), metadata, None)?;
     Ok(Some(path.to_string_lossy().to_string()))
 }
 
 #[tauri::command]
-fn batch_clear_and_save_doc_metadata(file_paths: Vec<String>) -> Vec<BatchSaveResultItem> {
+fn batch_clear_and_save_doc_metadata(
+    file_paths: Vec<String>,
+    options: Option<BatchClearOptions>,
+    request_id: Option<String>,
+) -> Vec<BatchSaveResultItem> {
     file_paths
         .into_iter()
         .map(|file_path| {
+            if let Err(err) = validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path)) {
+                return BatchSaveResultItem {
+                    file_path,
+                    success: false,
+                    error: Some(err),
+                };
+            }
+
             let mut metadata = match parse_doc_metadata_from_path(file_path.clone()) {
                 Ok(value) => value,
                 Err(err) => {
@@ -663,8 +1129,9 @@ fn batch_clear_and_save_doc_metadata(file_paths: Vec<String>) -> Vec<BatchSaveRe
             metadata.core_properties.dc_source.clear();
             metadata.app_properties.company.clear();
             metadata.app_properties.manager.clear();
+            apply_batch_metadata_options(&mut metadata, options.as_ref());
 
-            match save_doc_metadata_to_source(file_path.clone(), metadata) {
+            match save_doc_metadata_to_source(file_path.clone(), metadata, request_id.clone()) {
                 Ok(path) => BatchSaveResultItem {
                     file_path: path,
                     success: true,
@@ -1014,7 +1481,13 @@ fn build_updated_docx_bytes(file_bytes: Vec<u8>, metadata: &DocumentMetadata) ->
     Ok(output.into_inner())
 }
 
-fn process_single_batch_clear(file_path: &str) -> Result<(), String> {
+fn process_single_batch_clear(
+    file_path: &str,
+    options: Option<&BatchClearOptions>,
+    request_id: Option<&str>,
+) -> Result<(), String> {
+    validate_request_for_paths(request_id, &[file_path.to_string()])?;
+
     let path = PathBuf::from(file_path);
     let file_name = path
         .file_name()
@@ -1028,10 +1501,142 @@ fn process_single_batch_clear(file_path: &str) -> Result<(), String> {
 
     let mut metadata = parse_docx_metadata(file_name, file_size, file_bytes.clone())?;
     clear_metadata_fields(&mut metadata);
+    apply_batch_metadata_options(&mut metadata, options);
 
     let updated_file_bytes = build_updated_docx_bytes(file_bytes, &metadata)?;
     fs::write(&path, updated_file_bytes).map_err(|err| err.to_string())?;
     Ok(())
+}
+
+fn apply_batch_metadata_options(metadata: &mut DocumentMetadata, options: Option<&BatchClearOptions>) {
+    let Some(options) = options else {
+        return;
+    };
+
+    if let Some(template_id) = options.template_id.as_ref() {
+        let trimmed = template_id.trim();
+        if !trimmed.is_empty() && metadata.app_properties.template.trim().is_empty() {
+            metadata.app_properties.template = trimmed.to_string();
+        }
+    }
+
+    let Some(overrides) = options.metadata_overrides.as_ref() else {
+        return;
+    };
+
+    if let Some(document) = overrides.document_properties.as_ref() {
+        if let Some(value) = document.title.as_ref() {
+            metadata.document_properties.title = value.clone();
+        }
+        if let Some(value) = document.subject.as_ref() {
+            metadata.document_properties.subject = value.clone();
+        }
+        if let Some(value) = document.creator.as_ref() {
+            metadata.document_properties.creator = value.clone();
+        }
+        if let Some(value) = document.keywords.as_ref() {
+            metadata.document_properties.keywords = value.clone();
+        }
+        if let Some(value) = document.description.as_ref() {
+            metadata.document_properties.description = value.clone();
+        }
+        if let Some(value) = document.last_modified_by.as_ref() {
+            metadata.document_properties.last_modified_by = value.clone();
+        }
+        if let Some(value) = document.revision.as_ref() {
+            metadata.document_properties.revision = value.clone();
+        }
+        if let Some(value) = document.created.as_ref() {
+            metadata.document_properties.created = value.clone();
+        }
+        if let Some(value) = document.modified.as_ref() {
+            metadata.document_properties.modified = value.clone();
+        }
+        if let Some(value) = document.category.as_ref() {
+            metadata.document_properties.category = value.clone();
+        }
+        if let Some(value) = document.content_status.as_ref() {
+            metadata.document_properties.content_status = value.clone();
+        }
+        if let Some(value) = document.version.as_ref() {
+            metadata.document_properties.version = value.clone();
+        }
+        if let Some(value) = document.language.as_ref() {
+            metadata.document_properties.language = value.clone();
+        }
+        if let Some(value) = document.identifier.as_ref() {
+            metadata.document_properties.identifier = value.clone();
+        }
+        if let Some(value) = document.source.as_ref() {
+            metadata.document_properties.source = value.clone();
+        }
+    }
+
+    if let Some(core) = overrides.core_properties.as_ref() {
+        if let Some(value) = core.dc_title.as_ref() {
+            metadata.core_properties.dc_title = value.clone();
+        }
+        if let Some(value) = core.dc_subject.as_ref() {
+            metadata.core_properties.dc_subject = value.clone();
+        }
+        if let Some(value) = core.dc_creator.as_ref() {
+            metadata.core_properties.dc_creator = value.clone();
+        }
+        if let Some(value) = core.dc_description.as_ref() {
+            metadata.core_properties.dc_description = value.clone();
+        }
+        if let Some(value) = core.dc_keywords.as_ref() {
+            metadata.core_properties.dc_keywords = value.clone();
+        }
+        if let Some(value) = core.dc_language.as_ref() {
+            metadata.core_properties.dc_language = value.clone();
+        }
+        if let Some(value) = core.dc_identifier.as_ref() {
+            metadata.core_properties.dc_identifier = value.clone();
+        }
+        if let Some(value) = core.dc_source.as_ref() {
+            metadata.core_properties.dc_source = value.clone();
+        }
+    }
+
+    if let Some(app) = overrides.app_properties.as_ref() {
+        if let Some(value) = app.application.as_ref() {
+            metadata.app_properties.application = value.clone();
+        }
+        if let Some(value) = app.app_version.as_ref() {
+            metadata.app_properties.app_version = value.clone();
+        }
+        if let Some(value) = app.company.as_ref() {
+            metadata.app_properties.company = value.clone();
+        }
+        if let Some(value) = app.manager.as_ref() {
+            metadata.app_properties.manager = value.clone();
+        }
+        if let Some(value) = app.template.as_ref() {
+            metadata.app_properties.template = value.clone();
+        }
+        if let Some(value) = app.total_time.as_ref() {
+            metadata.app_properties.total_time = value.clone();
+        }
+        if let Some(value) = app.pages {
+            metadata.app_properties.pages = value;
+        }
+        if let Some(value) = app.words {
+            metadata.app_properties.words = value;
+        }
+        if let Some(value) = app.characters {
+            metadata.app_properties.characters = value;
+        }
+        if let Some(value) = app.characters_with_spaces {
+            metadata.app_properties.characters_with_spaces = value;
+        }
+        if let Some(value) = app.paragraphs {
+            metadata.app_properties.paragraphs = value;
+        }
+        if let Some(value) = app.lines {
+            metadata.app_properties.lines = value;
+        }
+    }
 }
 
 fn clear_metadata_fields(metadata: &mut DocumentMetadata) {
@@ -1392,6 +1997,11 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(external_navigation_plugin())
         .invoke_handler(tauri::generate_handler![
+            scan_directory,
+            create_automation_request,
+            cancel_automation_request,
+            finish_automation_request,
+            get_automation_request_status,
             parse_docx_metadata,
             parse_docx_metadata_from_path,
             update_docx_metadata,

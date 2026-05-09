@@ -1,10 +1,11 @@
 /**
- * Zustand Store - 统一状态管理 v2.0
- * 替代原有的 Context 嵌套架构
+ * Zustand Store - 工作流状态管理
  */
 
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
+import { invoke } from '@tauri-apps/api/core'
+import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs'
 import type {
   FileEntry,
   LoadedDocument,
@@ -14,7 +15,47 @@ import type {
   DirectoryInfo,
   BatchOperation,
   Workspace,
-} from '../types/v2-core'
+} from '../types/om-workflow'
+
+const TEMPLATE_STORAGE_KEY = 'om.templates'
+
+const persistTemplates = (templates: MetadataTemplate[]) => {
+  localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(templates))
+}
+
+const toText = (value: unknown): string => {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+const normalizeTemplate = (input: MetadataTemplate): MetadataTemplate => {
+  const legacyFields = Array.isArray(input.fields) ? input.fields : []
+  const legacyAuthor = legacyFields.find(field => field.key === 'creator')?.defaultValue
+  const legacyOrganization =
+    legacyFields.find(field => field.key === 'company' || field.key === 'organization')?.defaultValue
+  const legacyManager = legacyFields.find(field => field.key === 'manager')?.defaultValue
+  const legacyLanguage =
+    legacyFields.find(field => field.key === 'language' || field.key === 'dcLanguage')?.defaultValue
+
+  return {
+    ...input,
+    id: input.id || `tpl_${Date.now()}`,
+    name: toText(input.name) || '未命名模板',
+    description: toText(input.description),
+    author: toText(input.author) || toText(legacyAuthor),
+    organization: toText(input.organization) || toText(legacyOrganization),
+    manager: toText(input.manager) || toText(legacyManager),
+    language: toText(input.language) || toText(legacyLanguage) || 'zh-CN',
+    version: toText(input.version) || '1.0.0',
+    fields: legacyFields,
+    createdAt: input.createdAt || Date.now(),
+    updatedAt: Date.now(),
+  }
+}
+
+const parseTemplateFile = (content: string): MetadataTemplate => {
+  const raw = JSON.parse(content) as MetadataTemplate
+  return normalizeTemplate(raw)
+}
 
 // ==================== File Store ====================
 
@@ -63,7 +104,7 @@ export const useFileStore = create<FileStore>()(
     directoryFiles: [],
     isLoading: false,
     error: null,
-    
+
     addFiles: async (paths: string[]) => {
       set({ isLoading: true, error: null })
       try {
@@ -71,10 +112,10 @@ export const useFileStore = create<FileStore>()(
         const newFiles: FileEntry[] = paths.map(path => {
           const name = path.split('/').pop() || path
           const extension = name.split('.').pop()?.toLowerCase() || ''
-          const type = ['docx', 'xlsx', 'pptx', 'pdf'].includes(extension) 
-            ? extension as any 
+          const type = ['docx', 'xlsx', 'pptx', 'pdf'].includes(extension)
+            ? extension as any
             : 'unknown'
-          
+
           return {
             id: `file_${now}_${Math.random().toString(36).substr(2, 9)}`,
             path,
@@ -87,36 +128,36 @@ export const useFileStore = create<FileStore>()(
             updatedAt: now,
           }
         })
-        
+
         set(state => ({
           files: [...state.files, ...newFiles],
           isLoading: false,
         }))
       } catch (error) {
-        set({ 
+        set({
           error: error instanceof Error ? error.message : '添加文件失败',
           isLoading: false,
         })
         throw error
       }
     },
-    
+
     removeFile: (id: string) => {
       set(state => ({
         files: state.files.filter(f => f.id !== id),
         selectedFileIds: state.selectedFileIds.filter(fid => fid !== id),
       }))
-      
+
       const doc = get().documents.get(id)
       if (doc) {
         get().closeDocument(doc.id)
       }
     },
-    
+
     selectFile: (id: string) => {
       set({ activeDocumentId: id })
     },
-    
+
     toggleFileSelection: (id: string) => {
       set(state => {
         const isSelected = state.selectedFileIds.includes(id)
@@ -127,40 +168,40 @@ export const useFileStore = create<FileStore>()(
         }
       })
     },
-    
+
     selectAllFiles: () => {
       set(state => ({
         selectedFileIds: state.files.map(f => f.id),
       }))
     },
-    
+
     clearSelection: () => {
       set({ selectedFileIds: [] })
     },
-    
+
     clearAllFiles: () => {
-      set({ 
-        files: [], 
+      set({
+        files: [],
         selectedFileIds: [],
         documents: new Map(),
         activeDocumentId: null,
       })
     },
-    
+
     loadDocument: async (fileId: string) => {
       const file = get().files.find(f => f.id === fileId)
       if (!file) throw new Error('文件不存在')
-      
+
       const existingDoc = get().documents.get(fileId)
       if (existingDoc) {
         set({ activeDocumentId: fileId })
         return existingDoc
       }
-      
+
       set({ isLoading: true, error: null })
       try {
         const metadata: DocumentMetadata = {}
-        
+
         const doc: LoadedDocument = {
           id: `doc_${fileId}`,
           fileId,
@@ -170,120 +211,122 @@ export const useFileStore = create<FileStore>()(
           isDirty: false,
           loadedAt: Date.now(),
         }
-        
+
         set(state => ({
           documents: new Map(state.documents).set(fileId, doc),
           activeDocumentId: fileId,
           isLoading: false,
         }))
-        
+
         return doc
       } catch (error) {
-        set({ 
+        set({
           error: error instanceof Error ? error.message : '加载文档失败',
           isLoading: false,
         })
         throw error
       }
     },
-    
+
     updateDocumentMetadata: (documentId: string, updates: Partial<DocumentMetadata>) => {
       set(state => {
         const newDocuments = new Map(state.documents)
         const doc = newDocuments.get(documentId)
         if (!doc) return state
-        
+
         const updatedDoc: LoadedDocument = {
           ...doc,
           metadata: { ...doc.metadata, ...updates },
           isDirty: true,
         }
         newDocuments.set(documentId, updatedDoc)
-        
+
         return { documents: newDocuments }
       })
     },
-    
+
     saveDocument: async (documentId: string) => {
       const doc = get().documents.get(documentId)
       if (!doc) throw new Error('文档不存在')
-      
+
       set({ isLoading: true, error: null })
       try {
         set(state => {
           const newDocuments = new Map(state.documents)
           const savedDoc = newDocuments.get(documentId)
           if (!savedDoc) return state
-          
+
           savedDoc.isDirty = false
           savedDoc.lastSavedAt = Date.now()
           savedDoc.originalMetadata = { ...savedDoc.metadata }
           newDocuments.set(documentId, savedDoc)
-          
+
           return { documents: newDocuments, isLoading: false }
         })
       } catch (error) {
-        set({ 
+        set({
           error: error instanceof Error ? error.message : '保存失败',
           isLoading: false,
         })
         throw error
       }
     },
-    
+
     discardChanges: (documentId: string) => {
       set(state => {
         const newDocuments = new Map(state.documents)
         const doc = newDocuments.get(documentId)
         if (!doc) return state
-        
+
         doc.metadata = { ...doc.originalMetadata }
         doc.isDirty = false
         newDocuments.set(documentId, doc)
-        
+
         return { documents: newDocuments }
       })
     },
-    
+
     closeDocument: (documentId: string) => {
       set(state => {
         const newDocuments = new Map(state.documents)
         newDocuments.delete(documentId)
-        
+
         return {
           documents: newDocuments,
           activeDocumentId: state.activeDocumentId === documentId ? null : state.activeDocumentId,
         }
       })
     },
-    
+
     scanDirectory: async (path: string, options?: { recursive?: boolean }) => {
       set({ isLoading: true, error: null })
       try {
-        const mockFiles: DirectoryInfo[] = [
-          { path: `${path}/doc1.docx`, name: 'doc1.docx', extension: 'docx', size: 1024, modifiedAt: Date.now(), selected: false },
-          { path: `${path}/doc2.xlsx`, name: 'doc2.xlsx', extension: 'xlsx', size: 2048, modifiedAt: Date.now(), selected: false },
-        ]
-        
+        const result = await invoke<DirectoryScanResult>('scan_directory', {
+          path,
+          options: {
+            recursive: options?.recursive ?? true,
+            extensions: ['docx', 'doc', 'xlsx', 'pdf'],
+          },
+        })
+        const files = result.files.map(file => ({ ...file, selected: false })) as DirectoryInfo[]
+
         set({
           scanResults: {
-            path,
-            files: mockFiles,
-            totalFound: mockFiles.length,
-            scannedAt: Date.now(),
+            ...result,
+            files,
           },
-          directoryFiles: mockFiles,
+          directoryFiles: files,
           isLoading: false,
         })
       } catch (error) {
-        set({ 
+        set({
           error: error instanceof Error ? error.message : '扫描目录失败',
           isLoading: false,
         })
         throw error
       }
     },
-    
+
     toggleDirectoryFileSelection: (index: number) => {
       set(state => {
         const newFiles = [...state.directoryFiles]
@@ -293,28 +336,28 @@ export const useFileStore = create<FileStore>()(
         return { directoryFiles: newFiles }
       })
     },
-    
+
     selectAllDirectoryFiles: () => {
       set(state => ({
         directoryFiles: state.directoryFiles.map(f => ({ ...f, selected: true })),
       }))
     },
-    
+
     clearDirectorySelection: () => {
       set(state => ({
         directoryFiles: state.directoryFiles.map(f => ({ ...f, selected: false })),
       }))
     },
-    
+
     importSelectedFiles: async () => {
       const selectedFiles = get().directoryFiles.filter(f => f.selected)
       if (selectedFiles.length === 0) return
-      
+
       const paths = selectedFiles.map(f => f.path)
       await get().addFiles(paths)
       get().clearDirectorySelection()
     },
-    
+
     setLoading: (loading: boolean) => set({ isLoading: loading }),
     setError: (error: string | null) => set({ error }),
   }))
@@ -347,106 +390,133 @@ export const useTemplateStore = create<TemplateStore>()(
     activeTemplateId: null,
     isLoading: false,
     error: null,
-    
+
     loadTemplates: async () => {
       set({ isLoading: true, error: null })
       try {
-        set({ templates: [], isLoading: false })
+        const raw = localStorage.getItem(TEMPLATE_STORAGE_KEY)
+        const templates = raw ? (JSON.parse(raw) as MetadataTemplate[]) : []
+        const normalized = templates.map(item => normalizeTemplate(item))
+        persistTemplates(normalized)
+        set({ templates: normalized, isLoading: false })
       } catch (error) {
-        set({ 
+        set({
           error: error instanceof Error ? error.message : '加载模板失败',
           isLoading: false,
         })
       }
     },
-    
+
     createTemplate: async (template) => {
       set({ isLoading: true, error: null })
       try {
-        const id = `tpl_${Date.now()}`
-        
-        const newTemplate: MetadataTemplate = {
+        const now = Date.now()
+        const id = `tpl_${now}`
+
+        const newTemplate = normalizeTemplate({
           ...template,
           id,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        }
-        
+          createdAt: now,
+          updatedAt: now,
+        } as MetadataTemplate)
+
         set(state => ({
-          templates: [...state.templates, newTemplate],
+          templates: (() => {
+            const next = [...state.templates, newTemplate]
+            persistTemplates(next)
+            return next
+          })(),
           activeTemplateId: id,
           isLoading: false,
         }))
-        
+
         return id
       } catch (error) {
-        set({ 
+        set({
           error: error instanceof Error ? error.message : '创建模板失败',
           isLoading: false,
         })
         throw error
       }
     },
-    
+
     updateTemplate: async (template) => {
       set({ isLoading: true, error: null })
       try {
         set(state => ({
-          templates: state.templates.map(t => t.id === template.id ? { ...template, updatedAt: Date.now() } : t),
+          templates: (() => {
+            const next = state.templates.map(t =>
+              t.id === template.id ? normalizeTemplate({ ...template, updatedAt: Date.now() }) : t,
+            )
+            persistTemplates(next)
+            return next
+          })(),
           isLoading: false,
         }))
       } catch (error) {
-        set({ 
+        set({
           error: error instanceof Error ? error.message : '更新模板失败',
           isLoading: false,
         })
         throw error
       }
     },
-    
+
     deleteTemplate: async (id: string) => {
       set({ isLoading: true, error: null })
       try {
         set(state => ({
-          templates: state.templates.filter(t => t.id !== id),
+          templates: (() => {
+            const next = state.templates.filter(t => t.id !== id)
+            persistTemplates(next)
+            return next
+          })(),
           activeTemplateId: state.activeTemplateId === id ? null : state.activeTemplateId,
           isLoading: false,
         }))
       } catch (error) {
-        set({ 
+        set({
           error: error instanceof Error ? error.message : '删除模板失败',
           isLoading: false,
         })
         throw error
       }
     },
-    
+
     setActiveTemplate: (id: string | null) => set({ activeTemplateId: id }),
-    
+
     exportTemplate: async (id, outputPath) => {
-      // TODO: 调用 Tauri 命令
+      const template = useTemplateStore.getState().templates.find(t => t.id === id)
+      if (!template) {
+        throw new Error('模板不存在')
+      }
+      await writeTextFile(outputPath, JSON.stringify(template, null, 2))
     },
-    
+
     importTemplate: async (inputPath) => {
       set({ isLoading: true, error: null })
       try {
-        const template: MetadataTemplate = {
+        const content = await readTextFile(inputPath)
+        const parsed = parseTemplateFile(content)
+        const template = normalizeTemplate({
+          ...parsed,
           id: `tpl_${Date.now()}`,
-          name: 'Imported Template',
-          version: '1.0',
-          fields: [],
-          createdAt: Date.now(),
           updatedAt: Date.now(),
-        }
-        
+        })
+
         set(state => ({
-          templates: [...state.templates, template],
+          templates: (() => {
+            const next = [...state.templates, template]
+            persistTemplates(next)
+            return next
+          })(),
+          activeTemplateId: template.id,
           isLoading: false,
         }))
-        
+
         return template
       } catch (error) {
-        set({ 
+        set({
           error: error instanceof Error ? error.message : '导入模板失败',
           isLoading: false,
         })
@@ -478,7 +548,7 @@ export const useBatchStore = create<BatchStore>()(
   subscribeWithSelector((set) => ({
     operations: [],
     currentOperationId: null,
-    
+
     createOperation: (type, totalItems) => {
       const id = `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       const operation: BatchOperation = {
@@ -491,25 +561,25 @@ export const useBatchStore = create<BatchStore>()(
         failedItems: 0,
         progress: 0,
       }
-      
+
       set(state => ({
         operations: [...state.operations, operation],
         currentOperationId: id,
       }))
-      
+
       return id
     },
-    
+
     updateOperationProgress: (operationId, progress) => {
       set(state => ({
-        operations: state.operations.map(op => 
-          op.id === operationId 
-            ? { ...op, ...progress, status: progress.status ?? op.status } 
+        operations: state.operations.map(op =>
+          op.id === operationId
+            ? { ...op, ...progress, status: progress.status ?? op.status }
             : op
         ),
       }))
     },
-    
+
     completeOperation: (operationId, successfulItems, failedItems) => {
       set(state => ({
         operations: state.operations.map(op =>
@@ -527,7 +597,7 @@ export const useBatchStore = create<BatchStore>()(
         ),
       }))
     },
-    
+
     failOperation: (operationId, error) => {
       set(state => ({
         operations: state.operations.map(op =>
@@ -537,13 +607,13 @@ export const useBatchStore = create<BatchStore>()(
         ),
       }))
     },
-    
+
     setCurrentOperation: (id) => set({ currentOperationId: id }),
-    
+
     clearCompletedOperations: () => {
       set(state => ({
         operations: state.operations.filter(op => op.status !== 'completed'),
-        currentOperationId: state.currentOperationId && 
+        currentOperationId: state.currentOperationId &&
           state.operations.find(op => op.id === state.currentOperationId)?.status !== 'completed'
           ? state.currentOperationId
           : null,
@@ -573,7 +643,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
   subscribeWithSelector((set) => ({
     workspaces: [],
     activeWorkspaceId: null,
-    
+
     createWorkspace: (name: string) => {
       const id = `ws_${Date.now()}`
       const workspace: Workspace = {
@@ -582,30 +652,30 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
         directories: [],
         lastOpenedAt: Date.now(),
       }
-      
+
       set(state => ({
         workspaces: [...state.workspaces, workspace],
         activeWorkspaceId: id,
       }))
-      
+
       return id
     },
-    
+
     updateWorkspace: (id, updates) => {
       set(state => ({
         workspaces: state.workspaces.map(ws => ws.id === id ? { ...ws, ...updates } : ws),
       }))
     },
-    
+
     deleteWorkspace: (id) => {
       set(state => ({
         workspaces: state.workspaces.filter(ws => ws.id !== id),
         activeWorkspaceId: state.activeWorkspaceId === id ? null : state.activeWorkspaceId,
       }))
     },
-    
+
     setActiveWorkspace: (id) => set({ activeWorkspaceId: id }),
-    
+
     loadWorkspace: async (id) => {
       set({ activeWorkspaceId: id })
     },

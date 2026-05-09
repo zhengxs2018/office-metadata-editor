@@ -17,6 +17,7 @@ export interface FileContextValue {
   activeFileId: string | null
   isLoading: boolean
   openFiles: () => Promise<number>
+  addFilesByPaths: (paths: string[]) => number
   selectFile: (fileId: string) => void
   removeFile: (fileId: string) => void
   clearFiles: () => void
@@ -69,6 +70,25 @@ export const FileProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     }
   }, [activeFileId, files])
 
+  const addFilesByPaths = useCallback((paths: string[]): number => {
+    if (paths.length === 0) return 0
+
+    const existingPathSet = new Set(files.map(item => item.filePath))
+    const pathsToLoad = paths.filter(path => !existingPathSet.has(path))
+    if (pathsToLoad.length === 0) return 0
+
+    const addedFiles: FileEntry[] = pathsToLoad.map(filePath => ({
+      id: crypto.randomUUID(),
+      filePath,
+      status: "idle",
+      progressMessage: "待处理",
+    }))
+
+    setFiles(prev => [...prev, ...addedFiles])
+    setActiveFileId(prev => prev ?? addedFiles[0]?.id ?? null)
+    return addedFiles.length
+  }, [files])
+
   const selectFile = useCallback((fileId: string) => {
     setActiveFileId(fileId)
   }, [])
@@ -118,6 +138,7 @@ export const FileProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       activeFileId,
       isLoading,
       openFiles,
+      addFilesByPaths,
       selectFile,
       removeFile,
       clearFiles,
@@ -128,6 +149,7 @@ export const FileProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       activeFileId,
       isLoading,
       openFiles,
+      addFilesByPaths,
       selectFile,
       removeFile,
       clearFiles,

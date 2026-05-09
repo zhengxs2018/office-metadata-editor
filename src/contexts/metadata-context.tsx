@@ -7,7 +7,9 @@ import React, {
   useRef,
   useState,
 } from "react"
+import { invoke } from "@tauri-apps/api/core"
 import type { DocumentMetadata, MetadataSection } from "@/types/metadata"
+import type { MetadataTemplate } from "@/types/om-workflow"
 import { useFileContext } from "@/contexts/file-context"
 import {
   getDocumentResourceByPath,
@@ -83,6 +85,13 @@ interface DocumentState {
   hasChanges: boolean
 }
 
+interface AutomationRequestStatus {
+  requestId: string
+  source: string
+  status: "running" | "completed" | "failed" | "cancelled"
+  filePaths: string[]
+}
+
 export interface MetadataContextValue {
   documents: LoadedDocument[]
   activeDocumentId: string | null
@@ -104,6 +113,12 @@ export interface MetadataContextValue {
   batchClearAndSave: () => Promise<void>
   batchSaveAll: () => Promise<void>
   downloadFile: () => Promise<void>
+  applyTemplateToDocuments: (template: MetadataTemplate, documentIds: string[]) => void
+  documentTaskRequestIds: Record<string, string>
+  batchTaskRequestId: string | null
+  requestStatusMap: Record<string, AutomationRequestStatus["status"]>
+  cancelDocumentTask: (documentId: string) => Promise<void>
+  cancelBatchTask: () => Promise<void>
 }
 
 const MetadataContext = createContext<MetadataContextValue | null>(null)
@@ -121,6 +136,9 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
   } = useFileContext()
 
   const [documentsById, setDocumentsById] = useState<Record<string, DocumentState>>({})
+  const [documentTaskRequestIds, setDocumentTaskRequestIds] = useState<Record<string, string>>({})
+  const [batchTaskRequestId, setBatchTaskRequestId] = useState<string | null>(null)
+  const [requestStatusMap, setRequestStatusMap] = useState<Record<string, AutomationRequestStatus["status"]>>({})
   const loadingIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
@@ -208,6 +226,37 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
   const metadata = activeDocument?.metadata ?? createPlaceholderMetadata("未选择文件")
   const hasChanges = activeDocument?.hasChanges ?? false
   const isLoading = isFileLoading || loadingIdsRef.current.size > 0
+
+  const createRequest = useCallback(async (filePaths: string[], source: string) => {
+    return invoke<string>("create_automation_request", { filePaths, source })
+  }, [])
+
+  const queryRequestStatus = useCallback(async (requestId: string) => {
+    const status = await invoke<AutomationRequestStatus>("get_automation_request_status", {
+      requestId,
+    })
+    setRequestStatusMap(prev => ({
+      ...prev,
+      [requestId]: status.status,
+    }))
+    return status
+  }, [])
+
+  const finishRequest = useCallback(
+    async (requestId: string, status: AutomationRequestStatus["status"]) => {
+      await invoke("finish_automation_request", { requestId, status })
+      await queryRequestStatus(requestId)
+    },
+    [queryRequestStatus],
+  )
+
+  const cancelRequest = useCallback(
+    async (requestId: string) => {
+      await invoke("cancel_automation_request", { requestId })
+      await queryRequestStatus(requestId)
+    },
+    [queryRequestStatus],
+  )
 
   const setMetadata = useCallback(
     (newMetadata: DocumentMetadata) => {
@@ -320,31 +369,52 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
       const target = documents.find(item => item.id === documentId)
       if (!target) return
 
+      const requestId = await createRequest([target.filePath], "manual-single-save")
+      setDocumentTaskRequestIds(prev => ({ ...prev, [documentId]: requestId }))
+      setRequestStatusMap(prev => ({ ...prev, [requestId]: "running" }))
+
       updateFileStatus(documentId, { status: "processing", progressMessage: "保存中..." })
 
       const resource = getDocumentResourceByPath(target.filePath)
-      await resource.replace(target.filePath, target.metadata)
+      try {
+        await resource.replace(target.filePath, target.metadata, requestId)
 
-      setDocumentsById(prev => {
-        const current = prev[documentId]
-        if (!current) return prev
-        return {
-          ...prev,
-          [documentId]: {
-            ...current,
-            originalMetadata: current.metadata,
-            hasChanges: false,
-          },
-        }
-      })
+        setDocumentsById(prev => {
+          const current = prev[documentId]
+          if (!current) return prev
+          return {
+            ...prev,
+            [documentId]: {
+              ...current,
+              originalMetadata: current.metadata,
+              hasChanges: false,
+            },
+          }
+        })
 
-      updateFileStatus(documentId, {
-        status: "ready",
-        progressMessage: "已同步",
-        error: undefined,
-      })
+        updateFileStatus(documentId, {
+          status: "ready",
+          progressMessage: "已同步",
+          error: undefined,
+        })
+        await finishRequest(requestId, "completed")
+      } catch (error) {
+        updateFileStatus(documentId, {
+          status: "error",
+          progressMessage: "处理失败",
+          error: String(error),
+        })
+        await finishRequest(requestId, "failed")
+        throw error
+      } finally {
+        setDocumentTaskRequestIds(prev => {
+          const next = { ...prev }
+          delete next[documentId]
+          return next
+        })
+      }
     },
-    [documents, updateFileStatus],
+    [createRequest, documents, finishRequest, updateFileStatus],
   )
 
   const saveCurrent = useCallback(async () => {
@@ -357,38 +427,60 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
       const target = documents.find(item => item.id === documentId)
       if (!target) return
 
+      const requestId = await createRequest([target.filePath], "manual-single-clear")
+      setDocumentTaskRequestIds(prev => ({ ...prev, [documentId]: requestId }))
+      setRequestStatusMap(prev => ({ ...prev, [requestId]: "running" }))
+
       updateFileStatus(documentId, {
         status: "processing",
         progressMessage: "清理并保存中...",
       })
 
       const resource = getDocumentResourceByPath(target.filePath)
-      const results = await resource.destroyMetadataMany([target.filePath])
+      try {
+        const results = await resource.destroyMetadataMany([target.filePath], requestId)
 
-      if (!results[0]?.success) {
-        updateFileStatus(documentId, { status: "error", progressMessage: "处理失败" })
-        return
+        if (!results[0]?.success) {
+          await finishRequest(requestId, "failed")
+          updateFileStatus(documentId, { status: "error", progressMessage: "处理失败" })
+          return
+        }
+
+        const parsed = await resource.show(target.filePath)
+        const normalized = normalizeMetadata(parsed, target.filePath)
+
+        setDocumentsById(prev => ({
+          ...prev,
+          [documentId]: {
+            metadata: normalized,
+            originalMetadata: normalized,
+            hasChanges: false,
+          },
+        }))
+
+        updateFileStatus(documentId, {
+          status: "ready",
+          progressMessage: "已同步",
+          error: undefined,
+        })
+        await finishRequest(requestId, "completed")
+      } catch (error) {
+        await finishRequest(requestId, "failed")
+        updateFileStatus(documentId, {
+          status: "error",
+          progressMessage: "处理失败",
+          error: String(error),
+        })
+        throw error
+      } finally {
+        setDocumentTaskRequestIds(prev => {
+          const next = { ...prev }
+          delete next[documentId]
+          return next
+        })
       }
-
-      const parsed = await resource.show(target.filePath)
-      const normalized = normalizeMetadata(parsed, target.filePath)
-
-      setDocumentsById(prev => ({
-        ...prev,
-        [documentId]: {
-          metadata: normalized,
-          originalMetadata: normalized,
-          hasChanges: false,
-        },
-      }))
-
-      updateFileStatus(documentId, {
-        status: "ready",
-        progressMessage: "已同步",
-        error: undefined,
-      })
     },
-    [documents, updateFileStatus],
+    [createRequest, documents, finishRequest, updateFileStatus],
   )
 
   const saveCurrentAs = useCallback(async () => {
@@ -419,61 +511,95 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
   const batchClearAndSave = useCallback(async () => {
     if (documents.length === 0) return
 
-    documents.forEach(item => {
-      updateFileStatus(item.id, {
-        status: "processing",
-        progressMessage: "批量清理并保存中...",
-      })
-    })
-
-    const groupedByType = new Map<string, string[]>()
-    documents.forEach(item => {
-      const key = resolveFileTypeFromPath(item.filePath)
-      const existing = groupedByType.get(key) ?? []
-      existing.push(item.filePath)
-      groupedByType.set(key, existing)
-    })
-
-    const resultGroups = await Promise.all(
-      Array.from(groupedByType.entries()).map(async ([, filePaths]) => {
-        const resource = getDocumentResourceByPath(filePaths[0] ?? "")
-        return resource.destroyMetadataMany(filePaths)
-      }),
-    )
-
-    const results = resultGroups.flat()
-
-    const successPathSet = new Set(results.filter(item => item.success).map(item => item.filePath))
-    if (successPathSet.size === 0) return
-
-    const refreshTargets = documents.filter(item => successPathSet.has(item.filePath))
-    const refreshed = await Promise.all(
-      refreshTargets.map(async item => {
-        const resource = getDocumentResourceByPath(item.filePath)
-        const parsed = await resource.show(item.filePath)
-        return {
-          id: item.id,
-          metadata: normalizeMetadata(parsed, item.filePath),
-        }
-      }),
-    )
-
-    setDocumentsById(prev => {
+    const filePaths = documents.map(item => item.filePath)
+    const requestId = await createRequest(filePaths, "manual-batch-clear")
+    setBatchTaskRequestId(requestId)
+    setRequestStatusMap(prev => ({ ...prev, [requestId]: "running" }))
+    setDocumentTaskRequestIds(prev => {
       const next = { ...prev }
-      refreshed.forEach(item => {
-        next[item.id] = {
-          metadata: item.metadata,
-          originalMetadata: item.metadata,
-          hasChanges: false,
-        }
+      documents.forEach(item => {
+        next[item.id] = requestId
       })
       return next
     })
 
-    refreshed.forEach(item => {
-      updateFileStatus(item.id, { status: "ready", progressMessage: "已同步", error: undefined })
-    })
-  }, [documents, updateFileStatus])
+    try {
+      documents.forEach(item => {
+        updateFileStatus(item.id, {
+          status: "processing",
+          progressMessage: "批量清理并保存中...",
+        })
+      })
+
+      const groupedByType = new Map<string, string[]>()
+      documents.forEach(item => {
+        const key = resolveFileTypeFromPath(item.filePath)
+        const existing = groupedByType.get(key) ?? []
+        existing.push(item.filePath)
+        groupedByType.set(key, existing)
+      })
+
+      const resultGroups = await Promise.all(
+        Array.from(groupedByType.entries()).map(async ([, typedPaths]) => {
+          const resource = getDocumentResourceByPath(typedPaths[0] ?? "")
+          return resource.destroyMetadataMany(typedPaths, requestId)
+        }),
+      )
+
+      const results = resultGroups.flat()
+
+      const successPathSet = new Set(results.filter(item => item.success).map(item => item.filePath))
+      if (successPathSet.size === 0) {
+        await finishRequest(requestId, "failed")
+        return
+      }
+
+      const refreshTargets = documents.filter(item => successPathSet.has(item.filePath))
+      const refreshed = await Promise.all(
+        refreshTargets.map(async item => {
+          const resource = getDocumentResourceByPath(item.filePath)
+          const parsed = await resource.show(item.filePath)
+          return {
+            id: item.id,
+            metadata: normalizeMetadata(parsed, item.filePath),
+          }
+        }),
+      )
+
+      setDocumentsById(prev => {
+        const next = { ...prev }
+        refreshed.forEach(item => {
+          next[item.id] = {
+            metadata: item.metadata,
+            originalMetadata: item.metadata,
+            hasChanges: false,
+          }
+        })
+        return next
+      })
+
+      refreshed.forEach(item => {
+        updateFileStatus(item.id, { status: "ready", progressMessage: "已同步", error: undefined })
+      })
+
+      const hasFailures = results.some(item => !item.success)
+      await finishRequest(requestId, hasFailures ? "failed" : "completed")
+    } catch (error) {
+      await finishRequest(requestId, "failed")
+      throw error
+    } finally {
+      setBatchTaskRequestId(current => (current === requestId ? null : current))
+      setDocumentTaskRequestIds(prev => {
+        const next = { ...prev }
+        documents.forEach(item => {
+          if (next[item.id] === requestId) {
+            delete next[item.id]
+          }
+        })
+        return next
+      })
+    }
+  }, [createRequest, documents, finishRequest, updateFileStatus])
 
   const batchSaveAll = useCallback(async () => {
     const items: BatchSaveRequestItem[] = documents
@@ -482,55 +608,184 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
 
     if (items.length === 0) return
 
-    documents.forEach(item => {
-      if (item.hasChanges) {
-        updateFileStatus(item.id, { status: "processing", progressMessage: "批量保存中..." })
-      }
-    })
-
-    const itemsByType = new Map<string, BatchSaveRequestItem[]>()
-    items.forEach(item => {
-      const key = resolveFileTypeFromPath(item.filePath)
-      const existing = itemsByType.get(key) ?? []
-      existing.push(item)
-      itemsByType.set(key, existing)
-    })
-
-    const resultGroups = await Promise.all(
-      Array.from(itemsByType.entries()).map(async ([, typedItems]) => {
-        const resource = getDocumentResourceByPath(typedItems[0]?.filePath ?? "")
-        return resource.replaceMany(typedItems)
-      }),
+    const requestId = await createRequest(
+      items.map(item => item.filePath),
+      "manual-batch-save",
     )
-
-    const results = resultGroups.flat()
-    const successPathSet = new Set(results.filter(item => item.success).map(item => item.filePath))
-
-    setDocumentsById(prev => {
+    setBatchTaskRequestId(requestId)
+    setRequestStatusMap(prev => ({ ...prev, [requestId]: "running" }))
+    setDocumentTaskRequestIds(prev => {
       const next = { ...prev }
       documents.forEach(item => {
-        if (!successPathSet.has(item.filePath)) return
-        const current = next[item.id]
-        if (!current) return
-        next[item.id] = {
-          ...current,
-          originalMetadata: current.metadata,
-          hasChanges: false,
+        if (item.hasChanges) {
+          next[item.id] = requestId
         }
       })
       return next
     })
 
-    documents.forEach(item => {
-      if (successPathSet.has(item.filePath)) {
-        updateFileStatus(item.id, { status: "ready", progressMessage: "已同步", error: undefined })
-      }
-    })
-  }, [documents, updateFileStatus])
+    try {
+      documents.forEach(item => {
+        if (item.hasChanges) {
+          updateFileStatus(item.id, { status: "processing", progressMessage: "批量保存中..." })
+        }
+      })
+
+      const itemsByType = new Map<string, BatchSaveRequestItem[]>()
+      items.forEach(item => {
+        const key = resolveFileTypeFromPath(item.filePath)
+        const existing = itemsByType.get(key) ?? []
+        existing.push(item)
+        itemsByType.set(key, existing)
+      })
+
+      const resultGroups = await Promise.all(
+        Array.from(itemsByType.entries()).map(async ([, typedItems]) => {
+          const resource = getDocumentResourceByPath(typedItems[0]?.filePath ?? "")
+          return resource.replaceMany(typedItems, requestId)
+        }),
+      )
+
+      const results = resultGroups.flat()
+      const successPathSet = new Set(results.filter(item => item.success).map(item => item.filePath))
+
+      setDocumentsById(prev => {
+        const next = { ...prev }
+        documents.forEach(item => {
+          if (!successPathSet.has(item.filePath)) return
+          const current = next[item.id]
+          if (!current) return
+          next[item.id] = {
+            ...current,
+            originalMetadata: current.metadata,
+            hasChanges: false,
+          }
+        })
+        return next
+      })
+
+      documents.forEach(item => {
+        if (successPathSet.has(item.filePath)) {
+          updateFileStatus(item.id, { status: "ready", progressMessage: "已同步", error: undefined })
+        }
+      })
+
+      const hasFailures = results.some(item => !item.success)
+      await finishRequest(requestId, hasFailures ? "failed" : "completed")
+    } catch (error) {
+      await finishRequest(requestId, "failed")
+      throw error
+    } finally {
+      setBatchTaskRequestId(current => (current === requestId ? null : current))
+      setDocumentTaskRequestIds(prev => {
+        const next = { ...prev }
+        documents.forEach(item => {
+          if (next[item.id] === requestId) {
+            delete next[item.id]
+          }
+        })
+        return next
+      })
+    }
+  }, [createRequest, documents, finishRequest, updateFileStatus])
 
   const downloadFile = useCallback(async () => {
     await saveCurrentAs()
   }, [saveCurrentAs])
+
+  const applyTemplateToDocuments = useCallback((template: MetadataTemplate, documentIds: string[]) => {
+    if (documentIds.length === 0) return
+
+    const normalizedAuthor = (template.author || "").trim()
+    const normalizedOrganization = (template.organization || "").trim()
+    const normalizedManager = (template.manager || "").trim()
+    const normalizedLanguage = (template.language || "").trim()
+
+    if (!normalizedAuthor && !normalizedOrganization && !normalizedManager && !normalizedLanguage) return
+
+    setDocumentsById(prev => {
+      const next = { ...prev }
+
+      documentIds.forEach(documentId => {
+        const current = next[documentId]
+        if (!current) return
+
+        const metadata: DocumentMetadata = {
+          ...current.metadata,
+          documentProperties: {
+            ...current.metadata.documentProperties,
+            ...(normalizedAuthor ? { creator: normalizedAuthor } : {}),
+            ...(normalizedLanguage ? { language: normalizedLanguage } : {}),
+          },
+          coreProperties: {
+            ...current.metadata.coreProperties,
+            ...(normalizedAuthor ? { dcCreator: normalizedAuthor } : {}),
+            ...(normalizedLanguage ? { dcLanguage: normalizedLanguage } : {}),
+          },
+          appProperties: {
+            ...current.metadata.appProperties,
+            ...(normalizedOrganization ? { company: normalizedOrganization } : {}),
+            ...(normalizedManager ? { manager: normalizedManager } : {}),
+          },
+        }
+
+        next[documentId] = {
+          ...current,
+          metadata,
+          hasChanges: true,
+        }
+      })
+
+      return next
+    })
+  }, [])
+
+  const cancelDocumentTask = useCallback(
+    async (documentId: string) => {
+      const requestId = documentTaskRequestIds[documentId]
+      if (!requestId) return
+
+      await cancelRequest(requestId)
+      updateFileStatus(documentId, {
+        status: "error",
+        progressMessage: "任务已取消",
+        error: "任务已取消",
+      })
+
+      setDocumentTaskRequestIds(prev => {
+        const next = { ...prev }
+        delete next[documentId]
+        return next
+      })
+    },
+    [cancelRequest, documentTaskRequestIds, updateFileStatus],
+  )
+
+  const cancelBatchTask = useCallback(async () => {
+    if (!batchTaskRequestId) return
+    await cancelRequest(batchTaskRequestId)
+
+    documents.forEach(item => {
+      if (documentTaskRequestIds[item.id] === batchTaskRequestId) {
+        updateFileStatus(item.id, {
+          status: "error",
+          progressMessage: "批量任务已取消",
+          error: "批量任务已取消",
+        })
+      }
+    })
+
+    setDocumentTaskRequestIds(prev => {
+      const next = { ...prev }
+      Object.entries(next).forEach(([docId, reqId]) => {
+        if (reqId === batchTaskRequestId) {
+          delete next[docId]
+        }
+      })
+      return next
+    })
+    setBatchTaskRequestId(null)
+  }, [batchTaskRequestId, cancelRequest, documentTaskRequestIds, documents, updateFileStatus])
 
   const value: MetadataContextValue = {
     documents,
@@ -553,6 +808,12 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
     batchClearAndSave,
     batchSaveAll,
     downloadFile,
+    applyTemplateToDocuments,
+    documentTaskRequestIds,
+    batchTaskRequestId,
+    requestStatusMap,
+    cancelDocumentTask,
+    cancelBatchTask,
   }
 
   return <MetadataContext.Provider value={value}>{children}</MetadataContext.Provider>

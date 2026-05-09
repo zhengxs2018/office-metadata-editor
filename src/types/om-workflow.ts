@@ -1,5 +1,5 @@
 /**
- * Office Meta Editor v2.0 - 核心类型定义
+ * Office Meta Editor - 工作流类型定义
  * 支持模板、目录扫描、MCP、导出等核心功能
  */
 
@@ -66,8 +66,10 @@ export interface MetadataTemplate {
   name: string
   description?: string
   organization?: string
+  manager?: string
+  language?: string
   version: string
-  fields: TemplateField[]
+  fields?: TemplateField[]
   createdAt: number
   updatedAt: number
   author?: string
@@ -213,7 +215,7 @@ export interface TauriCommandMap {
   'load_file_metadata': (path: string) => Promise<DocumentMetadata>
   'save_file_metadata': (path: string, metadata: DocumentMetadata) => Promise<void>
   'clear_file_metadata': (path: string) => Promise<void>
-  
+
   // 模板操作
   'create_template': (template: Omit<MetadataTemplate, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string>
   'save_template': (template: MetadataTemplate) => Promise<void>
@@ -222,15 +224,15 @@ export interface TauriCommandMap {
   'export_template': (id: string, outputPath: string) => Promise<void>
   'import_template': (inputPath: string) => Promise<MetadataTemplate>
   'apply_template_to_files': (templateId: string, filePaths: string[], options: TemplateApplyOptions) => Promise<BatchItemResult[]>
-  
+
   // 导出操作
   'export_metadata': (filePaths: string[], options: ExportOptions) => Promise<ExportResult>
-  
+
   // MCP
   'start_mcp_server': (config: MCPConfig) => Promise<void>
   'stop_mcp_server': () => Promise<void>
   'mcp_handle_request': (request: MCPRequest) => Promise<MCPResponse>
-  
+
   // 批量操作
   'batch_save_metadata': (items: Array<{ path: string; metadata: DocumentMetadata }>) => Promise<BatchItemResult[]>
   'batch_clear_metadata': (filePaths: string[]) => Promise<BatchItemResult[]>

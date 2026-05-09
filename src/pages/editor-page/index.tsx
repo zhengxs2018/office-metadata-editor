@@ -15,7 +15,7 @@ export const EditorPage: React.FC = () => {
   const navigate = useNavigate()
 
   const { metadata, documents } = useMetadata()
-  const { files, activeFileId, selectFile, removeFile, openFiles, isLoading } = useFileContext()
+  const { files, activeFileId, selectFile, removeFile, isLoading } = useFileContext()
 
   const activeFile = useMemo(() => {
     if (files.length === 0) return null
@@ -41,12 +41,11 @@ export const EditorPage: React.FC = () => {
   }, [files.length, isLoading, navigate])
 
   return (
-    <EditorLayout actions={<OmEditorToolbar />}>
+    <EditorLayout showSidebarTrigger={files.length > 1} actions={<OmEditorToolbar />}>
       <EditorPageSidebar
         files={files}
         documents={documents}
         activeFileId={activeFileId}
-        onOpenFiles={() => void openFiles()}
         onSelectFile={selectFile}
         onRemoveFile={removeFile}
       />

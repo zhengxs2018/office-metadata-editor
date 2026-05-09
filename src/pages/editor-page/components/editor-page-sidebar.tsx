@@ -7,22 +7,18 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenuAction,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { FilePlus2, FileText, X } from "lucide-react"
+import { FileText, X } from "lucide-react"
 import { formatRelativeTime } from "@/lib/utils"
 
 export interface EditorPageSidebarProps {
   files: FileEntry[]
   documents: LoadedDocument[]
   activeFileId: string | null
-  onOpenFiles: () => void
   onSelectFile: (fileId: string) => void
   onRemoveFile: (fileId: string) => void
 }
@@ -31,7 +27,6 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
   files,
   documents,
   activeFileId,
-  onOpenFiles,
   onSelectFile,
   onRemoveFile,
 }) => {
@@ -39,23 +34,15 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
     return new Map(documents.map(item => [item.id, item]))
   }, [documents])
 
+  if (files.length < 2) {
+    return null
+  }
+
   return (
     <Sidebar
       collapsible="icon"
       className="top-22 bottom-0 h-auto"
     >
-      <SidebarHeader className="gap-1.5 px-2 pt-6 pb-4">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 w-full justify-start gap-1.5 rounded-lg bg-background/80 shadow-xs group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-          onClick={onOpenFiles}
-        >
-          <FilePlus2 className="h-4 w-4 shrink-0" />
-          <span className="group-data-[collapsible=icon]:hidden">添加文件</span>
-        </Button>
-      </SidebarHeader>
-      <SidebarSeparator className="m-0" />
       <SidebarContent>
         <SidebarGroup className="px-2 py-1.5">
           <SidebarGroupLabel>文件列表</SidebarGroupLabel>

@@ -6,14 +6,16 @@ import { PageLayout } from "@/layouts/page-layout"
 import { formatFileSize } from "@/lib/utils"
 
 export interface EditorLayoutProps {
+  showSidebarTrigger?: boolean
   actions?: React.ReactNode
 }
 
 export const EditorLayout: React.FC<React.PropsWithChildren<EditorLayoutProps>> = ({
+  showSidebarTrigger,
   children,
   actions,
 }) => {
-  const { metadata, hasChanges } = useMetadata()
+  const { metadata } = useMetadata()
   const resolvedMetadata = metadata!
 
   const fileType = resolvedMetadata.fileType
@@ -21,7 +23,7 @@ export const EditorLayout: React.FC<React.PropsWithChildren<EditorLayoutProps>> 
   const fileSize = resolvedMetadata.fileSize
 
   return (
-    <SidebarProvider className="h-screen" defaultOpen>
+    <SidebarProvider className="h-screen">
       <PageLayout
         backTo="/"
         header={
@@ -31,15 +33,10 @@ export const EditorLayout: React.FC<React.PropsWithChildren<EditorLayoutProps>> 
               <span className="text-sm font-medium text-foreground">{fileName}</span>
               <span className="text-xs text-muted-foreground">{formatFileSize(fileSize)}</span>
             </div>
-            {hasChanges && (
-              <span className="rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
-                未保持
-              </span>
-            )}
           </div>
         }
         actions={actions}
-        showSidebarTrigger
+        showSidebarTrigger={showSidebarTrigger}
       >
         {children}
       </PageLayout>

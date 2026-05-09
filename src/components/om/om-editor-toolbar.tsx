@@ -1,5 +1,10 @@
 import React from "react"
+import { useFileContext } from "@/contexts/file-context"
 import { useMetadata } from "@/contexts/metadata-context"
+import type { ExportFieldOption } from "@/components/om/om-export-center"
+import {
+  OmExportDialog,
+} from "@/components/om/om-common-dialogs"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -7,46 +12,164 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Download, MoreHorizontal, RotateCcw, Save, Trash2 } from "lucide-react"
+import {
+  FilePlus2,
+  Download,
+  MoreHorizontal,
+  RotateCcw,
+  Save,
+  Trash2,
+  Settings,
+  FolderOpen,
+} from "lucide-react"
+import { OmTemplateApplyDialog } from "./om-template-apply-dialog"
+import { OmShowDirectoryPickerDialog } from "./om-show-directory-picker"
 
 export const OmEditorToolbar: React.FC = () => {
-  const { hasChanges, clearMetadata, resetToOriginal, saveCurrent, saveCurrentAs } = useMetadata()
+  const { files, openFiles, addFilesByPaths } = useFileContext()
+  const {
+    documents,
+    activeDocumentId,
+    hasChanges,
+    clearMetadata,
+    resetToOriginal,
+    saveCurrent,
+    saveCurrentAs,
+    documentTaskRequestIds,
+  } = useMetadata()
+
+  const [showImportDialog, setShowImportDialog] = React.useState(false)
+  const [showExportDialog, setShowExportDialog] = React.useState(false)
+  const [showTemplateApplyDialog, setShowTemplateApplyDialog] = React.useState(false)
+
+  const exportFieldOptions = React.useMemo<ExportFieldOption[]>(() => {
+    const targetDocs = activeDocumentId
+      ? documents.filter(doc => doc.id === activeDocumentId)
+      : documents
+
+    const fieldSet = new Set<string>()
+    targetDocs.forEach(doc => {
+      Object.keys(doc.metadata.documentProperties).forEach(key => fieldSet.add(key))
+      Object.keys(doc.metadata.appProperties).forEach(key => fieldSet.add(key))
+    })
+
+    const labels: Record<string, string> = {
+      title: "标题",
+      subject: "主题",
+      creator: "作者",
+      keywords: "关键词",
+      description: "描述",
+      lastModifiedBy: "最后修改者",
+      created: "创建时间",
+      modified: "修改时间",
+      category: "分类",
+      manager: "管理者",
+      company: "组织机构",
+    }
+
+    return Array.from(fieldSet).map(key => ({
+      key,
+      label: labels[key] || key,
+    }))
+  }, [activeDocumentId, documents])
+
+  const activeRequestId = activeDocumentId ? documentTaskRequestIds[activeDocumentId] : undefined
 
   return (
-    <div className="flex items-center gap-1.5">
-      <Button
-        variant="default"
-        size="sm"
-        onClick={() => void saveCurrent()}
-        className="h-8 gap-1.5 rounded-lg"
-        disabled={!hasChanges}
-      >
-        <Save className="h-4 w-4" />
-        <span>保存</span>
-      </Button>
+    <>
+      <div className="flex items-center gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowTemplateApplyDialog(true)}
+          className="h-8 gap-1.5 rounded-lg"
+        >
+          <Settings className="h-4 w-4" />
+          <span>选择模板</span>
+        </Button>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" className="rounded-lg">
-            <MoreHorizontal className="h-4 w-4" />
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => void saveCurrent()}
+          className="h-8 gap-1.5 rounded-lg"
+          disabled={!hasChanges || !!activeRequestId}
+        >
+          <Save className="h-4 w-4" />
+          <span>保存</span>
+        </Button>
+
+        {hasChanges ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={resetToOriginal}
+            className="h-8 gap-1.5 rounded-lg"
+          >
+            <RotateCcw className="h-4 w-4" />
+            <span>重置</span>
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuItem onClick={() => void saveCurrentAs()}>
-            <Download className="mr-2 h-4 w-4" />
-            <span>另存为</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={clearMetadata}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            <span>清理元数据</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={resetToOriginal} disabled={!hasChanges}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            <span>重置为原始</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearMetadata}
+            className="h-8 gap-1.5 rounded-lg"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span>清理全部</span>
+          </Button>
+        )}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon-sm" className="rounded-lg">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={() => void openFiles()}>
+              <FilePlus2 className="mr-2 h-4 w-4" />
+              <span>添加文件</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void setShowImportDialog(true)}>
+              <FolderOpen className="mr-2 h-4 w-4" />
+              <span>添加目录</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void saveCurrentAs()}>
+              <Download className="mr-2 h-4 w-4" />
+              <span>另存为</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowExportDialog(true)}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>导出</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <OmShowDirectoryPickerDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        existingFilePaths={files.map(item => item.filePath)}
+        onImportComplete={paths => {
+          addFilesByPaths(paths)
+        }}
+      />
+
+      <OmExportDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        fileIds={activeDocumentId ? [activeDocumentId] : []}
+        availableFields={exportFieldOptions}
+      />
+
+      <OmTemplateApplyDialog
+        open={showTemplateApplyDialog}
+        onOpenChange={setShowTemplateApplyDialog}
+        documentIds={activeDocumentId ? [activeDocumentId] : []}
+      />
+    </>
   )
 }
 
