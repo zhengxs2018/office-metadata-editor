@@ -177,3 +177,41 @@ body {
     @apply select-text;
   }
 }
+
+/* macOS-style thin scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0 0 0 / 0.14);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0 0 0 / 0.24);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 0.14);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 0.24);
+}
+
+/* Primary-tinted text selection */
+::selection {
+  background: oklch(0.59 0.168 255.1 / 0.18);
+  color: inherit;
+}
+
+.dark ::selection {
+  background: oklch(0.685 0.169 237.323 / 0.28);
+  color: inherit;
+}

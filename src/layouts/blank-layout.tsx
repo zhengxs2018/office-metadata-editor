@@ -11,7 +11,6 @@ export const BlankLayout: React.FC<React.PropsWithChildren<BlankLayoutProps>> = 
   enableWindowDragOverlay,
   children,
 }) => {
-  const year = new Date().getFullYear()
   const showWindowDragOverlay = enableWindowDragOverlay ?? !header
 
   return (
@@ -19,10 +18,7 @@ export const BlankLayout: React.FC<React.PropsWithChildren<BlankLayoutProps>> = 
       {showWindowDragOverlay && <ChromeWindowToolbar />}
       <div className="flex h-full flex-col bg-background">
         {header}
-        <div className="flex min-h-0 flex-1 overflow-hidden bg-muted/55">{children}</div>
-        <footer className="border-t border-border/60 px-4 py-2 text-center text-xs text-muted-foreground select-none">
-          © {year} zhengxs2018
-        </footer>
+        <div className="flex min-h-0 flex-1 overflow-hidden bg-muted/40">{children}</div>
       </div>
     </main>
   )

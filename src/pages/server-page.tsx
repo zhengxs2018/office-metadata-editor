@@ -1,102 +1,25 @@
 import React, { useMemo, useState } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
-import { CircleHelp, Copy, Play, Square } from "lucide-react"
 
 import { PageLayout } from "@/layouts/page-layout"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
 import { useTemplateStore } from "@/stores/om-workflow-store"
 import type { MetadataTemplate } from "@/types/om-workflow"
-
-type LogLevel = "info" | "warn" | "error"
-
-interface ServiceLog {
-  id: string
-  level: LogLevel
-  source: string
-  message: string
-  timestamp: string
-}
-
-interface BatchClearResultItem {
-  filePath: string
-  success: boolean
-  error?: string | null
-}
-
-interface AutomationRequestPayload {
-  source?: string
-  templateId?: string
-  metadataOverrides?: MetadataOverrides
-  filePaths?: string[]
-}
-
-interface DocumentPropertiesOverrides {
-  title?: string
-  subject?: string
-  creator?: string
-  keywords?: string
-  description?: string
-  lastModifiedBy?: string
-  revision?: string
-  created?: string
-  modified?: string
-  category?: string
-  contentStatus?: string
-  version?: string
-  language?: string
-  identifier?: string
-  source?: string
-}
-
-interface CorePropertiesOverrides {
-  dcTitle?: string
-  dcSubject?: string
-  dcCreator?: string
-  dcDescription?: string
-  dcKeywords?: string
-  dcLanguage?: string
-  dcIdentifier?: string
-  dcSource?: string
-}
-
-interface AppPropertiesOverrides {
-  application?: string
-  appVersion?: string
-  company?: string
-  manager?: string
-  template?: string
-  totalTime?: string
-  pages?: number
-  words?: number
-  characters?: number
-  charactersWithSpaces?: number
-  paragraphs?: number
-  lines?: number
-}
-
-interface MetadataOverrides {
-  documentProperties?: DocumentPropertiesOverrides
-  coreProperties?: CorePropertiesOverrides
-  appProperties?: AppPropertiesOverrides
-}
-
-interface ServiceRequest {
-  id: string
-  source: string
-  pathCount: number
-  status: "queued" | "running" | "completed" | "failed" | "cancelled"
-  receivedAt: string
-}
+import type {
+  LogLevel,
+  ServiceLog,
+  ServiceRequest,
+  BatchClearResultItem,
+  AutomationRequestPayload,
+  DocumentPropertiesOverrides,
+  CorePropertiesOverrides,
+  AppPropertiesOverrides,
+  MetadataOverrides,
+} from "@/types/server-service"
+import { ServerConfigPanel } from "@/components/om/om-server-config-panel"
+import { ServerRequestQueue } from "@/components/om/om-server-request-queue"
+import { ServerLogPanel } from "@/components/om/om-server-log-panel"
+import { ServerExamplesDialog } from "@/components/om/om-server-examples-dialog"
 
 const now = () => new Date().toLocaleTimeString("zh-CN", { hour12: false })
 
@@ -169,42 +92,6 @@ export const ServerPage: React.FC = () => {
     }, {})
   }, [templates])
 
-  const requestExamples = {
-    curl: `curl -X POST http://${bindAddress}:${port}/request \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "source": "curl",
-    "templateId": "tpl_1741234567890",
-    "metadataOverrides": {
-      "documentProperties": { "creator": "品牌部", "source": "curl" },
-      "appProperties": { "company": "ACME Corp" }
-    },
-    "filePaths": ["/Users/demo/a.docx", "/Users/demo/b.xlsx"]
-  }'`,
-    node: `await emit("ome://service/request", {
-  source: "node",
-  templateId: "tpl_1741234567890",
-  metadataOverrides: {
-    documentProperties: { creator: "研发中心" },
-  },
-  filePaths: ["/Users/demo/a.docx", "/Users/demo/b.xlsx"],
-})`,
-    payload: `{
-  "source": "external",
-  "templateId": "tpl_1741234567890",
-  "metadataOverrides": {
-    "documentProperties": {
-      "creator": "法务部",
-      "source": "external"
-    }
-  },
-  "filePaths": ["/Users/demo/a.docx", "/Users/demo/b.xlsx"]
-}`,
-  }
-
-  const copyText = async (value: string) => {
-    await navigator.clipboard.writeText(value)
-  }
 
   const mergeOverrides = (
     templateOverrides?: MetadataOverrides,
@@ -507,212 +394,39 @@ export const ServerPage: React.FC = () => {
       }
     >
       <div className="flex h-full min-h-0 w-full flex-col gap-4 p-4">
-        <section className="rounded-lg border border-border/55 bg-card/84 p-4 backdrop-blur-md">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_120px_170px] lg:items-end">
-            <label className="space-y-2">
-              <span className="text-xs text-muted-foreground">监听地址</span>
-              <Input
-                value={bindAddress}
-                onChange={event => setBindAddress(event.target.value)}
-                placeholder="127.0.0.1"
-              />
-            </label>
-            <label className="space-y-2">
-              <span className="text-xs text-muted-foreground">端口</span>
-              <Input
-                value={port}
-                onChange={event => setPort(event.target.value)}
-                placeholder="9876"
-              />
-            </label>
-            <div className="flex items-center gap-2 lg:justify-end">
-              <Button size="default" onClick={toggleService} className="gap-2">
-                {isRunning ? <Square className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                {isRunning ? "停止服务" : "启动服务"}
-              </Button>
-              <CircleHelp className="h-4 w-4" onClick={() => setShowExamples(true)} />
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_120px_170px] lg:items-end">
-            <label className="space-y-2 lg:col-span-2">
-              <span className="text-xs text-muted-foreground">允许来源 source（逗号分隔）</span>
-              <Input
-                value={allowedSources}
-                onChange={event => setAllowedSources(event.target.value)}
-                placeholder="限制来源"
-              />
-            </label>
-          </div>
-        </section>
+        <ServerConfigPanel
+          bindAddress={bindAddress}
+          port={port}
+          allowedSources={allowedSources}
+          isRunning={isRunning}
+          onBindAddressChange={setBindAddress}
+          onPortChange={setPort}
+          onAllowedSourcesChange={setAllowedSources}
+          onToggleService={() => void toggleService()}
+          onShowExamples={() => setShowExamples(true)}
+        />
 
         <section className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[360px_1fr]">
-          <div className="flex min-h-0 flex-col rounded-lg border border-border/55 bg-card/84 p-4 backdrop-blur-md">
-            <div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">请求队列</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  外部程序推送的文件任务会按时间顺序进入这里。
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
-              {requests.length === 0 ? (
-                <div className="rounded-lg bg-background/60 px-0 py-4 text-xs leading-6 text-muted-foreground">
-                  服务启动后，外部程序推送的文件列表会出现在这里。
-                </div>
-              ) : (
-                requests.map(item => (
-                  <div
-                    key={item.id}
-                    className="grid grid-cols-[84px_66px_1fr_48px] gap-2 px-0 py-2 text-xs not-last:border-b not-last:border-border/50"
-                  >
-                    <span className="truncate text-muted-foreground">{item.receivedAt}</span>
-                    <span
-                      className={
-                        item.status === "failed"
-                          ? "text-red-500"
-                          : item.status === "cancelled"
-                            ? "text-amber-500"
-                            : item.status === "completed"
-                              ? "text-emerald-600"
-                              : item.status === "running"
-                                ? "text-blue-600"
-                                : "text-muted-foreground"
-                      }
-                    >
-                      {item.status}
-                    </span>
-                    <span className="truncate text-foreground">
-                      {item.source} / {item.pathCount} 文件 / {item.id}
-                    </span>
-                    <button
-                      type="button"
-                      className="text-muted-foreground transition-colors hover:text-destructive disabled:opacity-40"
-                      onClick={() => void cancelRequest(item.id)}
-                      disabled={item.status !== "queued" && item.status !== "running"}
-                    >
-                      取消
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="flex min-h-0 flex-col rounded-lg border border-border/55 bg-card/84 p-4 backdrop-blur-md">
-            <div className="grid grid-cols-[1fr_120px] gap-2">
-              <Input
-                value={logFilter}
-                onChange={event => setLogFilter(event.target.value)}
-                placeholder="过滤 source / message"
-              />
-              <select
-                value={levelFilter}
-                onChange={event => setLevelFilter(event.target.value as "all" | LogLevel)}
-                className="border border-border bg-background px-2 py-2 text-xs"
-              >
-                <option value="all">全部</option>
-                <option value="info">INFO</option>
-                <option value="warn">WARN</option>
-                <option value="error">ERROR</option>
-              </select>
-            </div>
-
-            <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
-              {filteredLogs.length === 0 ? (
-                <div className="rounded-lg bg-background/60 px-3 py-4 text-xs text-muted-foreground">
-                  暂无日志
-                </div>
-              ) : (
-                filteredLogs.map(item => (
-                  <div
-                    key={item.id}
-                    className="grid grid-cols-[72px_56px_110px_1fr] gap-2 px-0 py-2 text-xs not-last:border-b not-last:border-border/50"
-                  >
-                    <span className="text-muted-foreground">{item.timestamp}</span>
-                    <span
-                      className={
-                        item.level === "error"
-                          ? "text-red-500"
-                          : item.level === "warn"
-                            ? "text-amber-500"
-                            : "text-muted-foreground"
-                      }
-                    >
-                      {item.level.toUpperCase()}
-                    </span>
-                    <span className="truncate text-muted-foreground">{item.source}</span>
-                    <span className="truncate">{item.message}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+          <ServerRequestQueue requests={requests} onCancelRequest={cancelRequest} />
+          <ServerLogPanel
+            filteredLogs={filteredLogs}
+            logFilter={logFilter}
+            levelFilter={levelFilter}
+            onLogFilterChange={setLogFilter}
+            onLevelFilterChange={setLevelFilter}
+          />
         </section>
       </div>
 
-      <Dialog open={showExamples} onOpenChange={setShowExamples}>
-        <DialogContent className="min-w-120">
-          <DialogHeader>
-            <DialogTitle>调用示例</DialogTitle>
-            <DialogDescription>
-              使用事件 ome://service/request 推送文件列表，下面提供不同调用方式的示例。
-            </DialogDescription>
-          </DialogHeader>
-
-          <Tabs defaultValue="payload" className="w-full overflow-hidden">
-            <TabsList variant="line" className="w-full justify-start p-0">
-              <TabsTrigger value="payload">Payload</TabsTrigger>
-              <TabsTrigger value="curl">cURL</TabsTrigger>
-              <TabsTrigger value="node">Node.js</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="payload" className="mt-4">
-              <ExampleCodeBlock
-                label="Payload 结构"
-                value={requestExamples.payload}
-                onCopy={copyText}
-              />
-            </TabsContent>
-            <TabsContent value="curl" className="mt-4">
-              <ExampleCodeBlock label="命令行调用" value={requestExamples.curl} onCopy={copyText} />
-            </TabsContent>
-            <TabsContent value="node" className="mt-4">
-              <ExampleCodeBlock
-                label="Node.js / Tauri 事件调用"
-                value={requestExamples.node}
-                onCopy={copyText}
-              />
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
+      <ServerExamplesDialog
+        open={showExamples}
+        onOpenChange={setShowExamples}
+        bindAddress={bindAddress}
+        port={port}
+      />
     </PageLayout>
   )
 }
 
-interface ExampleCodeBlockProps {
-  label: string
-  value: string
-  onCopy: (value: string) => Promise<void>
-}
-
-const ExampleCodeBlock: React.FC<ExampleCodeBlockProps> = ({ label, value, onCopy }) => {
-  return (
-    <div className="w-full">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        <Button variant="outline" size="sm" onClick={() => void onCopy(value)} className="gap-1.5">
-          <Copy className="h-3.5 w-3.5" />
-          复制
-        </Button>
-      </div>
-      <pre className="block overflow-x-auto rounded-lg bg-muted/55 p-4 text-xs leading-6 whitespace-pre text-foreground">
-        <code>{value}</code>
-      </pre>
-    </div>
-  )
-}
-
+export default ServerPage
 export default ServerPage

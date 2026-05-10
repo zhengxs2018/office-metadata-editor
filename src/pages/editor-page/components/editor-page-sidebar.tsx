@@ -41,7 +41,7 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
   return (
     <Sidebar
       collapsible="icon"
-      className="top-22 bottom-0 h-auto"
+      className="top-[52px] bottom-0 h-auto"
     >
       <SidebarContent>
         <SidebarGroup className="px-2 py-1.5">

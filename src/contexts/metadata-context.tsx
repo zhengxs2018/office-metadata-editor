@@ -11,115 +11,28 @@ import { invoke } from "@tauri-apps/api/core"
 import type { DocumentMetadata, MetadataSection } from "@/types/metadata"
 import type { MetadataTemplate } from "@/types/om-workflow"
 import { useFileContext } from "@/contexts/file-context"
-import {
-  getDocumentResourceByPath,
-  type BatchSaveRequestItem,
-} from "@/lib/resources/documents"
-import { normalizeDocumentFileType, resolveFileTypeFromPath } from "@/lib/documents/file-type"
+import { getDocumentResourceByPath } from "@/lib/resources/documents"
+import { normalizeDocumentFileType } from "@/lib/documents/file-type"
 import {
   applyMetadataFieldUpdate,
   clearMetadataBySchema,
 } from "@/lib/documents/metadata"
+import {
+  defaultMetadata,
+  type LoadedDocument,
+  type DocumentState,
+  type AutomationRequestStatus,
+  type MetadataContextValue,
+} from "@/contexts/metadata-defaults"
+import {
+  normalizeMetadata,
+  createPlaceholderDocumentState,
+  createPlaceholderMetadata,
+} from "@/contexts/metadata-utils"
+import { executeBatchClearAndSave, executeBatchSaveAll } from "@/contexts/metadata-batch-ops"
 
-const defaultMetadata: DocumentMetadata = {
-  fileName: "",
-  fileType: "",
-  fileSize: 0,
-  documentProperties: {
-    title: "",
-    subject: "",
-    creator: "",
-    keywords: "",
-    description: "",
-    lastModifiedBy: "",
-    revision: "1",
-    created: "",
-    modified: "",
-    category: "",
-    contentStatus: "",
-    version: "",
-    language: "zh-CN",
-    identifier: "",
-    source: "",
-  },
-  coreProperties: {
-    dcTitle: "",
-    dcSubject: "",
-    dcCreator: "",
-    dcDescription: "",
-    dcKeywords: "",
-    dcLanguage: "zh-CN",
-    dcIdentifier: "",
-    dcSource: "",
-  },
-  appProperties: {
-    application: "Microsoft Office Word",
-    appVersion: "16.0",
-    company: "",
-    manager: "",
-    template: "Normal.dotm",
-    totalTime: "0",
-    pages: 0,
-    words: 0,
-    characters: 0,
-    charactersWithSpaces: 0,
-    paragraphs: 0,
-    lines: 0,
-  },
-}
-
-export interface LoadedDocument {
-  id: string
-  filePath: string
-  metadata: DocumentMetadata
-  originalMetadata: DocumentMetadata
-  hasChanges: boolean
-  status: "idle" | "reading" | "ready" | "processing" | "error"
-  progressMessage: string
-  error?: string
-}
-
-interface DocumentState {
-  metadata: DocumentMetadata
-  originalMetadata: DocumentMetadata
-  hasChanges: boolean
-}
-
-interface AutomationRequestStatus {
-  requestId: string
-  source: string
-  status: "running" | "completed" | "failed" | "cancelled"
-  filePaths: string[]
-}
-
-export interface MetadataContextValue {
-  documents: LoadedDocument[]
-  activeDocumentId: string | null
-  metadata: DocumentMetadata
-  isLoading: boolean
-  hasChanges: boolean
-  setMetadata: (metadata: DocumentMetadata) => void
-  selectDocument: (documentId: string) => void
-  removeDocument: (documentId: string) => void
-  clearDocuments: () => void
-  updateField: (category: MetadataSection["category"], field: string, value: string | number) => void
-  openFiles: () => Promise<number>
-  clearMetadata: () => void
-  resetToOriginal: () => void
-  saveCurrent: () => Promise<void>
-  saveCurrentAs: () => Promise<void>
-  saveDocument: (documentId: string) => Promise<void>
-  clearAndSaveDocument: (documentId: string) => Promise<void>
-  batchClearAndSave: () => Promise<void>
-  batchSaveAll: () => Promise<void>
-  downloadFile: () => Promise<void>
-  applyTemplateToDocuments: (template: MetadataTemplate, documentIds: string[]) => void
-  documentTaskRequestIds: Record<string, string>
-  batchTaskRequestId: string | null
-  requestStatusMap: Record<string, AutomationRequestStatus["status"]>
-  cancelDocumentTask: (documentId: string) => Promise<void>
-  cancelBatchTask: () => Promise<void>
-}
+// Re-export types used by other modules
+export type { LoadedDocument, MetadataContextValue } from "@/contexts/metadata-defaults"
 
 const MetadataContext = createContext<MetadataContextValue | null>(null)
 
@@ -509,184 +422,29 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
   }, [activeDocument])
 
   const batchClearAndSave = useCallback(async () => {
-    if (documents.length === 0) return
-
-    const filePaths = documents.map(item => item.filePath)
-    const requestId = await createRequest(filePaths, "manual-batch-clear")
-    setBatchTaskRequestId(requestId)
-    setRequestStatusMap(prev => ({ ...prev, [requestId]: "running" }))
-    setDocumentTaskRequestIds(prev => {
-      const next = { ...prev }
-      documents.forEach(item => {
-        next[item.id] = requestId
-      })
-      return next
+    await executeBatchClearAndSave({
+      documents,
+      createRequest,
+      finishRequest,
+      updateFileStatus,
+      setDocumentsById,
+      setDocumentTaskRequestIds,
+      setBatchTaskRequestId,
+      setRequestStatusMap,
     })
-
-    try {
-      documents.forEach(item => {
-        updateFileStatus(item.id, {
-          status: "processing",
-          progressMessage: "批量清理并保存中...",
-        })
-      })
-
-      const groupedByType = new Map<string, string[]>()
-      documents.forEach(item => {
-        const key = resolveFileTypeFromPath(item.filePath)
-        const existing = groupedByType.get(key) ?? []
-        existing.push(item.filePath)
-        groupedByType.set(key, existing)
-      })
-
-      const resultGroups = await Promise.all(
-        Array.from(groupedByType.entries()).map(async ([, typedPaths]) => {
-          const resource = getDocumentResourceByPath(typedPaths[0] ?? "")
-          return resource.destroyMetadataMany(typedPaths, requestId)
-        }),
-      )
-
-      const results = resultGroups.flat()
-
-      const successPathSet = new Set(results.filter(item => item.success).map(item => item.filePath))
-      if (successPathSet.size === 0) {
-        await finishRequest(requestId, "failed")
-        return
-      }
-
-      const refreshTargets = documents.filter(item => successPathSet.has(item.filePath))
-      const refreshed = await Promise.all(
-        refreshTargets.map(async item => {
-          const resource = getDocumentResourceByPath(item.filePath)
-          const parsed = await resource.show(item.filePath)
-          return {
-            id: item.id,
-            metadata: normalizeMetadata(parsed, item.filePath),
-          }
-        }),
-      )
-
-      setDocumentsById(prev => {
-        const next = { ...prev }
-        refreshed.forEach(item => {
-          next[item.id] = {
-            metadata: item.metadata,
-            originalMetadata: item.metadata,
-            hasChanges: false,
-          }
-        })
-        return next
-      })
-
-      refreshed.forEach(item => {
-        updateFileStatus(item.id, { status: "ready", progressMessage: "已同步", error: undefined })
-      })
-
-      const hasFailures = results.some(item => !item.success)
-      await finishRequest(requestId, hasFailures ? "failed" : "completed")
-    } catch (error) {
-      await finishRequest(requestId, "failed")
-      throw error
-    } finally {
-      setBatchTaskRequestId(current => (current === requestId ? null : current))
-      setDocumentTaskRequestIds(prev => {
-        const next = { ...prev }
-        documents.forEach(item => {
-          if (next[item.id] === requestId) {
-            delete next[item.id]
-          }
-        })
-        return next
-      })
-    }
   }, [createRequest, documents, finishRequest, updateFileStatus])
 
   const batchSaveAll = useCallback(async () => {
-    const items: BatchSaveRequestItem[] = documents
-      .filter(item => item.hasChanges)
-      .map(item => ({ filePath: item.filePath, metadata: item.metadata }))
-
-    if (items.length === 0) return
-
-    const requestId = await createRequest(
-      items.map(item => item.filePath),
-      "manual-batch-save",
-    )
-    setBatchTaskRequestId(requestId)
-    setRequestStatusMap(prev => ({ ...prev, [requestId]: "running" }))
-    setDocumentTaskRequestIds(prev => {
-      const next = { ...prev }
-      documents.forEach(item => {
-        if (item.hasChanges) {
-          next[item.id] = requestId
-        }
-      })
-      return next
+    await executeBatchSaveAll({
+      documents,
+      createRequest,
+      finishRequest,
+      updateFileStatus,
+      setDocumentsById,
+      setDocumentTaskRequestIds,
+      setBatchTaskRequestId,
+      setRequestStatusMap,
     })
-
-    try {
-      documents.forEach(item => {
-        if (item.hasChanges) {
-          updateFileStatus(item.id, { status: "processing", progressMessage: "批量保存中..." })
-        }
-      })
-
-      const itemsByType = new Map<string, BatchSaveRequestItem[]>()
-      items.forEach(item => {
-        const key = resolveFileTypeFromPath(item.filePath)
-        const existing = itemsByType.get(key) ?? []
-        existing.push(item)
-        itemsByType.set(key, existing)
-      })
-
-      const resultGroups = await Promise.all(
-        Array.from(itemsByType.entries()).map(async ([, typedItems]) => {
-          const resource = getDocumentResourceByPath(typedItems[0]?.filePath ?? "")
-          return resource.replaceMany(typedItems, requestId)
-        }),
-      )
-
-      const results = resultGroups.flat()
-      const successPathSet = new Set(results.filter(item => item.success).map(item => item.filePath))
-
-      setDocumentsById(prev => {
-        const next = { ...prev }
-        documents.forEach(item => {
-          if (!successPathSet.has(item.filePath)) return
-          const current = next[item.id]
-          if (!current) return
-          next[item.id] = {
-            ...current,
-            originalMetadata: current.metadata,
-            hasChanges: false,
-          }
-        })
-        return next
-      })
-
-      documents.forEach(item => {
-        if (successPathSet.has(item.filePath)) {
-          updateFileStatus(item.id, { status: "ready", progressMessage: "已同步", error: undefined })
-        }
-      })
-
-      const hasFailures = results.some(item => !item.success)
-      await finishRequest(requestId, hasFailures ? "failed" : "completed")
-    } catch (error) {
-      await finishRequest(requestId, "failed")
-      throw error
-    } finally {
-      setBatchTaskRequestId(current => (current === requestId ? null : current))
-      setDocumentTaskRequestIds(prev => {
-        const next = { ...prev }
-        documents.forEach(item => {
-          if (next[item.id] === requestId) {
-            delete next[item.id]
-          }
-        })
-        return next
-      })
-    }
   }, [createRequest, documents, finishRequest, updateFileStatus])
 
   const downloadFile = useCallback(async () => {
@@ -825,61 +583,4 @@ export function useMetadata(): MetadataContextValue {
     throw new Error("useMetadata must be used within a MetadataProvider")
   }
   return context
-}
-
-function normalizeMetadata(parsedMetadata: DocumentMetadata, filePath: string): DocumentMetadata {
-  const resolvedType = resolveFileTypeFromPath(filePath)
-
-  return {
-    ...defaultMetadata,
-    ...parsedMetadata,
-    fileName: parsedMetadata.fileName || basename(filePath),
-    fileType: resolvedType,
-    documentProperties: {
-      ...defaultMetadata.documentProperties,
-      ...parsedMetadata.documentProperties,
-    },
-    coreProperties: {
-      ...defaultMetadata.coreProperties,
-      ...parsedMetadata.coreProperties,
-    },
-    appProperties: {
-      ...defaultMetadata.appProperties,
-      ...parsedMetadata.appProperties,
-    },
-  }
-}
-
-function createPlaceholderDocumentState(filePath: string): DocumentState {
-  const placeholder = createPlaceholderMetadata(filePath)
-  return {
-    metadata: placeholder,
-    originalMetadata: placeholder,
-    hasChanges: false,
-  }
-}
-
-function createPlaceholderMetadata(filePath: string): DocumentMetadata {
-  const fileName = basename(filePath)
-  const fileType = resolveFileTypeFromPath(filePath)
-
-  return {
-    ...defaultMetadata,
-    fileName,
-    fileType,
-    fileSize: 0,
-    documentProperties: {
-      ...defaultMetadata.documentProperties,
-    },
-    coreProperties: {
-      ...defaultMetadata.coreProperties,
-    },
-    appProperties: {
-      ...defaultMetadata.appProperties,
-    },
-  }
-}
-
-function basename(filePath: string): string {
-  return filePath.split(/[\\/]/).filter(Boolean).pop() ?? filePath
 }
