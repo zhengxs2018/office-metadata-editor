@@ -34,7 +34,7 @@ export const ServerLogPanel: React.FC<ServerLogPanelProps> = ({
         <select
           value={levelFilter}
           onChange={e => onLevelFilterChange(e.target.value as "all" | LogLevel)}
-          className="h-9 rounded-md border border-input bg-background px-2 text-xs text-foreground outline-none focus:border-primary/50 focus:ring-0"
+          className="h-9 rounded-md border border-input bg-background px-2 text-xs text-foreground outline-none focus:border-primary/50 focus:ring-0 focus:outline-none"
         >
           <option value="all">全部</option>
           <option value="info">INFO</option>

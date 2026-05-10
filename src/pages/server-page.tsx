@@ -429,4 +429,3 @@ export const ServerPage: React.FC = () => {
 }
 
 export default ServerPage
-export default ServerPage

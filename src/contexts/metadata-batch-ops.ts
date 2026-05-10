@@ -1,5 +1,4 @@
 import React from "react"
-import type { DocumentMetadata } from "@/types/metadata"
 import type { FileEntry } from "@/contexts/file-context"
 import type { DocumentState, LoadedDocument, AutomationRequestStatus } from "@/contexts/metadata-defaults"
 import { normalizeMetadata } from "@/contexts/metadata-utils"
@@ -121,7 +120,7 @@ export async function executeBatchSaveAll(ctx: BatchOpsContext): Promise<void> {
 
   const items: BatchSaveRequestItem[] = documents
     .filter(item => item.hasChanges)
-    .map(item => ({ filePath: item.filePath, metadata: item.metadata as DocumentMetadata }))
+    .map(item => ({ filePath: item.filePath, metadata: item.metadata }))
 
   if (items.length === 0) return
 
