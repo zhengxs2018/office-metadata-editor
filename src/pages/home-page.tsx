@@ -4,7 +4,6 @@ import {
   Upload,
   Layers3,
   GitCompareArrows,
-  ShieldCheck,
   FileText,
   FileSpreadsheet,
   Sparkles,
@@ -17,19 +16,19 @@ import { Spinner } from "@/components/ui/spinner"
 import { APP_NAME } from "@/lib/app-config"
 import { SUPPORTED_FILE_EXTENSIONS } from "@/lib/documents/supported-formats"
 import { cn } from "@/lib/utils"
-import { getCurrentWebview } from "@tauri-apps/api/webview"
 import { invoke } from "@tauri-apps/api/core"
 import BlankLayout from "@/layouts/blank-layout"
 import { ROUTES } from "@/router/paths"
+import { useGlobalDragDrop } from "@/hooks/use-global-drag-drop"
 import type { DirectoryScanResult } from "@/types/om-workflow"
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate()
-  const { openFiles, addFilesByPaths, clearFiles, isLoading: ctxLoading } = useFileContext()
+  const { openFiles, addFilesByPaths, clearAll, isLoading: ctxLoading } = useFileContext()
 
   React.useEffect(() => {
-    clearFiles()
-  }, [clearFiles])
+    clearAll()
+  }, [clearAll])
 
   const handleOpenFiles = async () => {
     const added = await openFiles()
@@ -85,11 +84,11 @@ export const HomePage: React.FC = () => {
             />
           </section>
 
-          <section className="mt-5 grid shrink-0 grid-cols-1 gap-4 md:grid-cols-3">
+          <section className="mt-5 grid shrink-0 grid-cols-1 gap-4 md:grid-cols-2">
             <EntryCard
               tone="orange"
               icon={GitCompareArrows}
-              title="对比视图（防串标）"
+              title="对比视图"
               description="深度比对多份文档的作者、编辑时间与软件环境，精准识别国际串标风险。"
               badge="核心"
               actionLabel="开始对比"
@@ -98,19 +97,10 @@ export const HomePage: React.FC = () => {
             <EntryCard
               tone="violet"
               icon={Layers3}
-              title="批量提取"
+              title="批量处理"
               description="一键解析数百个 Office 文档的隐藏属性、修订记录与自定义 XML 数据。"
               badge="高效"
               actionLabel="批量处理"
-              onClick={() => navigate(ROUTES.batch)}
-            />
-            <EntryCard
-              tone="emerald"
-              icon={ShieldCheck}
-              title="隐私清洗"
-              description="彻底清除文档中的个人信息、隐藏批注、宏代码及不可见水印。"
-              badge="安全"
-              actionLabel="清洗工具"
               onClick={() => navigate(ROUTES.batch)}
             />
           </section>
@@ -127,28 +117,10 @@ const DragOrUploadZone: React.FC<{
 }> = ({ isLoading, onDropFiles, onOpenFiles }) => {
   const [isDragOver, setIsDragOver] = React.useState(false)
 
-  React.useEffect(() => {
-    let unlisten: (() => void) | undefined
-    getCurrentWebview()
-      .onDragDropEvent(event => {
-        if (event.payload.type === "over" || event.payload.type === "enter") {
-          setIsDragOver(true)
-        } else if (event.payload.type === "leave") {
-          setIsDragOver(false)
-        } else if (event.payload.type === "drop") {
-          setIsDragOver(false)
-          const paths = event.payload.paths ?? []
-          if (paths.length > 0) onDropFiles(paths)
-        }
-      })
-      .then(fn => {
-        unlisten = fn
-      })
-      .catch(err => console.error("[home-page] 监听拖拽事件失败:", err))
-    return () => {
-      if (unlisten) unlisten()
-    }
-  }, [onDropFiles])
+  useGlobalDragDrop(
+    onDropFiles,
+    hovering => setIsDragOver(hovering),
+  )
 
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault()
@@ -232,15 +204,10 @@ const TONE_STYLES: Record<string, { card: string; ring: string; icon: string }> 
     ring: "ring-violet-500/15",
     icon: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
   },
-  emerald: {
-    card: "from-emerald-500/15 to-emerald-500/0 border-emerald-500/20",
-    ring: "ring-emerald-500/15",
-    icon: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-  },
 }
 
 const EntryCard: React.FC<{
-  tone: "orange" | "violet" | "emerald"
+  tone: "orange" | "violet"
   icon: React.FC<{ className?: string }>
   title: string
   description: string
@@ -252,9 +219,7 @@ const EntryCard: React.FC<{
   const badgeColor =
     tone === "orange"
       ? "bg-red-500 text-white"
-      : tone === "emerald"
-        ? "bg-emerald-500 text-white"
-        : "bg-blue-500 text-white"
+      : "bg-blue-500 text-white"
 
   return (
     <button

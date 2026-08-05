@@ -991,6 +991,21 @@ fn write_text_file(file_path: String, contents: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn write_binary_file(file_path: String, base64_data: String) -> Result<(), String> {
+    use base64::Engine;
+    let path = PathBuf::from(&file_path);
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+        }
+    }
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(&base64_data)
+        .map_err(|err| format!("base64 解码失败: {}", err))?;
+    fs::write(&path, bytes).map_err(|err| err.to_string())
+}
+
+#[tauri::command]
 fn set_window_theme(window: tauri::Window, theme: String) -> Result<(), String> {
     let normalized = theme.trim().to_lowercase();
 
@@ -1613,6 +1628,7 @@ pub fn run() {
             batch_clear_and_save_doc_metadata,
             compare_metadata,
             write_text_file,
+            write_binary_file,
             set_window_theme
         ])
         .on_page_load(|webview, payload| {

@@ -1,38 +1,41 @@
-import React, { useEffect, useMemo } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import {
   AlertOctagon,
   AlertTriangle,
   ArrowLeft,
   CheckCircle2,
   Download,
+  FileSpreadsheet,
   FileText,
   Play,
   ShieldAlert,
   ShieldCheck,
   TriangleAlert,
 } from "lucide-react"
+import { invoke } from "@tauri-apps/api/core"
+import { save } from "@tauri-apps/plugin-dialog"
 
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import type { RiskFinding } from "@/lib/documents/compare-audit"
+import type { CompanyEntry } from "@/contexts/file-context"
 import type { LoadedDocument } from "@/contexts/metadata-context"
+import {
+  buildCompareExcelBase64,
+  buildExcelReportFileName,
+  type FileMetadataRecord,
+} from "@/lib/documents/compare-report"
 
 interface RiskReportViewProps {
   open: boolean
   onClose: () => void
   comparing: boolean
   findings: RiskFinding[]
-  leftCompanyName: string
-  rightCompanyName: string
-  leftDocs: LoadedDocument[]
-  rightDocs: LoadedDocument[]
-  leftCount: number
-  rightCount: number
+  companies: CompanyEntry[]
+  docsByCompany: Map<string, LoadedDocument[]>
   canRerun: boolean
-  exporting: boolean
   onRerun: () => void
-  onExport: () => void
 }
 
 interface FlaggedFile {
@@ -40,49 +43,84 @@ interface FlaggedFile {
   fileName: string
   author: string
   lastModifiedBy: string
+  appCompany: string
+  application: string
+  created: string
+  modified: string
   isFlagged: boolean
 }
 
-function buildFlaggedFiles(documents: LoadedDocument[], findings: RiskFinding[]): FlaggedFile[] {
+function buildFlaggedFiles(
+  documents: LoadedDocument[],
+  findings: RiskFinding[],
+): FlaggedFile[] {
   const flaggedNames = new Set<string>()
   for (const finding of findings) {
     for (const name of finding.files) flaggedNames.add(name)
   }
   return documents.map(doc => {
     const props = doc.metadata.documentProperties
+    const app = doc.metadata.appProperties
     const fileName = doc.metadata.fileName || doc.filePath.split("/").pop() || "未命名文件"
     return {
       id: doc.id,
       fileName,
       author: (props?.creator ?? "").trim() || "—",
       lastModifiedBy: (props?.lastModifiedBy ?? "").trim() || "—",
+      appCompany: (app?.company ?? "").trim() || "—",
+      application: (app?.application ?? "").trim() || "—",
+      created: (props?.created ?? "").trim() || "—",
+      modified: (props?.modified ?? "").trim() || "—",
       isFlagged: flaggedNames.has(fileName),
     }
   })
 }
 
-const FILE_TABLE_COLS = "grid-cols-[minmax(0,1.8fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]"
+function shortenCompany(name: string): string {
+  const suffixes = [
+    "股份有限公司",
+    "有限责任公司",
+    "科技有限公司",
+    "技术有限公司",
+    "有限公司",
+    "股份公司",
+    "集团",
+    "公司",
+  ]
+  let result = name
+  for (const suffix of suffixes) {
+    if (result.endsWith(suffix) && result.length > suffix.length) {
+      result = result.slice(0, -suffix.length)
+      break
+    }
+  }
+  return result || name
+}
+
+const FILE_META_COLS =
+  "grid-cols-[minmax(0,1.5fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_minmax(0,0.7fr)_auto]"
 
 export const RiskReportView: React.FC<RiskReportViewProps> = ({
   open,
   onClose,
   comparing,
   findings,
-  leftCompanyName,
-  rightCompanyName,
-  leftDocs,
-  rightDocs,
-  leftCount,
-  rightCount,
+  companies,
+  docsByCompany,
   canRerun,
-  exporting,
   onRerun,
-  onExport,
 }) => {
-  const leftFiles = useMemo(() => buildFlaggedFiles(leftDocs, findings), [leftDocs, findings])
-  const rightFiles = useMemo(() => buildFlaggedFiles(rightDocs, findings), [rightDocs, findings])
+  const [exporting, setExporting] = useState(false)
 
-  /** 当前正在处理的风险事件 */
+  const flaggedFilesByCompany = useMemo(() => {
+    const map = new Map<string, FlaggedFile[]>()
+    for (const c of companies) {
+      const docs = docsByCompany.get(c.id) ?? []
+      map.set(c.id, buildFlaggedFiles(docs, findings))
+    }
+    return map
+  }, [companies, docsByCompany, findings])
+
   const findingsByFile = useMemo(() => {
     const map = new Map<string, RiskFinding[]>()
     for (const f of findings) {
@@ -95,11 +133,21 @@ export const RiskReportView: React.FC<RiskReportViewProps> = ({
     return map
   }, [findings])
 
+  const allFiles = useMemo(() => {
+    const result: { company: string; file: FlaggedFile }[] = []
+    for (const c of companies) {
+      const files = flaggedFilesByCompany.get(c.id) ?? []
+      for (const f of files) {
+        result.push({ company: c.name, file: f })
+      }
+    }
+    return result
+  }, [companies, flaggedFilesByCompany])
+
   const highCount = findings.filter(f => f.level === "high").length
   const mediumCount = findings.filter(f => f.level === "medium").length
-  const flaggedTotal =
-    leftFiles.filter(f => f.isFlagged).length + rightFiles.filter(f => f.isFlagged).length
-  const cleanTotal = leftFiles.length + rightFiles.length - flaggedTotal
+  const flaggedTotal = allFiles.filter(({ file }) => file.isFlagged).length
+  const cleanTotal = allFiles.length - flaggedTotal
 
   const generatedAt = useMemo(
     () =>
@@ -112,6 +160,19 @@ export const RiskReportView: React.FC<RiskReportViewProps> = ({
       }),
     [],
   )
+
+  const companyNames = useMemo(
+    () => companies.map(c => shortenCompany(c.name)),
+    [companies],
+  )
+
+  const totalFiles = useMemo(() => {
+    let count = 0
+    for (const c of companies) {
+      count += (docsByCompany.get(c.id)?.length ?? 0)
+    }
+    return count
+  }, [companies, docsByCompany])
 
   useEffect(() => {
     if (!open) return
@@ -126,10 +187,35 @@ export const RiskReportView: React.FC<RiskReportViewProps> = ({
     }
   }, [open, comparing, onClose])
 
-  if (!open) return null
+  const handleExportExcel = useCallback(async () => {
+    if (exporting) return
+    setExporting(true)
+    try {
+      const records: FileMetadataRecord[] = allFiles.map(({ company, file }) => ({
+        company,
+        fileName: file.fileName,
+        author: file.author,
+        lastModifiedBy: file.lastModifiedBy,
+        orgCompany: file.appCompany,
+        application: file.application,
+        created: file.created,
+        modified: file.modified,
+      }))
+      const base64 = buildCompareExcelBase64({ records, generatedAt: new Date() })
+      const target = await save({
+        defaultPath: buildExcelReportFileName(new Date()),
+        filters: [{ name: "Excel 工作簿", extensions: ["xlsx"] }],
+      })
+      if (!target) return
+      await invoke("write_binary_file", { filePath: target, base64Data: base64 })
+    } catch (error) {
+      console.error("导出 Excel 失败:", error)
+    } finally {
+      setExporting(false)
+    }
+  }, [exporting, allFiles])
 
-  const leftShort = shortenCompany(leftCompanyName)
-  const rightShort = shortenCompany(rightCompanyName)
+  if (!open) return null
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -153,11 +239,9 @@ export const RiskReportView: React.FC<RiskReportViewProps> = ({
             <div className="min-w-0">
               <p className="text-ink truncate font-heading text-base font-semibold">对比报告</p>
               <p className="truncate text-fine-print text-muted-foreground">
-                {leftShort}
-                <span className="mx-1.5 text-muted-foreground/60">⟷</span>
-                {rightShort}
+                {companyNames.join(" ⟷ ")}
                 <span className="mx-1.5 text-muted-foreground/60">·</span>
-                {leftCount} vs {rightCount} 个文件
+                {companies.length} 家公司 · {totalFiles} 个文件
                 <span className="mx-1.5 text-muted-foreground/60">·</span>
                 {generatedAt}
               </p>
@@ -172,11 +256,11 @@ export const RiskReportView: React.FC<RiskReportViewProps> = ({
                 元数据对比 · {generatedAt}
               </p>
               <h1 className="text-ink font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-                {leftShort} <span className="text-muted-foreground/60">⟷</span> {rightShort}
+                {companyNames.join(" ⟷ ")}
               </h1>
               <p className="text-ink-soft mt-3 max-w-2xl text-fine-print">
                 {findings.length === 0
-                  ? "两家公司的文件元数据全部一致，未发现可疑条目。本次审查通过。"
+                  ? "各公司文件元数据全部一致，未发现可疑条目。本次审查通过。"
                   : `共识别 ${findings.length} 条可疑条目（高风险 ${highCount} 条、中风险 ${mediumCount} 条），建议优先复核高风险条目。`}
               </p>
             </section>
@@ -214,21 +298,129 @@ export const RiskReportView: React.FC<RiskReportViewProps> = ({
             <ReportSection
               title="文件元数据明细"
               index="02"
-              hint={`左 ${leftCount} · 右 ${rightCount}`}
+              hint={`${companies.length} 家公司 · ${totalFiles} 个文件`}
             >
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                <CompanyPane
-                  name={leftCompanyName}
-                  tone="left"
-                  files={leftFiles}
-                  findingsByFile={findingsByFile}
-                />
-                <CompanyPane
-                  name={rightCompanyName}
-                  tone="right"
-                  files={rightFiles}
-                  findingsByFile={findingsByFile}
-                />
+              <div className="mb-4 flex items-center justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleExportExcel}
+                  disabled={exporting}
+                  className="gap-1.5 rounded-lg"
+                >
+                  <FileSpreadsheet className="size-3.5" />
+                  {exporting ? "导出中…" : "导出 Excel"}
+                </Button>
+              </div>
+              <div className="overflow-hidden rounded-xl border border-border/60">
+                <div className="overflow-x-auto">
+                  <div
+                    className={cn(
+                      "grid min-w-0 gap-x-3 gap-y-1.5 px-4 py-3 text-sm",
+                      FILE_META_COLS,
+                    )}
+                  >
+                    <div className="text-fine-print font-medium text-muted-foreground">公司</div>
+                    <div className="text-fine-print font-medium text-muted-foreground">文件</div>
+                    <div className="text-fine-print font-medium text-muted-foreground">作者</div>
+                    <div className="text-fine-print font-medium whitespace-nowrap text-muted-foreground">
+                      最后修改者
+                    </div>
+                    <div className="text-fine-print font-medium text-muted-foreground">组织名</div>
+                    <div className="text-fine-print font-medium text-muted-foreground">创建器</div>
+                    <div className="text-fine-print font-medium whitespace-nowrap text-muted-foreground">
+                      创建时间
+                    </div>
+                    <div className="text-right text-fine-print font-medium whitespace-nowrap text-muted-foreground">
+                      状态
+                    </div>
+
+                    {allFiles.map(({ company, file }) => {
+                      const fileFindings = findingsByFile.get(file.fileName) ?? []
+                      return (
+                        <React.Fragment key={file.id}>
+                          <div
+                            className="truncate leading-snug text-ink-soft"
+                            title={company}
+                          >
+                            {shortenCompany(company)}
+                          </div>
+                          <div
+                            className={cn(
+                              "flex min-w-0 items-center gap-1.5 truncate leading-snug",
+                              file.isFlagged ? "text-ink font-medium" : "text-ink-soft",
+                            )}
+                            title={file.fileName}
+                          >
+                            <FileText className="size-3 shrink-0 text-muted-foreground" />
+                            <span className="truncate">{file.fileName}</span>
+                          </div>
+                          <div
+                            className={cn(
+                              "truncate leading-snug",
+                              file.isFlagged ? "text-ink" : "text-ink-soft",
+                            )}
+                            title={file.author}
+                          >
+                            {file.author}
+                          </div>
+                          <div
+                            className={cn(
+                              "truncate leading-snug",
+                              file.isFlagged ? "text-ink" : "text-ink-soft",
+                            )}
+                            title={file.lastModifiedBy}
+                          >
+                            {file.lastModifiedBy}
+                          </div>
+                          <div
+                            className="truncate leading-snug text-ink-soft"
+                            title={file.appCompany}
+                          >
+                            {file.appCompany}
+                          </div>
+                          <div
+                            className="truncate leading-snug text-ink-soft"
+                            title={file.application}
+                          >
+                            {file.application}
+                          </div>
+                          <div className="truncate leading-snug whitespace-nowrap text-ink-soft">
+                            {file.created}
+                          </div>
+                          <div className="text-right leading-snug whitespace-nowrap">
+                            {file.isFlagged ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex cursor-help items-center gap-1 rounded-md bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600">
+                                    <AlertOctagon className="size-3" />
+                                    风险
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="left"
+                                  align="end"
+                                  className="max-w-sm text-left whitespace-pre-line"
+                                >
+                                  {fileFindings.map((f, i) => (
+                                    <div key={i}>
+                                      {describeFindingFor(file.fileName, company, f)}
+                                    </div>
+                                  ))}
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">
+                                <CheckCircle2 className="size-3" />
+                                正常
+                              </span>
+                            )}
+                          </div>
+                        </React.Fragment>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
             </ReportSection>
 
@@ -252,8 +444,8 @@ export const RiskReportView: React.FC<RiskReportViewProps> = ({
         <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-md sm:px-6">
           <p className="hidden truncate text-fine-print text-muted-foreground sm:block">
             {findings.length === 0
-              ? "可直接关闭，或重新对比后导出报告。"
-              : "建议优先复核高风险条目，再导出报告归档。"}
+              ? "可直接关闭，或重新对比后导出 Excel 报告。"
+              : "建议优先复核高风险条目，再导出 Excel 报告归档。"}
           </p>
           <div className="flex shrink-0 items-center gap-2">
             <Button
@@ -265,15 +457,6 @@ export const RiskReportView: React.FC<RiskReportViewProps> = ({
             >
               <Play className="size-3.5 fill-current" />
               {comparing ? "对比中…" : "重新对比"}
-            </Button>
-            <Button
-              size="sm"
-              onClick={onExport}
-              disabled={exporting || findings.length === 0}
-              className="gap-1.5 rounded-lg"
-            >
-              <Download className="size-3.5" />
-              {exporting ? "导出中…" : "导出报告"}
             </Button>
             <Button
               variant="outline"
@@ -289,27 +472,6 @@ export const RiskReportView: React.FC<RiskReportViewProps> = ({
       </div>
     </TooltipProvider>
   )
-}
-
-function shortenCompany(name: string): string {
-  const suffixes = [
-    "股份有限公司",
-    "有限责任公司",
-    "科技有限公司",
-    "技术有限公司",
-    "有限公司",
-    "股份公司",
-    "集团",
-    "公司",
-  ]
-  let result = name
-  for (const suffix of suffixes) {
-    if (result.endsWith(suffix) && result.length > suffix.length) {
-      result = result.slice(0, -suffix.length)
-      break
-    }
-  }
-  return result || name
 }
 
 interface ReportSectionProps {
@@ -390,70 +552,6 @@ const SummaryBigCard: React.FC<SummaryBigCardProps> = ({
   )
 }
 
-interface CompanyPaneProps {
-  name: string
-  tone: "left" | "right"
-  files: FlaggedFile[]
-  findingsByFile: Map<string, RiskFinding[]>
-}
-
-const CompanyPane: React.FC<CompanyPaneProps> = ({ name, tone, files, findingsByFile }) => {
-  const toneClass =
-    tone === "left" ? "border-blue-500/30 bg-blue-500/5" : "border-orange-500/30 bg-orange-500/5"
-  const toneLabel = tone === "left" ? "基准方" : "对比方"
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-canvas">
-      <header
-        className={cn(
-          "flex items-center justify-between border-b border-border/60 px-4 py-3",
-          toneClass,
-        )}
-      >
-        <div className="min-w-0">
-          <p className="text-fine-print text-muted-foreground">{toneLabel}</p>
-          <p className="text-ink truncate font-heading text-sm font-semibold">
-            {name || "未命名公司"}
-          </p>
-        </div>
-        <span className="shrink-0 text-fine-print text-muted-foreground">
-          {files.length} 个文件
-        </span>
-      </header>
-
-      {files.length === 0 ? (
-        <p className="px-4 py-8 text-center text-fine-print text-muted-foreground">
-          该公司暂无文件
-        </p>
-      ) : (
-        <div className={cn("grid min-w-0 gap-2 px-4 py-3 text-sm", FILE_TABLE_COLS)}>
-          <div className="text-fine-print text-muted-foreground">文件</div>
-          <div className="text-fine-print text-muted-foreground">作者</div>
-          <div className="text-fine-print whitespace-nowrap text-muted-foreground">最后修改者</div>
-          <div className="text-right text-fine-print whitespace-nowrap text-muted-foreground">
-            状态
-          </div>
-
-          {files.map(file => (
-            <FileRow
-              key={file.id}
-              file={file}
-              fileFindings={findingsByFile.get(file.fileName) ?? []}
-              selfCompanyName={name}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-interface FileRowProps {
-  file: FlaggedFile
-  fileFindings: RiskFinding[]
-  selfCompanyName: string
-}
-
 function describeFindingFor(
   selfFileName: string,
   selfCompany: string,
@@ -466,59 +564,6 @@ function describeFindingFor(
     "、",
   )}）的「${fieldLabel}」字段相同：${finding.value}`
 }
-
-const FileRow: React.FC<FileRowProps> = ({ file, fileFindings, selfCompanyName }) => (
-  <>
-    <div
-      className={cn(
-        "flex min-w-0 items-center gap-2 truncate leading-snug",
-        file.isFlagged ? "text-ink font-medium" : "text-ink-soft",
-      )}
-      title={file.fileName}
-    >
-      <FileText className="size-3.5 shrink-0 text-muted-foreground" />
-      <span className="truncate">{file.fileName}</span>
-    </div>
-    <div
-      className={cn("truncate leading-snug", file.isFlagged ? "text-ink" : "text-ink-soft")}
-      title={file.author}
-    >
-      {file.author}
-    </div>
-    <div
-      className={cn("truncate leading-snug", file.isFlagged ? "text-ink" : "text-ink-soft")}
-      title={file.lastModifiedBy}
-    >
-      {file.lastModifiedBy}
-    </div>
-    <div className="text-right leading-snug whitespace-nowrap">
-      {file.isFlagged ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex cursor-help items-center gap-1 rounded-md bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600">
-              <AlertOctagon className="size-3" />
-              风险
-            </span>
-          </TooltipTrigger>
-          <TooltipContent
-            side="left"
-            align="end"
-            className="max-w-sm text-left whitespace-pre-line"
-          >
-            {fileFindings.map((f, i) => (
-              <div key={i}>{describeFindingFor(file.fileName, selfCompanyName, f)}</div>
-            ))}
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">
-          <CheckCircle2 className="size-3" />
-          正常
-        </span>
-      )}
-    </div>
-  </>
-)
 
 interface RiskEventsTableProps {
   findings: RiskFinding[]
@@ -584,7 +629,7 @@ const RiskEventsTable: React.FC<RiskEventsTableProps> = ({ findings }) => {
                       </span>
                     ))}
                   </td>
-                  <td className="text-ink px-3 py-2 font-medium">“{finding.value}”</td>
+                  <td className="text-ink px-3 py-2 font-medium">"{finding.value}"</td>
                   <td className="text-ink-soft px-3 py-2 wrap-break-word">
                     {finding.files.map((name, i) => (
                       <span key={name}>
@@ -597,7 +642,7 @@ const RiskEventsTable: React.FC<RiskEventsTableProps> = ({ findings }) => {
                     {finding.companies.map((name, i) => (
                       <span key={name}>
                         {name}
-                        {i < finding.companies.length - 1 ? "、" : ""}
+                        {i < finding.files.length - 1 ? "、" : ""}
                       </span>
                     ))}
                   </td>

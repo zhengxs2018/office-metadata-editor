@@ -2536,6 +2536,7 @@ dependencies = [
 name = "office-metadata-editor"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "log",
  "lopdf",
  "pinyin",

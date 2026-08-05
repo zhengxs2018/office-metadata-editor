@@ -3,7 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog"
 import { OPEN_FILE_DIALOG_FILTER } from "@/lib/documents/supported-formats"
 
 export type FileStatus = "idle" | "reading" | "ready" | "processing" | "error"
-export type CompanySide = "left" | "right"
+export type CompanySide = string
 
 export interface CompanyEntry {
   id: string
@@ -36,8 +36,9 @@ export interface FileContextValue {
   /** Drops every file and company, returning the session to a blank state. */
   clearAll: () => void
   updateFileStatus: (fileId: string, patch: Partial<Omit<FileEntry, "id" | "filePath">>) => void
-  ensureCompany: (side: CompanySide, name: string, sourceDir?: string) => string
+  ensureCompany: (name: string, sourceDir?: string) => string
   removeCompany: (companyId: string) => void
+  companyCount: number
 }
 
 const FileContext = createContext<FileContextValue | null>(null)
@@ -55,20 +56,22 @@ export const FileProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   }, [companies])
 
   const ensureCompany = useCallback(
-    (side: CompanySide, name: string, sourceDir?: string): string => {
-      const existing = companies.find(c => c.side === side)
-      if (existing) {
-        if (existing.name !== name || existing.sourceDir !== sourceDir) {
-          setCompanies(prev =>
-            prev.map(c =>
-              c.id === existing.id
-                ? { ...c, name, ...(sourceDir !== undefined ? { sourceDir } : {}) }
-                : c,
-            ),
-          )
+    (name: string, sourceDir?: string): string => {
+      const normalizedSourceDir = sourceDir
+        ? sourceDir.replace(/[\\/]+$/, "").replace(/\\/g, "/")
+        : undefined
+      if (normalizedSourceDir) {
+        const dup = companies.find(
+          c => c.sourceDir && c.sourceDir.replace(/[\\/]+$/, "").replace(/\\/g, "/") === normalizedSourceDir,
+        )
+        if (dup) {
+          if (dup.name !== name) {
+            setCompanies(prev => prev.map(c => (c.id === dup.id ? { ...c, name } : c)))
+          }
+          return dup.id
         }
-        return existing.id
       }
+      const side = String(companies.length)
       const id = crypto.randomUUID()
       setCompanies(prev => [
         ...prev,
@@ -204,6 +207,7 @@ export const FileProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       isLoading,
       companies,
       companyById,
+      companyCount: companies.length,
       openFiles,
       addFilesByPaths,
       selectFile,

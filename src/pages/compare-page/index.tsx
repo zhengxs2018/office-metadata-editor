@@ -1,16 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { Download, Play } from "lucide-react"
+import { Play } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
-import { save } from "@tauri-apps/plugin-dialog"
 
 import { Button } from "@/components/ui/button"
 import { PageLayout } from "@/layouts/page-layout"
 import { useFileContext, type CompanyEntry } from "@/contexts/file-context"
 import { useMetadata, type LoadedDocument } from "@/contexts/metadata-context"
 import { type RiskFinding } from "@/lib/documents/compare-audit"
-import { buildCompareReport, buildCompareReportFileName } from "@/lib/documents/compare-report"
 import { ROUTES } from "@/router/paths"
-import { CompanySlot } from "@/pages/compare-page/components/company-slot"
+import { DropZone } from "@/pages/compare-page/components/drop-zone"
+import { CompanyCard } from "@/pages/compare-page/components/company-card"
 import { RiskReportView } from "@/pages/compare-page/components/risk-report-dialog"
 
 interface RustMatchReport {
@@ -55,11 +54,10 @@ function toCompareInputs(
 }
 
 export const ComparePage: React.FC = () => {
-  const { companyById, clearAll } = useFileContext()
+  const { companyById, companies, clearAll, companyCount } = useFileContext()
   const { documents } = useMetadata()
   const [findings, setFindings] = useState<RiskFinding[]>([])
   const [comparing, setComparing] = useState(false)
-  const [exporting, setExporting] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const readyDocs = useMemo(() => documents.filter(doc => doc.status === "ready"), [documents])
@@ -69,28 +67,25 @@ export const ComparePage: React.FC = () => {
     setDialogOpen(false)
   }, [])
 
-  const leftCompany = useMemo(
-    () => Object.values(companyById).find(c => c.side === "left") ?? null,
-    [companyById],
-  )
-  const rightCompany = useMemo(
-    () => Object.values(companyById).find(c => c.side === "right") ?? null,
-    [companyById],
-  )
-  const leftDocs = useMemo(
-    () => readyDocs.filter(doc => doc.companyId === leftCompany?.id),
-    [readyDocs, leftCompany?.id],
-  )
-  const rightDocs = useMemo(
-    () => readyDocs.filter(doc => doc.companyId === rightCompany?.id),
-    [readyDocs, rightCompany?.id],
+  const allCompanies = useMemo(() => Object.values(companyById), [companyById])
+
+  const docsByCompany = useMemo(() => {
+    const map = new Map<string, LoadedDocument[]>()
+    for (const c of allCompanies) {
+      map.set(
+        c.id,
+        readyDocs.filter(doc => doc.companyId === c.id),
+      )
+    }
+    return map
+  }, [readyDocs, allCompanies])
+
+  const companiesWithFiles = useMemo(
+    () => allCompanies.filter(c => (docsByCompany.get(c.id)?.length ?? 0) > 0),
+    [allCompanies, docsByCompany],
   )
 
-  const canRun =
-    Boolean(leftCompany && rightCompany) &&
-    leftDocs.length > 0 &&
-    rightDocs.length > 0 &&
-    !comparing
+  const canRun = companiesWithFiles.length >= 2 && !comparing
 
   const handleRun = useCallback(async () => {
     if (!canRun) return
@@ -117,32 +112,7 @@ export const ComparePage: React.FC = () => {
     } finally {
       setComparing(false)
     }
-  }, [canRun, documents])
-
-  const handleExport = async () => {
-    if (exporting) return
-    setExporting(true)
-    try {
-      const leftName = leftCompany?.name ?? ""
-      const rightName = rightCompany?.name ?? ""
-      const report = buildCompareReport({
-        leftName,
-        rightName,
-        findings,
-        generatedAt: new Date(),
-      })
-      const target = await save({
-        defaultPath: buildCompareReportFileName(leftName, rightName),
-        filters: [{ name: "纯文本报告", extensions: ["txt"] }],
-      })
-      if (!target) return
-      await invoke("write_text_file", { filePath: target, contents: report })
-    } catch (error) {
-      console.error("导出报告失败:", error)
-    } finally {
-      setExporting(false)
-    }
-  }
+  }, [canRun, documents, companyById])
 
   const handleReset = () => {
     clearAll()
@@ -157,7 +127,7 @@ export const ComparePage: React.FC = () => {
       header={<h1 className="text-caption font-semibold">元数据对比</h1>}
       actions={
         <div className="flex items-center gap-1">
-          {leftCompany || rightCompany ? (
+          {companyCount > 0 ? (
             <Button
               variant="ghost"
               size="sm"
@@ -169,47 +139,24 @@ export const ComparePage: React.FC = () => {
             </Button>
           ) : null}
           <Button
-            variant="ghost"
             size="sm"
+            onClick={handleRun}
+            disabled={!canRun}
             className="gap-1.5 rounded-lg"
-            disabled={!dialogOpen || exporting || findings.length === 0}
-            onClick={handleExport}
           >
-            <Download className="size-4" />
-            导出报告
+            <Play className="size-3.5 fill-current" />
+            {comparing ? "对比中…" : "开始对比"}
           </Button>
         </div>
       }
     >
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 p-6">
-        <div className="flex w-full max-w-6xl flex-col items-stretch gap-4 lg:flex-row">
-          <CompanySlot
-            side="left"
-            title="基准方 (Baseline)"
-            emptyHint="拖拽基准方文件夹至此处"
-            addFolderLabel="选择文件夹"
-            sourceLabel="或点击下方按钮选择目录"
-            tone="blue"
-          />
-          <CompanySlot
-            side="right"
-            title="对比方 (Comparison)"
-            emptyHint="拖拽对比方文件夹至此处"
-            addFolderLabel="选择文件夹"
-            sourceLabel="或点击下方按钮选择目录"
-            tone="orange"
-          />
+      <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <DropZone />
+          {allCompanies.map((company, idx) => (
+            <CompanyCard key={company.id} company={company} index={idx} />
+          ))}
         </div>
-
-        <Button
-          size="lg"
-          onClick={handleRun}
-          disabled={!canRun}
-          className="rounded-full px-8 shadow-product"
-        >
-          <Play className="mr-1.5 size-4 fill-current" />
-          {comparing ? "对比中…" : "开始对比"}
-        </Button>
       </div>
 
       <RiskReportView
@@ -220,16 +167,10 @@ export const ComparePage: React.FC = () => {
         }}
         comparing={comparing}
         findings={findings}
-        leftCompanyName={leftCompany?.name ?? "基准方"}
-        rightCompanyName={rightCompany?.name ?? "对比方"}
-        leftDocs={leftDocs}
-        rightDocs={rightDocs}
-        leftCount={leftDocs.length}
-        rightCount={rightDocs.length}
+        companies={allCompanies}
+        docsByCompany={docsByCompany}
         canRerun={canRun}
-        exporting={exporting}
         onRerun={handleRun}
-        onExport={handleExport}
       />
     </PageLayout>
   )
