@@ -1,5 +1,6 @@
 import React from "react"
-import { FileSpreadsheet, FileText, Trash2 } from "lucide-react"
+import { HugeIcon } from "@/components/icons/huge-icon"
+import { FileSpreadsheetIcon, File01Icon, Delete01Icon } from "@hugeicons/core-free-icons"
 
 import {
   Sidebar,
@@ -53,9 +54,9 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
                 const doc = documents.find(d => d.id === file.id)
                 const fileName =
                   doc?.metadata.fileName || file.filePath.split(/[\\/]/).pop() || file.filePath
-                const Icon = file.filePath.toLowerCase().endsWith(".xlsx")
-                  ? FileSpreadsheet
-                  : FileText
+                const iconObj = file.filePath.toLowerCase().endsWith(".xlsx")
+                  ? FileSpreadsheetIcon
+                  : File01Icon
                 const isActive = file.id === activeFileId
                 const status = file.status ?? doc?.status ?? "idle"
                 return (
@@ -69,7 +70,7 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
                         status === "error" && "text-destructive",
                       )}
                     >
-                      <Icon className="size-4 shrink-0" />
+                      <HugeIcon icon={iconObj} size={16} />
                       <span className="min-w-0 flex-1 truncate text-left">{fileName}</span>
                       <span className="text-[10px] text-muted-foreground tabular-nums">
                         {statusLabel(status)}
@@ -83,7 +84,7 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
                         onRemoveFile(file.id)
                       }}
                     >
-                      <Trash2 />
+                      <HugeIcon icon={Delete01Icon} size={14} />
                     </SidebarMenuAction>
                   </SidebarMenuItem>
                 )

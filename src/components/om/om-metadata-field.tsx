@@ -2,7 +2,8 @@ import React from "react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Lock } from "lucide-react"
+import { HugeIcon } from "@/components/icons/huge-icon"
+import { LockPasswordIcon } from "@hugeicons/core-free-icons"
 import type { MetadataField } from "@/types/metadata"
 
 export const OmMetadataFieldList: React.FC<React.PropsWithChildren> = ({ children }) => {
@@ -47,7 +48,7 @@ export const OmMetadataFieldItem: React.FC<OmMetadataFieldItemProps> = ({ field,
         >
           {field.label}
         </Label>
-        {!field.editable && <Lock className="h-3 w-3 text-muted-foreground/50" />}
+        {!field.editable && <HugeIcon icon={LockPasswordIcon} size={12} className="text-muted-foreground/50" />}
       </div>
       <div className="flex items-center">
         {field.editable ? (

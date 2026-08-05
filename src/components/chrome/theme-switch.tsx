@@ -1,19 +1,19 @@
 import * as React from "react"
-import { Sun, Moon, CloudSun } from "lucide-react"
+import { Sun01Icon, Moon01Icon, AiLaptopIcon } from "@hugeicons/core-free-icons"
+import { HugeIcon } from "@/components/icons/huge-icon"
 import { useTheme } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
-import type { LucideIcon } from "lucide-react"
 
 type ThemeOption = {
   value: "light" | "dark" | "system"
   label: string
-  icon: LucideIcon
+  icon: React.ComponentProps<typeof HugeIcon>["icon"]
 }
 
 const OPTIONS: ThemeOption[] = [
-  { value: "light", label: "白天", icon: Sun },
-  { value: "dark", label: "暗黑", icon: Moon },
-  { value: "system", label: "系统", icon: CloudSun },
+  { value: "light", label: "白天", icon: Sun01Icon },
+  { value: "dark", label: "暗黑", icon: Moon01Icon },
+  { value: "system", label: "系统", icon: AiLaptopIcon },
 ]
 
 export const ThemeSwitch: React.FC<{ className?: string }> = ({ className }) => {
@@ -45,7 +45,7 @@ export const ThemeSwitch: React.FC<{ className?: string }> = ({ className }) => 
                 : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
             )}
           >
-            <Icon className="h-3.5 w-3.5" />
+            <HugeIcon icon={Icon} size={14} />
             <span>{option.label}</span>
           </button>
         )

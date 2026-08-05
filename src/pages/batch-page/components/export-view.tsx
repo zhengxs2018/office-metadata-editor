@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import {
-  ArrowLeft,
-  CheckCircle2,
-  Database,
-  Download,
-  FileJson,
-  FileSpreadsheet,
-  Loader2,
-  Table,
-  XCircle,
-} from "lucide-react"
+  ArrowLeft01Icon,
+  CheckmarkCircle02Icon,
+  DatabaseIcon,
+  Download01Icon,
+  CodeFolderIcon,
+  FileSpreadsheetIcon,
+  Loading02Icon,
+  Table01Icon,
+  CancelCircleIcon,
+} from "@hugeicons/core-free-icons"
 import { invoke } from "@tauri-apps/api/core"
 import { save } from "@tauri-apps/plugin-dialog"
 import * as XLSX from "xlsx"
@@ -45,11 +45,13 @@ const DEFAULT_FIELD_LABELS: Record<string, string> = {
   hiddenSlides: "隐藏幻灯片",
 }
 
-const FORMAT_META: Record<ExportFormat, { label: string; description: string; Icon: React.ComponentType<{ className?: string }> }> = {
-  json: { label: "JSON", description: "程序处理 / 备份", Icon: FileJson },
-  excel: { label: "Excel", description: "人工查阅 / 编辑", Icon: FileSpreadsheet },
-  csv: { label: "CSV", description: "导入其他系统", Icon: Table },
-  xml: { label: "XML", description: "企业级数据交换", Icon: Database },
+import { HugeIcon } from "@/components/icons/huge-icon"
+
+const FORMAT_META: Record<ExportFormat, { label: string; description: string; Icon: React.ComponentProps<typeof HugeIcon>["icon"] }> = {
+  json: { label: "JSON", description: "程序处理 / 备份", Icon: CodeFolderIcon },
+  excel: { label: "Excel", description: "人工查阅 / 编辑", Icon: FileSpreadsheetIcon },
+  csv: { label: "CSV", description: "导入其他系统", Icon: Table01Icon },
+  xml: { label: "XML", description: "企业级数据交换", Icon: DatabaseIcon },
 }
 
 export interface ExportViewProps {
@@ -257,17 +259,20 @@ export const ExportView: React.FC<ExportViewProps> = ({
         className="app-drag flex shrink-0 items-center gap-2 border-b border-border bg-background/95 py-3 pr-4 backdrop-blur-md sm:pr-6"
         style={{ paddingLeft: "calc(var(--chrome-traffic-light-inset, 0px) + 0.75rem)" }}
       >
-        <div className="app-no-drag flex min-w-0 items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={onClose}
-            disabled={exporting}
-            className="rounded-full"
-            aria-label="返回"
-          >
-            <ArrowLeft className="size-4" />
-          </Button>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="app-no-drag shrink-0">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onClose}
+              disabled={exporting}
+              className="rounded-lg text-muted-foreground hover:text-foreground"
+              aria-label="返回"
+            >
+              <HugeIcon icon={ArrowLeft01Icon} size={14} />
+            </Button>
+          </div>
+          <div className="h-4 w-px shrink-0 bg-hairline" />
           <div className="min-w-0">
             <p className="text-ink truncate font-heading text-base font-semibold">导出元数据</p>
             <p className="truncate text-fine-print text-muted-foreground">
@@ -277,15 +282,30 @@ export const ExportView: React.FC<ExportViewProps> = ({
             </p>
           </div>
         </div>
+        <div className="app-no-drag flex shrink-0 items-center gap-1">
+          <Button
+            size="sm"
+            onClick={handleExport}
+            disabled={exporting || documents.length === 0}
+            className="gap-1.5 rounded-lg"
+          >
+            {exporting ? (
+              <HugeIcon icon={Loading02Icon} size={14} className="animate-spin" />
+            ) : (
+              <HugeIcon icon={Download01Icon} size={14} />
+            )}
+            {exporting ? "导出中…" : "开始导出"}
+          </Button>
+        </div>
       </header>
 
       <main className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-5xl px-5 pt-12 pb-10 sm:px-8 sm:pt-20 sm:pb-14">
-          <section className="mb-12">
-            <p className="mb-2 text-caption font-medium tracking-widest text-muted-foreground uppercase">
+        <div className="mx-auto w-full max-w-5xl px-4 pt-6 pb-6 sm:px-6 sm:pt-10 sm:pb-8">
+          <section className="mb-8">
+            <p className="mb-1.5 text-caption font-medium tracking-widest text-muted-foreground uppercase">
               导出 · {generatedAt}
             </p>
-            <h1 className="text-ink font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="text-ink font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
               {documents.length} 个文件待导出
             </h1>
             <p className="text-ink-soft mt-3 max-w-2xl text-fine-print">
@@ -299,7 +319,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
             title="目标格式"
             hint={`已选 ${FORMAT_META[format].label}`}
           >
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               {(Object.keys(FORMAT_META) as ExportFormat[]).map(key => {
                 const meta = FORMAT_META[key]
                 const active = format === key
@@ -308,17 +328,16 @@ export const ExportView: React.FC<ExportViewProps> = ({
                     key={key}
                     onClick={() => setFormat(key)}
                     className={cn(
-                      "flex flex-col items-start gap-2 rounded-xl border px-4 py-3 text-left transition-all",
+                      "flex flex-col items-start gap-1.5 rounded-lg border px-3 py-2.5 text-left transition-all",
                       active
                         ? "border-primary/40 bg-primary/8 ring-1 ring-primary/20"
                         : "border-border/60 hover:border-primary/30",
                     )}
                   >
-                    <meta.Icon
-                      className={cn(
-                        "size-4",
-                        active ? "text-primary" : "text-muted-foreground",
-                      )}
+                    <HugeIcon
+                      icon={meta.Icon}
+                      size={16}
+                      className={active ? "text-primary" : "text-muted-foreground"}
                     />
                     <div>
                       <p className="text-ink text-caption font-semibold">{meta.label}</p>
@@ -349,8 +368,8 @@ export const ExportView: React.FC<ExportViewProps> = ({
                 {includeFields.length === allFields.length ? "清空选择" : "全选"}
               </Button>
             </div>
-            <div className="overflow-hidden rounded-xl border border-border/60">
-              <ScrollArea className="max-h-72">
+            <div className="overflow-hidden rounded-lg border border-border/60">
+              <ScrollArea className="max-h-60">
                 <div className="grid grid-cols-1 gap-x-4 gap-y-1.5 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3">
                   {allFields.map(field => {
                     const isAutoIncluded = includeFields.length === 0
@@ -384,7 +403,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
             title="导出预览"
             hint={`共 ${documents.length} 个文件${documents.length > previewDocs.length ? `（仅预览前 ${previewDocs.length} 个）` : ""}`}
           >
-            <div className="overflow-hidden rounded-xl border border-border/60">
+            <div className="overflow-hidden rounded-lg border border-border/60">
               <div className="overflow-x-auto">
                 <table className="w-full table-fixed border-collapse text-sm">
                   <colgroup>
@@ -435,10 +454,10 @@ export const ExportView: React.FC<ExportViewProps> = ({
           </ReportSection>
 
           {result ? (
-            <section className="mb-12">
+            <section className="mb-8">
               <div
                 className={cn(
-                  "rounded-xl border p-5",
+                  "rounded-lg border p-4",
                   result.success
                     ? "border-emerald-500/30 bg-emerald-500/5"
                     : "border-red-500/30 bg-red-500/5",
@@ -446,9 +465,9 @@ export const ExportView: React.FC<ExportViewProps> = ({
               >
                 <div className="flex items-start gap-3">
                   {result.success ? (
-                    <CheckCircle2 className="size-5 shrink-0 text-emerald-600" />
+                    <HugeIcon icon={CheckmarkCircle02Icon} size={20} className="text-emerald-600" />
                   ) : (
-                    <XCircle className="size-5 shrink-0 text-red-600" />
+                    <HugeIcon icon={CancelCircleIcon} size={20} className="text-red-600" />
                   )}
                   <div className="min-w-0 flex-1">
                     <p
@@ -485,46 +504,12 @@ export const ExportView: React.FC<ExportViewProps> = ({
             </section>
           ) : null}
 
-          <div className="mt-16 border-t border-border/60 pt-6 text-fine-print text-muted-foreground">
+          <div className="mt-10 border-t border-border/60 pt-4 text-fine-print text-muted-foreground">
             所有元数据来自文件本身，未上传到任何云端。
             · Excel 格式使用 xlsx（SheetJS）生成并通过 write_binary_file 写入。
           </div>
         </div>
       </main>
-
-      <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-md sm:px-6">
-        <p className="hidden truncate text-fine-print text-muted-foreground sm:block">
-          {documents.length === 0
-            ? "请先导入文件后再导出。"
-            : result?.success
-              ? "导出已完成，可关闭窗口或继续导出其他格式。"
-              : "建议选择 Excel 以便人工查看，JSON 适合程序处理。"}
-        </p>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            disabled={exporting}
-            className="rounded-lg"
-          >
-            关闭
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleExport}
-            disabled={exporting || documents.length === 0}
-            className="gap-1.5 rounded-lg"
-          >
-            {exporting ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Download className="size-3.5" />
-            )}
-            {exporting ? "导出中…" : "开始导出"}
-          </Button>
-        </div>
-      </footer>
     </div>
   )
 }
@@ -537,8 +522,8 @@ interface ReportSectionProps {
 }
 
 const ReportSection: React.FC<ReportSectionProps> = ({ index, title, hint, children }) => (
-  <section className="mb-14 scroll-mt-24">
-    <header className="mb-5 flex items-baseline justify-between border-b border-border/40 pb-3">
+  <section className="mb-8 scroll-mt-24">
+    <header className="mb-3 flex items-baseline justify-between border-b border-border/40 pb-2">
       <h2 className="text-ink flex items-baseline gap-3 font-heading text-caption font-semibold tracking-wide uppercase">
         {index ? (
           <span className="font-heading text-fine-print text-muted-foreground tabular-nums">

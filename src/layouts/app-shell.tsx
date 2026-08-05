@@ -40,7 +40,7 @@ export const AppShell: React.FC<React.PropsWithChildren<AppShellProps>> = ({
         className="app-drag hairline-b relative z-30 flex h-(--chrome-titlebar-height) shrink-0 items-center gap-2 bg-parchment/80 pr-3 backdrop-blur-xl"
         style={{ paddingLeft: "calc(var(--chrome-traffic-light-inset) + 0.75rem)" }}
       >
-        <div className="app-no-drag flex min-w-0 flex-1 items-center gap-2">{leading}</div>
+        <div className="flex min-w-0 flex-1 items-center gap-2">{leading}</div>
         {actions ? (
           <div className="app-no-drag flex shrink-0 items-center gap-1">{actions}</div>
         ) : null}

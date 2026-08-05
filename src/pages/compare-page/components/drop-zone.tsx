@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { open } from "@tauri-apps/plugin-dialog"
 import { invoke } from "@tauri-apps/api/core"
-import { AlertCircle, FolderOpen, Loader2, Upload } from "lucide-react"
+import { HugeIcon } from "@/components/icons/huge-icon"
+import { AlertCircleIcon, FolderOpenIcon, Loading02Icon, Upload01Icon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -10,6 +11,20 @@ import { useGlobalDragDrop } from "@/hooks/use-global-drag-drop"
 import type { DirectoryScanResult } from "@/types/om-workflow"
 
 const ACCEPT_EXTS = ["docx", "doc", "xlsx", "pdf"]
+
+/** 文件选择模式 */
+export type DropZoneMode = "both" | "file" | "directory"
+
+export interface DropZoneProps {
+  /**
+   * 选择模式：
+   * - `"both"`：点击=文件对话框，拖拽=文件+目录，保留「选择文件夹」按钮
+   * - `"file"`：仅文件，点击=文件对话框，拖拽只接受文件，无目录按钮
+   * - `"directory"`：仅目录，点击=目录对话框，拖拽只接受目录，无文件按钮
+   * @default "both"
+   */
+  mode?: DropZoneMode
+}
 
 function basename(path: string): string {
   const seg = path.replace(/\\/g, "/").split("/").filter(Boolean)
@@ -37,7 +52,7 @@ async function scanFolder(dir: string): Promise<string[]> {
   }
 }
 
-export const DropZone: React.FC = () => {
+export const DropZone: React.FC<DropZoneProps> = ({ mode = "both" }) => {
   const { addFilesByPaths, ensureCompany, files: ctxFiles } = useFileContext()
   const [hovering, setHovering] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -46,6 +61,9 @@ export const DropZone: React.FC = () => {
 
   const ctxFilesRef = useRef(ctxFiles)
   ctxFilesRef.current = ctxFiles
+
+  const canAcceptFile = mode !== "directory"
+  const canAcceptDir = mode !== "file"
 
   const isInsideZone = useCallback((position: { x: number; y: number } | null) => {
     if (!position) return false
@@ -67,6 +85,10 @@ export const DropZone: React.FC = () => {
       for (const p of paths) {
         const lower = p.toLowerCase()
         const isSingleFile = ACCEPT_EXTS.some(ext => lower.endsWith("." + ext))
+        // 按模式过滤非法路径
+        if (isSingleFile && !canAcceptFile) continue
+        if (!isSingleFile && !canAcceptDir) continue
+
         if (isSingleFile) {
           const companyId = ensureCompany(basename(p).replace(/\.[^.]+$/, "") || "未命名")
           addFilesByPaths([p], companyId)
@@ -90,7 +112,7 @@ export const DropZone: React.FC = () => {
       }
       setBusy(false)
     },
-    [addFilesByPaths, ensureCompany],
+    [addFilesByPaths, ensureCompany, canAcceptFile, canAcceptDir],
   )
 
   const handleHover = useCallback(
@@ -105,6 +127,28 @@ export const DropZone: React.FC = () => {
   )
 
   useGlobalDragDrop(ingestPaths, handleHover)
+
+  async function handlePickFiles() {
+    setHint(null)
+    setBusy(true)
+    try {
+      const selected = await open({
+        multiple: true,
+        filters: [{ name: "支持的文档", extensions: ACCEPT_EXTS }],
+      })
+      if (!selected) {
+        setBusy(false)
+        return
+      }
+      const paths = Array.isArray(selected) ? selected : [selected]
+      await ingestPaths(paths)
+    } catch (err) {
+      console.warn("pickFiles failed", err)
+      setHint("选择文件失败")
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function handlePickDirectory() {
     setHint(null)
@@ -124,18 +168,43 @@ export const DropZone: React.FC = () => {
     }
   }
 
+  /** 区域点击行为：目录模式=目录对话框，其他=文件对话框 */
+  const handleZoneClick = () => {
+    if (busy) return
+    if (mode === "directory") {
+      handlePickDirectory()
+    } else {
+      handlePickFiles()
+    }
+  }
+
+  const description = {
+    both: "点击选择文件，或拖拽文件/文件夹至此处",
+    file: "点击选择文件，或拖拽文件至此处",
+    directory: "点击选择文件夹，或拖拽文件夹至此处",
+  } as const
+
   return (
     <div
       ref={zoneRef}
+      onClick={handleZoneClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          handleZoneClick()
+        }
+      }}
       className={cn(
-        "flex min-h-0 min-w-0 flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-all",
-        "border-primary/30 bg-primary/3",
+        "flex min-h-0 min-w-0 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-all",
+        "cursor-pointer border-primary/30 bg-primary/3 hover:bg-primary/5",
         hovering && "border-primary/60 bg-primary/6 ring-4 ring-primary/20",
       )}
     >
       {busy ? (
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-8 animate-spin text-muted-foreground" strokeWidth={1.25} />
+          <HugeIcon icon={Loading02Icon} size={32} className="animate-spin text-muted-foreground" />
           <p className="text-fine-print text-muted-foreground">正在解析文件…</p>
         </div>
       ) : (
@@ -147,30 +216,35 @@ export const DropZone: React.FC = () => {
             )}
           >
             {hovering ? (
-              <Upload className="size-5" />
+              <HugeIcon icon={Upload01Icon} size={20} />
             ) : (
-              <FolderOpen className="size-5" strokeWidth={1.5} />
+              <HugeIcon icon={FolderOpenIcon} size={20} />
             )}
           </div>
           <div className="space-y-0.5">
-            <p className="text-ink text-fine-print font-medium">拖拽文件夹或文件至此处</p>
+            <p className="text-ink text-fine-print font-medium">{description[mode]}</p>
             <p className="text-fine-print text-muted-foreground">支持 PDF / XLSX / DOCX</p>
           </div>
-          <Button
-            onClick={handlePickDirectory}
-            variant="outline"
-            size="sm"
-            className="mt-1 gap-1.5 rounded-lg"
-          >
-            <FolderOpen className="size-3.5" />
-            选择文件夹
-          </Button>
+          {mode === "both" && (
+            <Button
+              onClick={e => {
+                e.stopPropagation()
+                handlePickDirectory()
+              }}
+              variant="outline"
+              size="sm"
+              className="mt-1 gap-1.5 rounded-lg"
+            >
+              <HugeIcon icon={FolderOpenIcon} size={14} />
+              选择文件夹
+            </Button>
+          )}
         </>
       )}
 
       {hint ? (
         <p className="inline-flex items-center gap-1 text-fine-print text-warning-foreground">
-          <AlertCircle className="size-3" />
+          <HugeIcon icon={AlertCircleIcon} size={12} />
           {hint}
         </p>
       ) : null}

@@ -6,7 +6,8 @@ import { OmMetadataFieldList } from "@/components/om/om-metadata-field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Lock } from "lucide-react"
+import { HugeIcon } from "@/components/icons/huge-icon"
+import { LockPasswordIcon } from "@hugeicons/core-free-icons"
 import { resolveMetadataSections } from "@/lib/documents/metadata"
 import type { DocumentFileType } from "@/types/metadata"
 
@@ -151,7 +152,7 @@ export const OmMetadataEditor: React.FC<OmMetadataEditorProps> = ({ fileType }) 
                     >
                       {field.label}
                     </Label>
-                    {!field.editable && <Lock className="h-3 w-3 text-muted-foreground/50" />}
+                    {!field.editable && <HugeIcon icon={LockPasswordIcon} size={12} className="text-muted-foreground/50" />}
                   </div>
                   <div className="flex items-center">
                     {field.editable ? (

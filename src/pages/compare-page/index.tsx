@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { Play } from "lucide-react"
+import { HugeIcon } from "@/components/icons/huge-icon"
+import { PlayIcon } from "@hugeicons/core-free-icons"
 import { invoke } from "@tauri-apps/api/core"
 
 import { Button } from "@/components/ui/button"
@@ -144,15 +145,15 @@ export const ComparePage: React.FC = () => {
             disabled={!canRun}
             className="gap-1.5 rounded-lg"
           >
-            <Play className="size-3.5 fill-current" />
+            <HugeIcon icon={PlayIcon} size={14} />
             {comparing ? "对比中…" : "开始对比"}
           </Button>
         </div>
       }
     >
-      <div className="min-h-0 flex-1 overflow-y-auto p-6">
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          <DropZone />
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          <DropZone mode="directory" />
           {allCompanies.map((company, idx) => (
             <CompanyCard key={company.id} company={company} index={idx} />
           ))}

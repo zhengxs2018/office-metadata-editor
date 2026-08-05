@@ -1,6 +1,7 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
-import { FolderOpen, Save, Trash2, X } from "lucide-react"
+import { HugeIcon } from "@/components/icons/huge-icon"
+import { FileAddIcon, SaveEnergy01Icon, Delete01Icon, Cancel01Icon } from "@hugeicons/core-free-icons"
 
 export interface OmBatchToolbarProps {
   hasFiles: boolean
@@ -30,7 +31,7 @@ export const OmBatchToolbar: React.FC<OmBatchToolbarProps> = ({
         disabled={isBusy}
         className="gap-2"
       >
-        <FolderOpen className="h-4 w-4" />
+        <HugeIcon icon={FileAddIcon} size={14} />
         <span>{isBusy ? "处理中..." : "添加文件"}</span>
       </Button>
       <Button
@@ -40,7 +41,7 @@ export const OmBatchToolbar: React.FC<OmBatchToolbarProps> = ({
         disabled={!hasFiles || isBusy}
         className="gap-2"
       >
-        <Save className="h-4 w-4" />
+        <HugeIcon icon={SaveEnergy01Icon} size={14} />
         <span>一键保存</span>
       </Button>
       <Button
@@ -50,7 +51,7 @@ export const OmBatchToolbar: React.FC<OmBatchToolbarProps> = ({
         disabled={!hasFiles || isBusy}
         className="gap-2"
       >
-        <Trash2 className="h-4 w-4" />
+        <HugeIcon icon={Delete01Icon} size={14} />
         <span>一键清空并保存</span>
       </Button>
       <Button
@@ -60,7 +61,7 @@ export const OmBatchToolbar: React.FC<OmBatchToolbarProps> = ({
         disabled={!hasFiles || isBusy}
         className="gap-2"
       >
-        <X className="h-4 w-4" />
+        <HugeIcon icon={Cancel01Icon} size={14} />
         <span>清空列表</span>
       </Button>
       {busyText && <span className="text-xs text-muted-foreground">{busyText}</span>}

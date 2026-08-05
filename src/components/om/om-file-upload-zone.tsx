@@ -1,6 +1,7 @@
 import React from "react"
 import { useState, useCallback } from "react"
-import { Upload, FileText } from "lucide-react"
+import { HugeIcon } from "@/components/icons/huge-icon"
+import { Upload01Icon, File01Icon } from "@hugeicons/core-free-icons"
 import { Spinner } from "@/components/ui/spinner"
 import { SUPPORTED_FILE_EXTENSIONS } from "@/lib/documents/supported-formats"
 import { cn } from "@/lib/utils"
@@ -87,9 +88,9 @@ export const OmFileUploadZone: React.FC<OmFileUploadZoneProps> = ({
             }`}
           >
             {isDragOver ? (
-              <FileText className="h-8 w-8 text-primary" />
+              <HugeIcon icon={File01Icon} size={32} />
             ) : (
-              <Upload className="h-8 w-8 text-muted-foreground group-hover:text-primary" />
+              <HugeIcon icon={Upload01Icon} size={32} />
             )}
           </div>
           <div className="flex flex-col items-center gap-1">

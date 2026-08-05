@@ -1,14 +1,15 @@
-import React, { useRef, useState } from "react"
+import React, { useState } from "react"
 import { open } from "@tauri-apps/plugin-dialog"
 import { invoke } from "@tauri-apps/api/core"
+import { HugeIcon } from "@/components/icons/huge-icon"
 import {
-  AlertCircle,
-  Building2,
-  FileSpreadsheet,
-  FileText,
-  Loader2,
-  Trash2,
-} from "lucide-react"
+  AlertCircleIcon,
+  Building01Icon,
+  FileSpreadsheetIcon,
+  File01Icon,
+  Loading02Icon,
+  Delete01Icon,
+} from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -21,7 +22,7 @@ const ACCEPT_EXTS = ["docx", "doc", "xlsx", "pdf"]
 const ACCEPT_FILTERS = [{ name: "Office 文档", extensions: ACCEPT_EXTS }]
 
 function iconForExt(path: string) {
-  return path.toLowerCase().endsWith(".xlsx") ? FileSpreadsheet : FileText
+  return path.toLowerCase().endsWith(".xlsx") ? FileSpreadsheetIcon : File01Icon
 }
 
 function basename(path: string): string {
@@ -105,13 +106,13 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({ company, index }) => {
   return (
     <div
       className={cn(
-        "flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border-2",
+        "flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border-2",
         borderColor,
       )}
     >
-      <header className="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
+      <header className="flex shrink-0 items-center justify-between gap-2 px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
-          <Building2 className="size-4 shrink-0 text-muted-foreground" />
+          <HugeIcon icon={Building01Icon} size={16} />
           <h3
             className="text-ink truncate text-caption font-semibold"
             title={company.name}
@@ -126,14 +127,14 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({ company, index }) => {
           onClick={handleClear}
           className="shrink-0 rounded-lg text-muted-foreground hover:text-destructive"
         >
-          <Trash2 className="size-3.5" />
+          <HugeIcon icon={Delete01Icon} size={14} />
         </Button>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
+      <div className="flex min-h-0 flex-1 flex-col px-3 pb-3">
         {busy ? (
           <div className="flex flex-1 items-center justify-center py-8">
-            <Loader2 className="size-8 animate-spin text-muted-foreground" strokeWidth={1.25} />
+            <HugeIcon icon={Loading02Icon} size={32} className="animate-spin text-muted-foreground" />
           </div>
         ) : slotDocs.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-8 text-center">
@@ -177,7 +178,7 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({ company, index }) => {
                         )}
                         title={doc.filePath}
                       >
-                        <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+                        <HugeIcon icon={Icon} size={14} />
                         <span className="min-w-0 flex-1 truncate">
                           {doc.metadata.fileName || basename(doc.filePath)}
                         </span>
@@ -199,7 +200,7 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({ company, index }) => {
 
         {hint ? (
           <p className="mt-2 inline-flex items-center gap-1 text-fine-print text-warning-foreground">
-            <AlertCircle className="size-3" />
+            <HugeIcon icon={AlertCircleIcon} size={12} />
             {hint}
           </p>
         ) : null}

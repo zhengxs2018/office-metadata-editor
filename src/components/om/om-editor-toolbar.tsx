@@ -10,16 +10,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { HugeIcon } from "@/components/icons/huge-icon"
 import {
-  FilePlus2,
-  Download,
-  MoreHorizontal,
-  RotateCcw,
-  Save,
-  Trash2,
-  Settings,
-  FolderOpen,
-} from "lucide-react"
+  FileAddIcon,
+  Download01Icon,
+  MoreHorizontalIcon,
+  RotateLeft01Icon,
+  SaveEnergy01Icon,
+  Delete01Icon,
+  Settings01Icon,
+  FolderOpenIcon,
+} from "@hugeicons/core-free-icons"
 import { OmShowDirectoryPickerDialog } from "./om-show-directory-picker"
 
 export const OmEditorToolbar: React.FC = () => {
@@ -81,7 +82,7 @@ export const OmEditorToolbar: React.FC = () => {
           className="h-8 gap-1.5 rounded-lg"
           disabled={!hasChanges || !!activeRequestId}
         >
-          <Save className="h-4 w-4" />
+          <HugeIcon icon={SaveEnergy01Icon} size={14} />
           <span>保存</span>
         </Button>
 
@@ -92,7 +93,7 @@ export const OmEditorToolbar: React.FC = () => {
             onClick={resetToOriginal}
             className="h-8 gap-1.5 rounded-lg"
           >
-            <RotateCcw className="h-4 w-4" />
+            <HugeIcon icon={RotateLeft01Icon} size={14} />
             <span>重置</span>
           </Button>
         ) : (
@@ -102,7 +103,7 @@ export const OmEditorToolbar: React.FC = () => {
             onClick={clearMetadata}
             className="h-8 gap-1.5 rounded-lg"
           >
-            <Trash2 className="h-4 w-4" />
+            <HugeIcon icon={Delete01Icon} size={14} />
             <span>清理全部</span>
           </Button>
         )}
@@ -110,24 +111,24 @@ export const OmEditorToolbar: React.FC = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon-sm" className="rounded-lg">
-              <MoreHorizontal className="h-4 w-4" />
+              <HugeIcon icon={MoreHorizontalIcon} size={14} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem onClick={() => void openFiles()}>
-              <FilePlus2 className="mr-2 h-4 w-4" />
+              <HugeIcon icon={FileAddIcon} size={14} className="mr-2" />
               <span>添加文件</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => void setShowImportDialog(true)}>
-              <FolderOpen className="mr-2 h-4 w-4" />
+              <HugeIcon icon={FolderOpenIcon} size={14} className="mr-2" />
               <span>添加目录</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => void saveCurrentAs()}>
-              <Download className="mr-2 h-4 w-4" />
+              <HugeIcon icon={Download01Icon} size={14} className="mr-2" />
               <span>另存为</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setShowExportDialog(true)}>
-              <Settings className="mr-2 h-4 w-4" />
+              <HugeIcon icon={Settings01Icon} size={14} className="mr-2" />
               <span>导出</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

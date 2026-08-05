@@ -15,7 +15,8 @@ import { type FileStatus, useFileContext } from "@/contexts/file-context"
 import { useMetadata } from "@/contexts/metadata-context"
 import { ROUTES } from "@/router/paths"
 import { formatFileSize } from "@/lib/utils"
-import { Download, FolderOpen } from "lucide-react"
+import { HugeIcon } from "@/components/icons/huge-icon"
+import { Download01Icon, FolderOpenIcon } from "@hugeicons/core-free-icons"
 import { OmShowDirectoryPickerDialog } from "@/components/om/om-show-directory-picker"
 import type { ExportFieldOption } from "@/components/om/om-export-center"
 import { ExportView } from "@/pages/batch-page/components/export-view"
@@ -197,7 +198,7 @@ export const BatchPage: React.FC = () => {
             onClick={() => setShowImportDialog(true)}
             className="gap-2"
           >
-            <FolderOpen className="h-4 w-4" />
+            <HugeIcon icon={FolderOpenIcon} size={14} />
             目录导入
           </Button>
           <Button
@@ -207,7 +208,7 @@ export const BatchPage: React.FC = () => {
             disabled={rows.length === 0}
             className="gap-2"
           >
-            <Download className="h-4 w-4" />
+            <HugeIcon icon={Download01Icon} size={14} />
             导出
           </Button>
           <OmBatchToolbar
@@ -230,8 +231,8 @@ export const BatchPage: React.FC = () => {
         </div>
       }
     >
-      <div className="h-full w-full p-4">
-        <div className="h-full rounded-lg border border-border/55 bg-card/84 p-4 backdrop-blur-md">
+      <div className="h-full w-full p-3">
+        <div className="h-full rounded-md border border-border/55 bg-card/84 p-3 backdrop-blur-md">
           <Table>
             <TableHeader>
               <TableRow>

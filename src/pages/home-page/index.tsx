@@ -1,23 +1,23 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
+import { HugeIcon } from "@/components/icons/huge-icon"
 import {
-  Upload,
-  Layers3,
-  GitCompareArrows,
-  FileText,
-  FileSpreadsheet,
-  Sparkles,
-} from "lucide-react"
+  Upload01Icon,
+  Layers01Icon,
+  GitCompareIcon,
+  File01Icon,
+  FileSpreadsheetIcon,
+  SparklesIcon,
+} from "@hugeicons/core-free-icons"
 
 import { useFileContext } from "@/contexts/file-context"
-import { Button } from "@/components/ui/button"
 import { ThemeSwitch } from "@/components/chrome/theme-switch"
 import { Spinner } from "@/components/ui/spinner"
 import { APP_NAME } from "@/lib/app-config"
 import { SUPPORTED_FILE_EXTENSIONS } from "@/lib/documents/supported-formats"
 import { cn } from "@/lib/utils"
 import { invoke } from "@tauri-apps/api/core"
-import BlankLayout from "@/layouts/blank-layout"
+import { BlankLayout } from "@/layouts/blank-layout"
 import { ROUTES } from "@/router/paths"
 import { useGlobalDragDrop } from "@/hooks/use-global-drag-drop"
 import type { DirectoryScanResult } from "@/types/om-workflow"
@@ -60,23 +60,23 @@ export const HomePage: React.FC = () => {
 
   return (
     <BlankLayout>
-      <div className="relative h-full w-full overflow-hidden bg-background">
-        <div className="relative mx-auto flex h-full w-full max-w-7xl flex-col px-6 pt-8 pb-6">
-          <header className="flex shrink-0 flex-wrap items-center justify-between gap-4 pb-5">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                欢迎使用 {APP_NAME}
-              </h1>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                快速检查、对比与清洗您的文档元数据。
-              </p>
-            </div>
-            <div className="flex items-center gap-6">
-              <ThemeSwitch />
-            </div>
-          </header>
+      <div className="flex h-full w-full flex-col bg-background">
+        <header className="flex shrink-0 flex-wrap items-start justify-between gap-4 px-6 pb-5 pt-10">
+          <div className="min-w-0 flex-1 pt-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              欢迎使用 {APP_NAME}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              快速检查、对比与清洗您的文档元数据。
+            </p>
+          </div>
+          <div className="shrink-0 pr-10 pt-3">
+            <ThemeSwitch />
+          </div>
+        </header>
 
-          <section className="flex min-h-0 flex-1 flex-col justify-center rounded-2xl border border-dashed border-primary/35 bg-linear-to-br from-primary/8 via-primary/3 to-transparent p-6">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-6 pb-6">
+          <section className="flex min-h-0 flex-1 flex-col justify-center rounded-xl border border-dashed border-primary/35 bg-linear-to-br from-primary/8 via-primary/3 to-transparent p-4">
             <DragOrUploadZone
               isLoading={ctxLoading}
               onDropFiles={handleDropFiles}
@@ -84,10 +84,10 @@ export const HomePage: React.FC = () => {
             />
           </section>
 
-          <section className="mt-5 grid shrink-0 grid-cols-1 gap-4 md:grid-cols-2">
+          <section className="grid shrink-0 grid-cols-1 gap-3 md:grid-cols-2">
             <EntryCard
               tone="orange"
-              icon={GitCompareArrows}
+              icon={GitCompareIcon}
               title="对比视图"
               description="深度比对多份文档的作者、编辑时间与软件环境，精准识别国际串标风险。"
               badge="核心"
@@ -96,7 +96,7 @@ export const HomePage: React.FC = () => {
             />
             <EntryCard
               tone="violet"
-              icon={Layers3}
+              icon={Layers01Icon}
               title="批量处理"
               description="一键解析数百个 Office 文档的隐藏属性、修订记录与自定义 XML 数据。"
               badge="高效"
@@ -138,48 +138,59 @@ const DragOrUploadZone: React.FC<{
       onDragOver={e => e.preventDefault()}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
+      onClick={() => {
+        if (!isLoading) onOpenFiles()
+      }}
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-xl py-12 transition-colors",
+        "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl py-6 transition-colors hover:bg-primary/5",
         isDragOver && "bg-primary/8",
       )}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          if (!isLoading) onOpenFiles()
+        }
+      }}
     >
-      <div className="flex items-center justify-center gap-3">
-        <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 shadow-sm dark:bg-blue-500/15 dark:text-blue-300">
-          <FileText className="h-7 w-7" />
+      <div className="flex items-center justify-center gap-2">
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 shadow-sm dark:bg-blue-500/15 dark:text-blue-300">
+          <HugeIcon icon={File01Icon} size={22} />
         </span>
-        <span className="-ml-2 flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 shadow-sm dark:bg-emerald-500/15 dark:text-emerald-300">
-          <FileSpreadsheet className="h-7 w-7" />
+        <span className="-ml-1.5 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 shadow-sm dark:bg-emerald-500/15 dark:text-emerald-300">
+          <HugeIcon icon={FileSpreadsheetIcon} size={22} />
         </span>
-        <span className="-ml-2 flex h-12 w-12 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 shadow-sm dark:bg-rose-500/15 dark:text-rose-300">
-          <Sparkles className="h-7 w-7" />
-        </span>
-      </div>
-
-      <div className="mt-2 flex items-center justify-center">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-4 ring-primary/15">
-          <Upload className="h-5 w-5" />
+        <span className="-ml-1.5 flex h-10 w-10 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 shadow-sm dark:bg-rose-500/15 dark:text-rose-300">
+          <HugeIcon icon={SparklesIcon} size={22} />
         </span>
       </div>
 
-      <div className="mt-1 text-center">
-        <p className="text-sm font-medium text-foreground">拖拽文件或文件夹到此处</p>
-        <p className="mt-1 text-xs text-muted-foreground">
+      <div className="mt-1 flex items-center justify-center">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-primary/15">
+          <HugeIcon icon={Upload01Icon} size={18} />
+        </span>
+      </div>
+
+      <div className="mt-0.5 text-center">
+        <p className="text-xs font-medium text-foreground">点击选择文件，或拖拽文件/文件夹到此处</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
           支持 {extensions.join(" / ")} 及旧版格式
         </p>
       </div>
 
       {isLoading ? (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Spinner className="h-4 w-4" />
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Spinner className="h-3.5 w-3.5" />
           正在加载…
         </div>
       ) : (
-        <Button onClick={onOpenFiles} className="mt-2">
-          选择文件…
-        </Button>
+        <span className="mt-1 text-[11px] text-muted-foreground/60">
+          点击此处选择文件
+        </span>
       )}
 
-      <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground/80">
+      <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground/80">
         {extensions.map(ext => (
           <span
             key={ext}
@@ -208,7 +219,7 @@ const TONE_STYLES: Record<string, { card: string; ring: string; icon: string }> 
 
 const EntryCard: React.FC<{
   tone: "orange" | "violet"
-  icon: React.FC<{ className?: string }>
+  icon: React.ComponentProps<typeof HugeIcon>["icon"]
   title: string
   description: string
   badge: string
@@ -226,23 +237,23 @@ const EntryCard: React.FC<{
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative flex flex-col rounded-2xl border bg-linear-to-br p-5 text-left transition-shadow hover:shadow-md",
+        "group relative flex flex-col rounded-xl border bg-linear-to-br p-4 text-left transition-shadow hover:shadow-md",
         style.card,
       )}
     >
       <div className="flex items-start justify-between">
-        <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg", style.icon)}>
-          <Icon className="h-5 w-5" />
+        <span className={cn("flex h-8 w-8 items-center justify-center rounded-md", style.icon)}>
+          <HugeIcon icon={Icon} size={16} />
         </span>
-        <span className={cn("rounded-md px-2 py-0.5 text-[11px] font-semibold", badgeColor)}>
+        <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-semibold", badgeColor)}>
           {badge}
         </span>
       </div>
-      <div className="mt-4 flex-1">
-        <p className="text-base font-semibold text-foreground">{title}</p>
-        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
+      <div className="mt-3 flex-1">
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
       </div>
-      <div className="mt-4 flex items-center justify-end text-xs font-medium text-primary transition-transform group-hover:translate-x-0.5">
+      <div className="mt-3 flex items-center justify-end text-xs font-medium text-primary transition-transform group-hover:translate-x-0.5">
         {actionLabel} →
       </div>
     </button>

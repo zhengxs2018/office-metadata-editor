@@ -1,13 +1,14 @@
 import React from "react"
 import type { RiskFinding, RiskLevel } from "@/lib/documents/compare-audit"
-import { ShieldAlert, ShieldCheck } from "lucide-react"
+import { Alert02Icon, Alert01Icon } from "@hugeicons/core-free-icons"
+import { HugeIcon } from "@/components/icons/huge-icon"
 
 const LEVEL_META: Record<
   RiskLevel,
-  { label: string; className: string; Icon: React.ComponentType<{ className?: string }> }
+  { label: string; className: string; icon: React.ComponentProps<typeof HugeIcon>["icon"] }
 > = {
-  high: { label: "高风险", className: "bg-red-500/10 text-red-600", Icon: ShieldAlert },
-  medium: { label: "中风险", className: "bg-amber-500/10 text-amber-600", Icon: ShieldCheck },
+  high: { label: "高风险", className: "bg-red-500/10 text-red-600", icon: Alert02Icon },
+  medium: { label: "中风险", className: "bg-amber-500/10 text-amber-600", icon: Alert01Icon },
 }
 
 interface RiskFindingTableProps {
@@ -44,14 +45,14 @@ export const RiskFindingTable: React.FC<RiskFindingTableProps> = ({ findings, lo
         <tbody>
           {findings.map((f, i) => {
             const meta = LEVEL_META[f.level]
-            const Icon = meta.Icon
+            const Icon = meta.icon
             return (
               <tr key={i} className="border-b border-border/50 align-top last:border-0">
                 <td className="px-3 py-2">
                   <span
                     className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${meta.className}`}
                   >
-                    <Icon className="size-3.5" />
+                    <HugeIcon icon={Icon} size={14} />
                     {meta.label}
                   </span>
                 </td>

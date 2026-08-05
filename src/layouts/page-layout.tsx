@@ -1,6 +1,7 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft } from "lucide-react"
+import { HugeIcon } from "@/components/icons/huge-icon"
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
@@ -11,31 +12,18 @@ export interface PageLayoutProps {
   header: React.ReactNode
   actions?: React.ReactNode
   showSidebarTrigger?: boolean
+  showBackButton?: boolean
   bleed?: boolean
-  /**
-   * 左/右侧 sidebar（如 `<EditorPageSidebar/>`）。
-   * 传入后 AppShell content 改为 flex-row（让 sidebar-gap 按 max-content 推挤 SidebarInset）。
-   */
   sidebar?: React.ReactNode
 }
 
-/**
- * 页面级布局：
- *
- * ```
- * <SidebarProvider>          ← Provider 在最外，保证 SidebarTrigger 可用
- *   <AppShell direction=row> ← header 全宽 + content flex-row（sidebar 推挤）
- *     {sidebar}              ← shadcn Sidebar（wrapper block → max-content = gap 宽）
- *     <SidebarInset>         ← flex-1 撑满剩余
- *       {children}
- * ```
- */
 export const PageLayout: React.FC<React.PropsWithChildren<PageLayoutProps>> = ({
   children,
   backTo = "/",
   header,
   actions,
   showSidebarTrigger = false,
+  showBackButton = true,
   bleed,
   sidebar,
 }) => {
@@ -44,18 +32,26 @@ export const PageLayout: React.FC<React.PropsWithChildren<PageLayoutProps>> = ({
   const leading = (
     <>
       {showSidebarTrigger && (
-        <SidebarTrigger className="size-7 rounded-lg text-muted-foreground hover:text-foreground" />
+        <div className="app-no-drag shrink-0">
+          <SidebarTrigger className="size-7 rounded-lg text-muted-foreground hover:text-foreground" />
+        </div>
       )}
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label="返回"
-        onClick={() => navigate(backTo)}
-        className="rounded-lg text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-      </Button>
-      <div className="h-4 w-px shrink-0 bg-hairline" />
+      {showBackButton && (
+        <>
+          <div className="app-no-drag shrink-0">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="返回"
+              onClick={() => navigate(backTo)}
+              className="rounded-lg text-muted-foreground hover:text-foreground"
+            >
+              <HugeIcon icon={ArrowLeft01Icon} size={14} />
+            </Button>
+          </div>
+          <div className="h-4 w-px shrink-0 bg-hairline" />
+        </>
+      )}
       <div className="min-w-0 flex-1">{header}</div>
     </>
   )
