@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -11,17 +11,18 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PageLayout } from "@/layouts/page-layout"
 import { OmBatchToolbar } from "@/components/om/om-batch-toolbar"
-import { OmExportDialog } from "@/components/om/om-common-dialogs"
-import type { ExportFieldOption } from "@/components/om/om-export-center"
 import { type FileStatus, useFileContext } from "@/contexts/file-context"
 import { useMetadata } from "@/contexts/metadata-context"
 import { ROUTES } from "@/router/paths"
 import { formatFileSize } from "@/lib/utils"
-import { FolderOpen, FileSpreadsheet } from "lucide-react"
+import { Download, FolderOpen } from "lucide-react"
 import { OmShowDirectoryPickerDialog } from "@/components/om/om-show-directory-picker"
+import type { ExportFieldOption } from "@/components/om/om-export-center"
+import { ExportView } from "@/pages/batch-page/components/export-view"
 
 export const BatchPage: React.FC = () => {
-  const { files, openFiles, addFilesByPaths, removeFile, clearFiles } = useFileContext()
+  const { files, openFiles, addFilesByPaths, removeFile, clearFiles, isLoading } =
+    useFileContext()
   const {
     documents,
     saveDocument,
@@ -38,6 +39,16 @@ export const BatchPage: React.FC = () => {
   const [actionStatus, setActionStatus] = useState<string | null>(null)
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
+  const autoOpenedRef = useRef(false)
+
+  useEffect(() => {
+    if (autoOpenedRef.current) return
+    if (isLoading) return
+    if (files.length === 0) {
+      autoOpenedRef.current = true
+      setShowImportDialog(true)
+    }
+  }, [files.length, isLoading])
 
   const documentMap = useMemo(() => {
     return new Map(documents.map(item => [item.id, item]))
@@ -110,6 +121,7 @@ export const BatchPage: React.FC = () => {
       category: "分类",
       manager: "管理者",
       company: "组织机构",
+      application: "创建器",
     }
 
     return Array.from(fieldSet).map(key => ({
@@ -192,9 +204,10 @@ export const BatchPage: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setShowExportDialog(true)}
+            disabled={rows.length === 0}
             className="gap-2"
           >
-            <FileSpreadsheet className="h-4 w-4" />
+            <Download className="h-4 w-4" />
             导出
           </Button>
           <OmBatchToolbar
@@ -236,7 +249,7 @@ export const BatchPage: React.FC = () => {
                     colSpan={5}
                     className="py-10 text-center text-sm text-muted-foreground"
                   >
-                    暂无待处理文件，请先点击“添加文件”。
+                    暂无待处理文件，请先点击“目录导入”或“添加文件”。
                   </TableCell>
                 </TableRow>
               ) : (
@@ -334,10 +347,10 @@ export const BatchPage: React.FC = () => {
         }}
       />
 
-      <OmExportDialog
+      <ExportView
         open={showExportDialog}
-        onOpenChange={setShowExportDialog}
-        fileIds={rows.map(item => item.id)}
+        onClose={() => setShowExportDialog(false)}
+        documents={documents}
         availableFields={exportFieldOptions}
       />
     </PageLayout>

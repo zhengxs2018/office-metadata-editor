@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client"
 
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { TooltipProvider } from "@/components/ui/tooltip.tsx"
+import { FileProvider } from "./contexts/file-context"
 import { APP_WINDOW_TITLE } from "@/lib/app-config"
 import "@/style/base.css"
 import "@/style/chrome.css"
@@ -14,9 +15,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider>
       <TooltipProvider>
-        <div className="chrome-window-shell" data-ui-scroll-container>
+        <FileProvider>
           <App />
-        </div>
+        </FileProvider>
       </TooltipProvider>
     </ThemeProvider>
   </StrictMode>,
