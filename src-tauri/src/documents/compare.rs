@@ -28,29 +28,9 @@ pub struct CompareFileInput {
 }
 
 const PERSON_THRESHOLD: f64 = 0.8;
-const COMPANY_OVERLAP_RATIO: f64 = 0.5;
 
 fn stop_words() -> HashSet<&'static str> {
     ["admin", "null", "未知", "无", ""].into_iter().collect()
-}
-
-fn company_suffixes() -> Vec<&'static str> {
-    let mut suffixes = vec![
-        "股份有限公司",
-        "有限责任公司",
-        "科技有限公司",
-        "技术有限公司",
-        "有限公司",
-        "股份公司",
-        "集团",
-        "公司",
-    ];
-    suffixes.sort_by(|a, b| b.len().cmp(&a.len()));
-    suffixes
-}
-
-fn generic_words() -> HashSet<&'static str> {
-    ["科技", "技术", "投资", "发展", "国际", "控股", "贸易"].into_iter().collect()
 }
 
 fn normalize(text: &str) -> Option<String> {
@@ -64,23 +44,6 @@ fn normalize(text: &str) -> Option<String> {
     } else {
         Some(cleaned)
     }
-}
-
-fn strip_company_suffix(text: &str) -> String {
-    for suffix in company_suffixes() {
-        if text.ends_with(suffix) && text.len() > suffix.len() {
-            return text[..text.len() - suffix.len()].to_string();
-        }
-    }
-    text.to_string()
-}
-
-fn strip_generic_words(text: &str) -> String {
-    let mut result = text.to_string();
-    for word in generic_words() {
-        result = result.replace(word, "");
-    }
-    result
 }
 
 fn to_pinyin_str(text: &str) -> String {
@@ -117,15 +80,6 @@ fn levenshtein(a: &str, b: &str) -> usize {
         std::mem::swap(&mut prev, &mut curr);
     }
     prev[n]
-}
-
-/// 是否为疑似公司名：含常见公司后缀/通用词，或长度 ≥ 4（人名通常 ≤3 字）。
-fn looks_like_company(text: &str) -> bool {
-    let t = text.trim();
-    let has_suffix = company_suffixes().iter().any(|suffix| t.contains(suffix));
-    let has_generic = generic_words().iter().any(|word| t.contains(word));
-    let long_enough = t.chars().count() >= 4;
-    has_suffix || has_generic || long_enough
 }
 
 fn check_person_match(v1: &str, v2: &str) -> Option<(f64, &'static str)> {
