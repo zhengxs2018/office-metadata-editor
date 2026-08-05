@@ -5,14 +5,14 @@
 
 // ==================== 文件与文档 ====================
 
-export type FileStatus = 'idle' | 'ready' | 'processing' | 'synced' | 'error' | 'pending'
+export type FileStatus = "idle" | "ready" | "processing" | "synced" | "error" | "pending"
 
 export interface FileEntry {
   id: string
   path: string
   name: string
   extension: string
-  type: 'docx' | 'xlsx' | 'pptx' | 'pdf' | 'unknown'
+  type: "docx" | "xlsx" | "pptx" | "pdf" | "unknown"
   size: number
   status: FileStatus
   errorMessage?: string
@@ -37,7 +37,7 @@ export interface MetadataField {
   key: string
   label: string
   value: string
-  type: 'text' | 'date' | 'number' | 'select'
+  type: "text" | "date" | "number" | "select"
   builtin: boolean
   editable: boolean
   options?: string[]
@@ -57,40 +57,6 @@ export interface DocumentMetadata {
   company?: string
   custom?: Record<string, string>
   [key: string]: string | Record<string, string> | undefined
-}
-
-// ==================== 模板系统 ====================
-
-export interface MetadataTemplate {
-  id: string
-  name: string
-  description?: string
-  organization?: string
-  manager?: string
-  language?: string
-  version: string
-  fields?: TemplateField[]
-  createdAt: number
-  updatedAt: number
-  author?: string
-  tags?: string[]
-  isBuiltin?: boolean
-}
-
-export interface TemplateField {
-  key: string
-  label: string
-  defaultValue?: string
-  required: boolean
-  type: 'text' | 'date' | 'number' | 'select'
-  options?: string[]
-  description?: string
-}
-
-export interface TemplateApplyOptions {
-  overwriteExisting: boolean
-  applyToSelectedOnly: boolean
-  fileIds?: string[]
 }
 
 // ==================== 目录扫描 ====================
@@ -120,7 +86,7 @@ export interface DirectoryInfo {
 
 // ==================== 导出系统 ====================
 
-export type ExportFormat = 'json' | 'excel' | 'csv' | 'xml'
+export type ExportFormat = "json" | "excel" | "csv" | "xml"
 
 export interface ExportOptions {
   format: ExportFormat
@@ -137,40 +103,12 @@ export interface ExportResult {
   exportedCount: number
 }
 
-// ==================== MCP (Model Context Protocol) ====================
-
-export interface MCPConfig {
-  enabled: boolean
-  serverPort?: number
-  allowedOperations: MCPOperation[]
-}
-
-export type MCPOperation = 'list_files' | 'get_metadata' | 'set_metadata' | 'apply_template' | 'export_data'
-
-export interface MCPRequest {
-  jsonrpc: '2.0'
-  id: string | number
-  method: string
-  params?: Record<string, unknown>
-}
-
-export interface MCPResponse {
-  jsonrpc: '2.0'
-  id: string | number
-  result?: unknown
-  error?: {
-    code: number
-    message: string
-    data?: unknown
-  }
-}
-
 // ==================== 批量操作 ====================
 
 export interface BatchOperation {
   id: string
-  type: 'apply_template' | 'clear_metadata' | 'export' | 'save_all'
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+  type: "apply_template" | "clear_metadata" | "export" | "save_all"
+  status: "pending" | "running" | "completed" | "failed" | "cancelled"
   totalItems: number
   processedItems: number
   successfulItems: number
@@ -199,41 +137,29 @@ export interface Workspace {
 }
 
 export interface AppState {
-  currentView: 'workspace' | 'editor' | 'templates' | 'batch' | 'export' | 'settings'
+  currentView: "workspace" | "editor" | "templates" | "batch" | "export" | "settings"
   workspaces: Workspace[]
   activeWorkspaceId?: string
   darkMode: boolean
   mcpEnabled: boolean
-  language: 'zh-CN' | 'en-US'
+  language: "zh-CN" | "en-US"
 }
 
 // ==================== Tauri 命令类型 ====================
 
 export interface TauriCommandMap {
   // 文件操作
-  'scan_directory': (path: string, options: DirectoryScanOptions) => Promise<DirectoryScanResult>
-  'load_file_metadata': (path: string) => Promise<DocumentMetadata>
-  'save_file_metadata': (path: string, metadata: DocumentMetadata) => Promise<void>
-  'clear_file_metadata': (path: string) => Promise<void>
-
-  // 模板操作
-  'create_template': (template: Omit<MetadataTemplate, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string>
-  'save_template': (template: MetadataTemplate) => Promise<void>
-  'delete_template': (id: string) => Promise<void>
-  'list_templates': () => Promise<MetadataTemplate[]>
-  'export_template': (id: string, outputPath: string) => Promise<void>
-  'import_template': (inputPath: string) => Promise<MetadataTemplate>
-  'apply_template_to_files': (templateId: string, filePaths: string[], options: TemplateApplyOptions) => Promise<BatchItemResult[]>
+  scan_directory: (path: string, options: DirectoryScanOptions) => Promise<DirectoryScanResult>
+  load_file_metadata: (path: string) => Promise<DocumentMetadata>
+  save_file_metadata: (path: string, metadata: DocumentMetadata) => Promise<void>
+  clear_file_metadata: (path: string) => Promise<void>
 
   // 导出操作
-  'export_metadata': (filePaths: string[], options: ExportOptions) => Promise<ExportResult>
-
-  // MCP
-  'start_mcp_server': (config: MCPConfig) => Promise<void>
-  'stop_mcp_server': () => Promise<void>
-  'mcp_handle_request': (request: MCPRequest) => Promise<MCPResponse>
+  export_metadata: (filePaths: string[], options: ExportOptions) => Promise<ExportResult>
 
   // 批量操作
-  'batch_save_metadata': (items: Array<{ path: string; metadata: DocumentMetadata }>) => Promise<BatchItemResult[]>
-  'batch_clear_metadata': (filePaths: string[]) => Promise<BatchItemResult[]>
+  batch_save_metadata: (
+    items: Array<{ path: string; metadata: DocumentMetadata }>,
+  ) => Promise<BatchItemResult[]>
+  batch_clear_metadata: (filePaths: string[]) => Promise<BatchItemResult[]>
 }

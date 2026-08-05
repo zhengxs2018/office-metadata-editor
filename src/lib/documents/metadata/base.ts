@@ -39,42 +39,192 @@ export const defaultClearStrategy = {
 }
 
 export const commonDocumentFieldSchemas: MetadataFieldSchema[] = [
-  { key: "title", label: "标题", editable: true, type: "text", span: 2, source: { category: "documentProperties", field: "title" } },
-  { key: "subject", label: "主题", editable: true, type: "text", span: 2, source: { category: "documentProperties", field: "subject" } },
-  { key: "language", label: "语言", editable: true, type: "text", source: { category: "documentProperties", field: "language" } },
-  { key: "version", label: "版本", editable: true, type: "text", source: { category: "documentProperties", field: "version" } },
-  { key: "category", label: "类别", editable: true, type: "text", source: { category: "documentProperties", field: "category" } },
-  { key: "keywords", label: "关键词", editable: true, type: "text", source: { category: "documentProperties", field: "keywords" } },
-  { key: "description", label: "描述", editable: true, type: "textarea", span: 2, source: { category: "documentProperties", field: "description" } },
-  { key: "creator", label: "作者", editable: true, type: "text", source: { category: "documentProperties", field: "creator" } },
-  { key: "lastModifiedBy", label: "最后修改者", editable: true, type: "text", source: { category: "documentProperties", field: "lastModifiedBy" } },
-  { key: "contentStatus", label: "内容状态", editable: true, type: "text", source: { category: "documentProperties", field: "contentStatus" } },
-  { key: "identifier", label: "标识符", editable: true, type: "text", source: { category: "documentProperties", field: "identifier" } },
-  { key: "source", label: "来源", editable: true, type: "text", span: 2, source: { category: "documentProperties", field: "source" } },
-  { key: "created", label: "创建时间", editable: false, type: "date", source: { category: "documentProperties", field: "created" } },
-  { key: "modified", label: "修改时间", editable: false, type: "date", source: { category: "documentProperties", field: "modified" } },
+  {
+    key: "title",
+    label: "标题",
+    editable: true,
+    type: "text",
+    span: 2,
+    source: { category: "documentProperties", field: "title" },
+  },
+  {
+    key: "subject",
+    label: "主题",
+    editable: true,
+    type: "text",
+    span: 2,
+    source: { category: "documentProperties", field: "subject" },
+  },
+  {
+    key: "language",
+    label: "语言",
+    editable: true,
+    type: "text",
+    source: { category: "documentProperties", field: "language" },
+  },
+  {
+    key: "version",
+    label: "版本",
+    editable: true,
+    type: "text",
+    source: { category: "documentProperties", field: "version" },
+  },
+  {
+    key: "category",
+    label: "类别",
+    editable: true,
+    type: "text",
+    source: { category: "documentProperties", field: "category" },
+  },
+  {
+    key: "keywords",
+    label: "关键词",
+    editable: true,
+    type: "text",
+    source: { category: "documentProperties", field: "keywords" },
+  },
+  {
+    key: "description",
+    label: "描述",
+    editable: true,
+    type: "textarea",
+    span: 2,
+    source: { category: "documentProperties", field: "description" },
+  },
+  {
+    key: "creator",
+    label: "作者",
+    editable: true,
+    type: "text",
+    source: { category: "documentProperties", field: "creator" },
+  },
+  {
+    key: "lastModifiedBy",
+    label: "最后修改者",
+    editable: true,
+    type: "text",
+    source: { category: "documentProperties", field: "lastModifiedBy" },
+  },
+  {
+    key: "contentStatus",
+    label: "内容状态",
+    editable: true,
+    type: "text",
+    source: { category: "documentProperties", field: "contentStatus" },
+  },
+  {
+    key: "identifier",
+    label: "标识符",
+    editable: true,
+    type: "text",
+    source: { category: "documentProperties", field: "identifier" },
+  },
+  {
+    key: "source",
+    label: "来源",
+    editable: true,
+    type: "text",
+    span: 2,
+    source: { category: "documentProperties", field: "source" },
+  },
+  {
+    key: "created",
+    label: "创建时间",
+    editable: false,
+    type: "date",
+    source: { category: "documentProperties", field: "created" },
+  },
+  {
+    key: "modified",
+    label: "修改时间",
+    editable: false,
+    type: "date",
+    source: { category: "documentProperties", field: "modified" },
+  },
 ]
 
 export const commonDublinCoreFieldSchemas: MetadataFieldSchema[] = [
-  { key: "dcTitle", label: "标题", editable: true, type: "text", span: 2, source: { category: "coreProperties", field: "dcTitle" } },
-  { key: "dcSubject", label: "主题", editable: true, type: "text", span: 2, source: { category: "coreProperties", field: "dcSubject" } },
-  { key: "dcCreator", label: "创建者", editable: true, type: "text", source: { category: "coreProperties", field: "dcCreator" } },
-  { key: "dcLanguage", label: "语言", editable: true, type: "text", source: { category: "coreProperties", field: "dcLanguage" } },
-  { key: "dcKeywords", label: "关键词", editable: true, type: "text", span: 2, source: { category: "coreProperties", field: "dcKeywords" } },
-  { key: "dcDescription", label: "描述", editable: true, type: "textarea", span: 2, source: { category: "coreProperties", field: "dcDescription" } },
-  { key: "dcIdentifier", label: "标识符", editable: true, type: "text", source: { category: "coreProperties", field: "dcIdentifier" } },
-  { key: "dcSource", label: "来源", editable: true, type: "text", source: { category: "coreProperties", field: "dcSource" } },
+  {
+    key: "dcTitle",
+    label: "标题",
+    editable: true,
+    type: "text",
+    span: 2,
+    source: { category: "coreProperties", field: "dcTitle" },
+  },
+  {
+    key: "dcSubject",
+    label: "主题",
+    editable: true,
+    type: "text",
+    span: 2,
+    source: { category: "coreProperties", field: "dcSubject" },
+  },
+  {
+    key: "dcCreator",
+    label: "创建者",
+    editable: true,
+    type: "text",
+    source: { category: "coreProperties", field: "dcCreator" },
+  },
+  {
+    key: "dcLanguage",
+    label: "语言",
+    editable: true,
+    type: "text",
+    source: { category: "coreProperties", field: "dcLanguage" },
+  },
+  {
+    key: "dcKeywords",
+    label: "关键词",
+    editable: true,
+    type: "text",
+    span: 2,
+    source: { category: "coreProperties", field: "dcKeywords" },
+  },
+  {
+    key: "dcDescription",
+    label: "描述",
+    editable: true,
+    type: "textarea",
+    span: 2,
+    source: { category: "coreProperties", field: "dcDescription" },
+  },
+  {
+    key: "dcIdentifier",
+    label: "标识符",
+    editable: true,
+    type: "text",
+    source: { category: "coreProperties", field: "dcIdentifier" },
+  },
+  {
+    key: "dcSource",
+    label: "来源",
+    editable: true,
+    type: "text",
+    source: { category: "coreProperties", field: "dcSource" },
+  },
 ]
 
 export const commonOrganizationFieldSchemas: MetadataFieldSchema[] = [
-  { key: "company", label: "公司", editable: true, type: "text", source: { category: "appProperties", field: "company" } },
-  { key: "manager", label: "管理者", editable: true, type: "text", source: { category: "appProperties", field: "manager" } },
+  {
+    key: "company",
+    label: "公司",
+    editable: true,
+    type: "text",
+    source: { category: "appProperties", field: "company" },
+  },
+  {
+    key: "manager",
+    label: "管理者",
+    editable: true,
+    type: "text",
+    source: { category: "appProperties", field: "manager" },
+  },
 ]
 
 function normalizeTextValue(value: string): string {
-  return value
-    .normalize("NFC")
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+  return value.normalize("NFC").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
 }
 
 function readSourceValue(
@@ -109,7 +259,10 @@ function formatPreviewValue(raw: string | number, schema: MetadataPreviewPropert
   return normalizeTextValue(String(raw ?? ""))
 }
 
-export function buildMetadataSections(schema: MetadataSchema, metadata: DocumentMetadata): MetadataSection[] {
+export function buildMetadataSections(
+  schema: MetadataSchema,
+  metadata: DocumentMetadata,
+): MetadataSection[] {
   return schema.sections.map(section => ({
     id: section.id,
     title: section.title,
@@ -118,7 +271,9 @@ export function buildMetadataSections(schema: MetadataSchema, metadata: Document
     fields: section.fields.map(field => ({
       key: field.key,
       label: field.label,
-      value: normalizeTextValue(String(readSourceValue(metadata, field.source.category, field.source.field))),
+      value: normalizeTextValue(
+        String(readSourceValue(metadata, field.source.category, field.source.field)),
+      ),
       editable: field.editable,
       type: field.type,
       ...(field.span ? { span: field.span } : {}),

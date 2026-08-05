@@ -14,9 +14,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider>
       <TooltipProvider>
-        <main className="chrome-window-shell" data-ui-scroll-container>
+        <div className="chrome-window-shell" data-ui-scroll-container>
           <App />
-        </main>
+        </div>
       </TooltipProvider>
     </ThemeProvider>
   </StrictMode>,

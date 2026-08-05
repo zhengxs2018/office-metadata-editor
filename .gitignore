@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 
+.crew
+
 pnpm-lock.yaml
 package-lock.json
 pnpm-lock.yaml

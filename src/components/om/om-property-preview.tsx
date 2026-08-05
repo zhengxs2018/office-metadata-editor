@@ -1,6 +1,9 @@
 import React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { OmPropertyPreviewList, OmPropertyPreviewItem } from "@/components/om/om-property-preview-item"
+import {
+  OmPropertyPreviewList,
+  OmPropertyPreviewItem,
+} from "@/components/om/om-property-preview-item"
 
 export type OmProperty = {
   label: string

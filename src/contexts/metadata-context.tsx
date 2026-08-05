@@ -9,17 +9,10 @@ import React, {
 } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import type { DocumentMetadata, MetadataSection } from "@/types/metadata"
-import type { MetadataTemplate } from "@/types/om-workflow"
 import { useFileContext } from "@/contexts/file-context"
-import {
-  getDocumentResourceByPath,
-  type BatchSaveRequestItem,
-} from "@/lib/resources/documents"
+import { getDocumentResourceByPath, type BatchSaveRequestItem } from "@/lib/resources/documents"
 import { normalizeDocumentFileType, resolveFileTypeFromPath } from "@/lib/documents/file-type"
-import {
-  applyMetadataFieldUpdate,
-  clearMetadataBySchema,
-} from "@/lib/documents/metadata"
+import { applyMetadataFieldUpdate, clearMetadataBySchema } from "@/lib/documents/metadata"
 
 const defaultMetadata: DocumentMetadata = {
   fileName: "",
@@ -77,6 +70,7 @@ export interface LoadedDocument {
   status: "idle" | "reading" | "ready" | "processing" | "error"
   progressMessage: string
   error?: string
+  companyId?: string
 }
 
 interface DocumentState {
@@ -102,7 +96,11 @@ export interface MetadataContextValue {
   selectDocument: (documentId: string) => void
   removeDocument: (documentId: string) => void
   clearDocuments: () => void
-  updateField: (category: MetadataSection["category"], field: string, value: string | number) => void
+  updateField: (
+    category: MetadataSection["category"],
+    field: string,
+    value: string | number,
+  ) => void
   openFiles: () => Promise<number>
   clearMetadata: () => void
   resetToOriginal: () => void
@@ -113,7 +111,6 @@ export interface MetadataContextValue {
   batchClearAndSave: () => Promise<void>
   batchSaveAll: () => Promise<void>
   downloadFile: () => Promise<void>
-  applyTemplateToDocuments: (template: MetadataTemplate, documentIds: string[]) => void
   documentTaskRequestIds: Record<string, string>
   batchTaskRequestId: string | null
   requestStatusMap: Record<string, AutomationRequestStatus["status"]>
@@ -138,7 +135,9 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
   const [documentsById, setDocumentsById] = useState<Record<string, DocumentState>>({})
   const [documentTaskRequestIds, setDocumentTaskRequestIds] = useState<Record<string, string>>({})
   const [batchTaskRequestId, setBatchTaskRequestId] = useState<string | null>(null)
-  const [requestStatusMap, setRequestStatusMap] = useState<Record<string, AutomationRequestStatus["status"]>>({})
+  const [requestStatusMap, setRequestStatusMap] = useState<
+    Record<string, AutomationRequestStatus["status"]>
+  >({})
   const loadingIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
@@ -211,6 +210,7 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
         hasChanges: doc.hasChanges,
         status: file.status,
         progressMessage: file.progressMessage,
+        ...(file.companyId ? { companyId: file.companyId } : {}),
         ...(file.error ? { error: file.error } : {}),
       }
       return item
@@ -548,7 +548,9 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
 
       const results = resultGroups.flat()
 
-      const successPathSet = new Set(results.filter(item => item.success).map(item => item.filePath))
+      const successPathSet = new Set(
+        results.filter(item => item.success).map(item => item.filePath),
+      )
       if (successPathSet.size === 0) {
         await finishRequest(requestId, "failed")
         return
@@ -647,7 +649,9 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
       )
 
       const results = resultGroups.flat()
-      const successPathSet = new Set(results.filter(item => item.success).map(item => item.filePath))
+      const successPathSet = new Set(
+        results.filter(item => item.success).map(item => item.filePath),
+      )
 
       setDocumentsById(prev => {
         const next = { ...prev }
@@ -666,7 +670,11 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
 
       documents.forEach(item => {
         if (successPathSet.has(item.filePath)) {
-          updateFileStatus(item.id, { status: "ready", progressMessage: "已同步", error: undefined })
+          updateFileStatus(item.id, {
+            status: "ready",
+            progressMessage: "已同步",
+            error: undefined,
+          })
         }
       })
 
@@ -692,53 +700,6 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
   const downloadFile = useCallback(async () => {
     await saveCurrentAs()
   }, [saveCurrentAs])
-
-  const applyTemplateToDocuments = useCallback((template: MetadataTemplate, documentIds: string[]) => {
-    if (documentIds.length === 0) return
-
-    const normalizedAuthor = (template.author || "").trim()
-    const normalizedOrganization = (template.organization || "").trim()
-    const normalizedManager = (template.manager || "").trim()
-    const normalizedLanguage = (template.language || "").trim()
-
-    if (!normalizedAuthor && !normalizedOrganization && !normalizedManager && !normalizedLanguage) return
-
-    setDocumentsById(prev => {
-      const next = { ...prev }
-
-      documentIds.forEach(documentId => {
-        const current = next[documentId]
-        if (!current) return
-
-        const metadata: DocumentMetadata = {
-          ...current.metadata,
-          documentProperties: {
-            ...current.metadata.documentProperties,
-            ...(normalizedAuthor ? { creator: normalizedAuthor } : {}),
-            ...(normalizedLanguage ? { language: normalizedLanguage } : {}),
-          },
-          coreProperties: {
-            ...current.metadata.coreProperties,
-            ...(normalizedAuthor ? { dcCreator: normalizedAuthor } : {}),
-            ...(normalizedLanguage ? { dcLanguage: normalizedLanguage } : {}),
-          },
-          appProperties: {
-            ...current.metadata.appProperties,
-            ...(normalizedOrganization ? { company: normalizedOrganization } : {}),
-            ...(normalizedManager ? { manager: normalizedManager } : {}),
-          },
-        }
-
-        next[documentId] = {
-          ...current,
-          metadata,
-          hasChanges: true,
-        }
-      })
-
-      return next
-    })
-  }, [])
 
   const cancelDocumentTask = useCallback(
     async (documentId: string) => {
@@ -808,7 +769,6 @@ export const MetadataProvider: React.FC<React.PropsWithChildren> = ({ children }
     batchClearAndSave,
     batchSaveAll,
     downloadFile,
-    applyTemplateToDocuments,
     documentTaskRequestIds,
     batchTaskRequestId,
     requestStatusMap,

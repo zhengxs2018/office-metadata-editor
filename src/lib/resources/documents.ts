@@ -28,13 +28,20 @@ export const documentsResource = {
       return trackedInvoke<DocumentMetadata>("parse_docx_metadata_from_path", { filePath })
     },
     replace(filePath: string, metadata: DocumentMetadata, requestId?: string) {
-      return trackedInvoke<string>("save_docx_metadata_to_source", { filePath, metadata, requestId })
+      return trackedInvoke<string>("save_docx_metadata_to_source", {
+        filePath,
+        metadata,
+        requestId,
+      })
     },
     createSavedCopy(filePath: string, metadata: DocumentMetadata) {
       return trackedInvoke<string | null>("save_docx_metadata_as", { filePath, metadata })
     },
     replaceMany(items: BatchSaveRequestItem[], requestId?: string) {
-      return trackedInvoke<BatchSaveResultItem[]>("batch_save_docx_metadata_to_source", { items, requestId })
+      return trackedInvoke<BatchSaveResultItem[]>("batch_save_docx_metadata_to_source", {
+        items,
+        requestId,
+      })
     },
     destroyMetadataMany(filePaths: string[], requestId?: string) {
       return trackedInvoke<BatchSaveResultItem[]>("batch_clear_and_save_docx_metadata", {
@@ -48,13 +55,20 @@ export const documentsResource = {
       return trackedInvoke<DocumentMetadata>("parse_xlsx_metadata_from_path", { filePath })
     },
     replace(filePath: string, metadata: DocumentMetadata, requestId?: string) {
-      return trackedInvoke<string>("save_xlsx_metadata_to_source", { filePath, metadata, requestId })
+      return trackedInvoke<string>("save_xlsx_metadata_to_source", {
+        filePath,
+        metadata,
+        requestId,
+      })
     },
     createSavedCopy(filePath: string, metadata: DocumentMetadata) {
       return trackedInvoke<string | null>("save_xlsx_metadata_as", { filePath, metadata })
     },
     replaceMany(items: BatchSaveRequestItem[], requestId?: string) {
-      return trackedInvoke<BatchSaveResultItem[]>("batch_save_xlsx_metadata_to_source", { items, requestId })
+      return trackedInvoke<BatchSaveResultItem[]>("batch_save_xlsx_metadata_to_source", {
+        items,
+        requestId,
+      })
     },
     destroyMetadataMany(filePaths: string[], requestId?: string) {
       return trackedInvoke<BatchSaveResultItem[]>("batch_clear_and_save_xlsx_metadata", {
@@ -74,7 +88,10 @@ export const documentsResource = {
       return trackedInvoke<string | null>("save_pdf_metadata_as", { filePath, metadata })
     },
     replaceMany(items: BatchSaveRequestItem[], requestId?: string) {
-      return trackedInvoke<BatchSaveResultItem[]>("batch_save_pdf_metadata_to_source", { items, requestId })
+      return trackedInvoke<BatchSaveResultItem[]>("batch_save_pdf_metadata_to_source", {
+        items,
+        requestId,
+      })
     },
     destroyMetadataMany(filePaths: string[], requestId?: string) {
       return trackedInvoke<BatchSaveResultItem[]>("batch_clear_and_save_pdf_metadata", {
@@ -94,7 +111,10 @@ export const documentsResource = {
       return trackedInvoke<string | null>("save_doc_metadata_as", { filePath, metadata })
     },
     replaceMany(items: BatchSaveRequestItem[], requestId?: string) {
-      return trackedInvoke<BatchSaveResultItem[]>("batch_save_doc_metadata_to_source", { items, requestId })
+      return trackedInvoke<BatchSaveResultItem[]>("batch_save_doc_metadata_to_source", {
+        items,
+        requestId,
+      })
     },
     destroyMetadataMany(filePaths: string[], requestId?: string) {
       return trackedInvoke<BatchSaveResultItem[]>("batch_clear_and_save_doc_metadata", {

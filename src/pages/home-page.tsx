@@ -1,37 +1,31 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
 import {
-  CloudSun,
-  Moon,
-  Sun,
-  ArrowUpRight,
+  Upload,
   Layers3,
-  Settings,
-  Server,
-  FolderArchive,
+  GitCompareArrows,
+  ShieldCheck,
+  FileText,
+  FileSpreadsheet,
+  Sparkles,
 } from "lucide-react"
 
 import { useFileContext } from "@/contexts/file-context"
-import { useTheme } from "@/components/theme-provider"
-import { OmFileUploadZone } from "@/components/om/om-file-upload-zone"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { ThemeSwitch } from "@/components/chrome/theme-switch"
+import { Spinner } from "@/components/ui/spinner"
 import { APP_NAME } from "@/lib/app-config"
 import { SUPPORTED_FILE_EXTENSIONS } from "@/lib/documents/supported-formats"
+import { cn } from "@/lib/utils"
+import { getCurrentWebview } from "@tauri-apps/api/webview"
+import { invoke } from "@tauri-apps/api/core"
 import BlankLayout from "@/layouts/blank-layout"
+import { ROUTES } from "@/router/paths"
+import type { DirectoryScanResult } from "@/types/om-workflow"
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate()
   const { openFiles, addFilesByPaths, clearFiles, isLoading: ctxLoading } = useFileContext()
-  const { theme, resolvedTheme, setTheme } = useTheme()
 
   React.useEffect(() => {
     clearFiles()
@@ -39,154 +33,255 @@ export const HomePage: React.FC = () => {
 
   const handleOpenFiles = async () => {
     const added = await openFiles()
-    if (added > 0) {
-      navigate("/editor")
-    }
+    if (added > 0) navigate(ROUTES.editor)
   }
 
-  const handleDropFiles = (paths: string[]) => {
-    const added = addFilesByPaths(paths)
-    if (added > 0) {
-      navigate("/editor")
+  const handleDropFiles = async (paths: string[]) => {
+    const supportedSet = new Set(SUPPORTED_FILE_EXTENSIONS.map(ext => ext.toLowerCase()))
+    const filePaths: string[] = []
+    for (const p of paths) {
+      const lower = p.toLowerCase()
+      if (supportedSet.has(lower.replace(/^.*\./, ""))) {
+        filePaths.push(p)
+      } else {
+        try {
+          const result = await invoke<DirectoryScanResult>("scan_directory", {
+            path: p,
+            options: { recursive: true, extensions: [...supportedSet] },
+          })
+          for (const f of result.files) filePaths.push(f.path)
+        } catch (err) {
+          console.warn("scan_directory failed", p, err)
+        }
+      }
     }
+    const added = addFilesByPaths(filePaths)
+    if (added > 0) navigate(ROUTES.editor)
   }
 
   return (
     <BlankLayout>
-      <div className="relative h-full w-full overflow-hidden bg-[linear-gradient(165deg,oklch(0.99_0.01_245)_0%,oklch(0.985_0.02_190)_48%,oklch(0.97_0.025_150)_100%)] dark:bg-[linear-gradient(165deg,oklch(0.23_0.015_248)_0%,oklch(0.2_0.02_210)_50%,oklch(0.19_0.02_170)_100%)]">
-        <div className="pointer-events-none absolute -top-30 left-1/2 h-95 w-95 -translate-x-1/2 rounded-full bg-white/35 blur-3xl dark:bg-white/8" />
-
-        <div className="relative flex h-full min-h-0 flex-col overflow-hidden px-7 pt-10 pb-4">
-          <div className="flex items-center justify-between pb-4">
-            <div className="rounded-md border border-border/60 bg-card/75 px-3 py-1 text-xs text-muted-foreground backdrop-blur-sm select-none">
-              {APP_NAME}
+      <div className="relative h-full w-full overflow-hidden bg-background">
+        <div className="relative mx-auto flex h-full w-full max-w-7xl flex-col px-6 pt-8 pb-6">
+          <header className="flex shrink-0 flex-wrap items-center justify-between gap-4 pb-5">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                欢迎使用 {APP_NAME}
+              </h1>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                快速检查、对比与清洗您的文档元数据。
+              </p>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 rounded-md bg-card/75 backdrop-blur-sm"
-                >
-                  {theme === "system" ? (
-                    <CloudSun className="h-4 w-4" />
-                  ) : resolvedTheme === "dark" ? (
-                    <Moon className="h-4 w-4" />
-                  ) : (
-                    <Sun className="h-4 w-4" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuLabel>主题</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup
-                  value={theme}
-                  onValueChange={value => setTheme(value as "dark" | "light" | "system")}
-                >
-                  <DropdownMenuRadioItem value="light">白天</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dark">暗黑</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="system">跟随系统</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+            <div className="flex items-center gap-6">
+              <ThemeSwitch />
+            </div>
+          </header>
 
-          <div className="mx-auto grid h-full min-h-0 w-full max-w-7xl grid-cols-1 gap-4 overflow-hidden lg:grid-cols-[0.88fr_1.12fr]">
-            <section className="flex min-h-0 flex-col gap-4 self-start">
-              <div className="rounded-lg border border-border/55 bg-card/84 p-5 backdrop-blur-md">
-                <p className="text-[2.2rem] leading-[1.05] font-semibold tracking-tight text-foreground">
-                  Office 元数据编辑器
-                </p>
-                <p className="mt-2.5 max-w-lg text-[14px] leading-6 text-muted-foreground">
-                  读取、编辑、清理、批处理全部本地完成，支持多格式文档的元数据处理。
-                </p>
-                <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium tracking-[0.02em] text-muted-foreground">
-                  {["全程本地", "文档回源", "批量提速", "多格式支持"].map(item => (
-                    <span key={item} className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary/55" />
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
+          <section className="flex min-h-0 flex-1 flex-col justify-center rounded-2xl border border-dashed border-primary/35 bg-linear-to-br from-primary/8 via-primary/3 to-transparent p-6">
+            <DragOrUploadZone
+              isLoading={ctxLoading}
+              onDropFiles={handleDropFiles}
+              onOpenFiles={handleOpenFiles}
+            />
+          </section>
 
-              <div className="rounded-lg border border-border/55 bg-card/84 p-4 backdrop-blur-md">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-foreground">快捷入口</p>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
-                    <FolderArchive className="h-4 w-4" />
-                  </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-2.5 xl:grid-cols-3">
-                  <ShortcutCard
-                    title="批量处理"
-                    icon={Layers3}
-                    onClick={() => navigate("/batch")}
-                  />
-                  <ShortcutCard
-                    title="模板中心"
-                    icon={Settings}
-                    onClick={() => navigate("/templates")}
-                  />
-                  <ShortcutCard title="启动服务" icon={Server} onClick={() => navigate("/server")} />
-                </div>
-              </div>
-            </section>
-
-            <section className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border/55 bg-card/86 p-5">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">快速导入</p>
-                  <p className="mt-1 text-xs text-muted-foreground">拖入文件或直接点击上传区域</p>
-                </div>
-                <div className="flex flex-wrap justify-end gap-2">
-                  {SUPPORTED_FILE_EXTENSIONS.map(ext => (
-                    <span
-                      key={ext}
-                      className="rounded-md bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary"
-                    >
-                      .{ext}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <OmFileUploadZone
-                className="flex-1"
-                isLoading={ctxLoading}
-                onOpenFiles={handleOpenFiles}
-                onDropFiles={handleDropFiles}
-              />
-            </section>
-          </div>
+          <section className="mt-5 grid shrink-0 grid-cols-1 gap-4 md:grid-cols-3">
+            <EntryCard
+              tone="orange"
+              icon={GitCompareArrows}
+              title="对比视图（防串标）"
+              description="深度比对多份文档的作者、编辑时间与软件环境，精准识别国际串标风险。"
+              badge="核心"
+              actionLabel="开始对比"
+              onClick={() => navigate(ROUTES.compare)}
+            />
+            <EntryCard
+              tone="violet"
+              icon={Layers3}
+              title="批量提取"
+              description="一键解析数百个 Office 文档的隐藏属性、修订记录与自定义 XML 数据。"
+              badge="高效"
+              actionLabel="批量处理"
+              onClick={() => navigate(ROUTES.batch)}
+            />
+            <EntryCard
+              tone="emerald"
+              icon={ShieldCheck}
+              title="隐私清洗"
+              description="彻底清除文档中的个人信息、隐藏批注、宏代码及不可见水印。"
+              badge="安全"
+              actionLabel="清洗工具"
+              onClick={() => navigate(ROUTES.batch)}
+            />
+          </section>
         </div>
       </div>
     </BlankLayout>
   )
 }
 
-interface ShortcutCardProps {
-  title: string
-  icon: React.FC<{ className?: string }>
-  onClick: () => void
+const DragOrUploadZone: React.FC<{
+  isLoading: boolean
+  onDropFiles: (paths: string[]) => void
+  onOpenFiles: () => void
+}> = ({ isLoading, onDropFiles, onOpenFiles }) => {
+  const [isDragOver, setIsDragOver] = React.useState(false)
+
+  React.useEffect(() => {
+    let unlisten: (() => void) | undefined
+    getCurrentWebview()
+      .onDragDropEvent(event => {
+        if (event.payload.type === "over" || event.payload.type === "enter") {
+          setIsDragOver(true)
+        } else if (event.payload.type === "leave") {
+          setIsDragOver(false)
+        } else if (event.payload.type === "drop") {
+          setIsDragOver(false)
+          const paths = event.payload.paths ?? []
+          if (paths.length > 0) onDropFiles(paths)
+        }
+      })
+      .then(fn => {
+        unlisten = fn
+      })
+      .catch(err => console.error("[home-page] 监听拖拽事件失败:", err))
+    return () => {
+      if (unlisten) unlisten()
+    }
+  }, [onDropFiles])
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault()
+    setIsDragOver(false)
+    const paths = Array.from(event.dataTransfer.files)
+      .map(file => (file as File & { path?: string }).path)
+      .filter((path): path is string => Boolean(path))
+    if (paths.length > 0) onDropFiles(paths)
+  }
+
+  const extensions = SUPPORTED_FILE_EXTENSIONS.map(ext => `.${ext}`)
+
+  return (
+    <div
+      onDragOver={e => e.preventDefault()}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={handleDrop}
+      className={cn(
+        "flex flex-col items-center justify-center gap-3 rounded-xl py-12 transition-colors",
+        isDragOver && "bg-primary/8",
+      )}
+    >
+      <div className="flex items-center justify-center gap-3">
+        <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 shadow-sm dark:bg-blue-500/15 dark:text-blue-300">
+          <FileText className="h-7 w-7" />
+        </span>
+        <span className="-ml-2 flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 shadow-sm dark:bg-emerald-500/15 dark:text-emerald-300">
+          <FileSpreadsheet className="h-7 w-7" />
+        </span>
+        <span className="-ml-2 flex h-12 w-12 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 shadow-sm dark:bg-rose-500/15 dark:text-rose-300">
+          <Sparkles className="h-7 w-7" />
+        </span>
+      </div>
+
+      <div className="mt-2 flex items-center justify-center">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-4 ring-primary/15">
+          <Upload className="h-5 w-5" />
+        </span>
+      </div>
+
+      <div className="mt-1 text-center">
+        <p className="text-sm font-medium text-foreground">拖拽文件或文件夹到此处</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          支持 {extensions.join(" / ")} 及旧版格式
+        </p>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Spinner className="h-4 w-4" />
+          正在加载…
+        </div>
+      ) : (
+        <Button onClick={onOpenFiles} className="mt-2">
+          选择文件…
+        </Button>
+      )}
+
+      <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground/80">
+        {extensions.map(ext => (
+          <span
+            key={ext}
+            className="rounded border border-border/60 bg-background/60 px-1.5 py-0.5"
+          >
+            {ext}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
 }
 
-const ShortcutCard: React.FC<ShortcutCardProps> = ({ title, icon: Icon, onClick }) => {
+const TONE_STYLES: Record<string, { card: string; ring: string; icon: string }> = {
+  orange: {
+    card: "from-orange-500/15 to-orange-500/0 border-orange-500/20",
+    ring: "ring-orange-500/15",
+    icon: "bg-orange-500/10 text-orange-600 dark:text-orange-300",
+  },
+  violet: {
+    card: "from-violet-500/15 to-violet-500/0 border-violet-500/20",
+    ring: "ring-violet-500/15",
+    icon: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
+  },
+  emerald: {
+    card: "from-emerald-500/15 to-emerald-500/0 border-emerald-500/20",
+    ring: "ring-emerald-500/15",
+    icon: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+  },
+}
+
+const EntryCard: React.FC<{
+  tone: "orange" | "violet" | "emerald"
+  icon: React.FC<{ className?: string }>
+  title: string
+  description: string
+  badge: string
+  actionLabel: string
+  onClick: () => void
+}> = ({ tone, icon: Icon, title, description, badge, actionLabel, onClick }) => {
+  const style = TONE_STYLES[tone]
+  const badgeColor =
+    tone === "orange"
+      ? "bg-red-500 text-white"
+      : tone === "emerald"
+        ? "bg-emerald-500 text-white"
+        : "bg-blue-500 text-white"
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex min-h-24 flex-col justify-between rounded-lg bg-background/72 p-3 text-left transition-colors hover:bg-background"
+      className={cn(
+        "group relative flex flex-col rounded-2xl border bg-linear-to-br p-5 text-left transition-shadow hover:shadow-md",
+        style.card,
+      )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Icon className="h-4 w-4" />
-        </div>
-        <ArrowUpRight className="h-4 w-4 text-primary/70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+      <div className="flex items-start justify-between">
+        <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg", style.icon)}>
+          <Icon className="h-5 w-5" />
+        </span>
+        <span className={cn("rounded-md px-2 py-0.5 text-[11px] font-semibold", badgeColor)}>
+          {badge}
+        </span>
       </div>
-      <p className="text-sm font-semibold text-foreground">{title}</p>
+      <div className="mt-4 flex-1">
+        <p className="text-base font-semibold text-foreground">{title}</p>
+        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
+      </div>
+      <div className="mt-4 flex items-center justify-end text-xs font-medium text-primary transition-transform group-hover:translate-x-0.5">
+        {actionLabel} →
+      </div>
     </button>
   )
 }
+
+export default HomePage

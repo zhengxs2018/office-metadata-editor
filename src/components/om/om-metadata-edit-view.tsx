@@ -9,9 +9,12 @@ export interface OmMetadataEditViewProps {
   previewGroups: MetadataPreviewGroup[]
 }
 
-export const OmMetadataEditView: React.FC<OmMetadataEditViewProps> = ({ fileType, previewGroups }) => {
+export const OmMetadataEditView: React.FC<OmMetadataEditViewProps> = ({
+  fileType,
+  previewGroups,
+}) => {
   return (
-    <div className="flex h-full overflow-hidden p-4 gap-2">
+    <div className="flex h-full gap-2 overflow-hidden p-4">
       <ScrollArea className="min-w-0 flex-3 pr-2">
         <OmMetadataEditor fileType={fileType} />
       </ScrollArea>

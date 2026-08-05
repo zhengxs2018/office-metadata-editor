@@ -131,11 +131,7 @@ export const OmMetadataEditor: React.FC<OmMetadataEditorProps> = ({ fileType }) 
   return (
     <div className="flex flex-col gap-3">
       {sections.map(section => (
-        <OmMetadataSection
-          key={section.id}
-          title={section.title}
-          description={section.description}
-        >
+        <OmMetadataSection key={section.id} title={section.title} description={section.description}>
           <OmMetadataFieldList>
             {section.fields.map(field => {
               const fieldPath = toFieldPath(section.category, field.key)

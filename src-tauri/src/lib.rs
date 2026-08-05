@@ -7,7 +7,6 @@ use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
 use std::time::UNIX_EPOCH;
 
-use lopdf::{Dictionary as PdfDictionary, Document as PdfDocument, Object as PdfObject, ObjectId, StringFormat};
 use serde::{Deserialize, Serialize};
 use tauri::webview::PageLoadEvent;
 use tauri_plugin_dialog::{DialogExt, FilePath};
@@ -16,81 +15,10 @@ use tauri_plugin_opener::OpenerExt;
 use xmltree::{Element, XMLNode};
 use zip::{write::SimpleFileOptions, ZipArchive, ZipWriter};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-struct DocumentProperties {
-    title: String,
-    subject: String,
-    creator: String,
-    keywords: String,
-    description: String,
-    last_modified_by: String,
-    revision: String,
-    created: String,
-    modified: String,
-    category: String,
-    content_status: String,
-    version: String,
-    language: String,
-    identifier: String,
-    source: String,
-}
+pub mod documents;
+pub mod export;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-struct CoreProperties {
-    dc_title: String,
-    dc_subject: String,
-    dc_creator: String,
-    dc_description: String,
-    dc_keywords: String,
-    dc_language: String,
-    dc_identifier: String,
-    dc_source: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-struct AppProperties {
-    application: String,
-    app_version: String,
-    company: String,
-    manager: String,
-    template: String,
-    total_time: String,
-    pages: u32,
-    words: u32,
-    characters: u32,
-    characters_with_spaces: u32,
-    paragraphs: u32,
-    lines: u32,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-struct DocumentMetadata {
-    file_name: String,
-    file_type: String,
-    file_size: u64,
-    document_properties: DocumentProperties,
-    core_properties: CoreProperties,
-    app_properties: AppProperties,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct BatchSaveResultItem {
-    file_path: String,
-    success: bool,
-    error: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct BatchSaveRequestItem {
-    file_path: String,
-    metadata: DocumentMetadata,
-}
+use documents::{BatchSaveRequestItem, BatchSaveResultItem, DocumentMetadata};
 
 #[derive(Debug, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
@@ -489,57 +417,6 @@ fn scan_directory(path: String, options: DirectoryScanOptions) -> Result<Directo
     })
 }
 
-impl DocumentMetadata {
-    fn defaults(file_name: String, file_size: u64) -> Self {
-        Self {
-            file_name,
-            file_type: "docx".to_string(),
-            file_size,
-            document_properties: DocumentProperties {
-                title: String::new(),
-                subject: String::new(),
-                creator: String::new(),
-                keywords: String::new(),
-                description: String::new(),
-                last_modified_by: String::new(),
-                revision: String::new(),
-                created: String::new(),
-                modified: String::new(),
-                category: String::new(),
-                content_status: String::new(),
-                version: String::new(),
-                language: "zh-CN".to_string(),
-                identifier: String::new(),
-                source: String::new(),
-            },
-            core_properties: CoreProperties {
-                dc_title: String::new(),
-                dc_subject: String::new(),
-                dc_creator: String::new(),
-                dc_description: String::new(),
-                dc_keywords: String::new(),
-                dc_language: "zh-CN".to_string(),
-                dc_identifier: String::new(),
-                dc_source: String::new(),
-            },
-            app_properties: AppProperties {
-                application: "Microsoft Office Word".to_string(),
-                app_version: String::new(),
-                company: String::new(),
-                manager: String::new(),
-                template: String::new(),
-                total_time: "0".to_string(),
-                pages: 0,
-                words: 0,
-                characters: 0,
-                characters_with_spaces: 0,
-                paragraphs: 0,
-                lines: 0,
-            },
-        }
-    }
-}
-
 #[tauri::command]
 fn parse_docx_metadata(file_name: String, file_size: u64, file_bytes: Vec<u8>) -> Result<DocumentMetadata, String> {
     let mut metadata = DocumentMetadata::defaults(file_name, file_size);
@@ -709,15 +586,7 @@ fn batch_clear_and_save_docx_metadata(
 
 #[tauri::command]
 fn parse_xlsx_metadata_from_path(file_path: String) -> Result<DocumentMetadata, String> {
-    let mut metadata = parse_docx_metadata_from_path(file_path)?;
-    metadata.file_type = "xlsx".to_string();
-    if metadata.app_properties.application.trim().is_empty() {
-        metadata.app_properties.application = "Microsoft Excel".to_string();
-    }
-    if metadata.app_properties.template.trim().is_empty() {
-        metadata.app_properties.template = "Book.xltx".to_string();
-    }
-    Ok(metadata)
+    documents::xlsx::parse_metadata_from_path(file_path)
 }
 
 #[tauri::command]
@@ -727,9 +596,7 @@ fn save_xlsx_metadata_to_source(
     request_id: Option<String>,
 ) -> Result<String, String> {
     validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))?;
-    let file_bytes = fs::read(&file_path).map_err(|err| err.to_string())?;
-    let updated_file_bytes = build_updated_docx_bytes(file_bytes, &metadata)?;
-    fs::write(&file_path, updated_file_bytes).map_err(|err| err.to_string())?;
+    documents::xlsx::write_metadata_to_path(&file_path, &metadata)?;
     Ok(file_path)
 }
 
@@ -817,33 +684,7 @@ fn batch_clear_and_save_xlsx_metadata(
 
 #[tauri::command]
 fn parse_pdf_metadata_from_path(file_path: String) -> Result<DocumentMetadata, String> {
-    let path = PathBuf::from(&file_path);
-    let file_name = path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("document.pdf")
-        .to_string();
-    let file_size = fs::metadata(&path).map_err(|err| err.to_string())?.len();
-
-    let mut metadata = DocumentMetadata::defaults(file_name, file_size);
-    metadata.file_type = "pdf".to_string();
-    metadata.app_properties.application = "PDF".to_string();
-
-    let loaded = PdfDocument::load(&file_path).map_err(|err| err.to_string())?;
-    if let Some(info) = get_pdf_info_dict(&loaded)? {
-        metadata.document_properties.title = get_pdf_string(info, b"Title");
-        metadata.document_properties.subject = get_pdf_string(info, b"Subject");
-        metadata.document_properties.creator = get_pdf_string(info, b"Author");
-        metadata.document_properties.keywords = get_pdf_string(info, b"Keywords");
-        metadata.document_properties.description = get_pdf_string(info, b"Description");
-        metadata.document_properties.last_modified_by = get_pdf_string(info, b"Producer");
-        metadata.document_properties.created =
-            normalize_pdf_date_for_display(&get_pdf_string(info, b"CreationDate"));
-        metadata.document_properties.modified =
-            normalize_pdf_date_for_display(&get_pdf_string(info, b"ModDate"));
-    }
-
-    Ok(metadata)
+    documents::pdf::parse_metadata_from_path(file_path)
 }
 
 #[tauri::command]
@@ -853,25 +694,7 @@ fn save_pdf_metadata_to_source(
     request_id: Option<String>,
 ) -> Result<String, String> {
     validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))?;
-    let mut loaded = PdfDocument::load(&file_path).map_err(|err| err.to_string())?;
-    let info = ensure_pdf_info_dict_mut(&mut loaded)?;
-
-    set_pdf_string(info, b"Title", &metadata.document_properties.title);
-    set_pdf_string(info, b"Subject", &metadata.document_properties.subject);
-    set_pdf_string(info, b"Author", &metadata.document_properties.creator);
-    set_pdf_string(info, b"Keywords", &metadata.document_properties.keywords);
-    set_pdf_string(info, b"Description", &metadata.document_properties.description);
-    set_pdf_string(info, b"Producer", &metadata.document_properties.last_modified_by);
-    if !metadata.document_properties.created.trim().is_empty() {
-        let created = normalize_pdf_date_for_write(&metadata.document_properties.created);
-        set_pdf_string(info, b"CreationDate", &created);
-    }
-    if !metadata.document_properties.modified.trim().is_empty() {
-        let modified = normalize_pdf_date_for_write(&metadata.document_properties.modified);
-        set_pdf_string(info, b"ModDate", &modified);
-    }
-
-    loaded.save(&file_path).map_err(|err| err.to_string())?;
+    documents::pdf::write_metadata_to_path(&file_path, &metadata)?;
     Ok(file_path)
 }
 
@@ -1148,6 +971,26 @@ fn batch_clear_and_save_doc_metadata(
 }
 
 #[tauri::command]
+fn compare_metadata(
+    files: Vec<documents::compare::CompareFileInput>,
+) -> Vec<documents::compare::MatchReport> {
+    documents::compare::compare_files(&files)
+}
+
+#[tauri::command]
+fn write_text_file(file_path: String, contents: String) -> Result<(), String> {
+    let path = PathBuf::from(&file_path);
+
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+        }
+    }
+
+    fs::write(&path, contents).map_err(|err| err.to_string())
+}
+
+#[tauri::command]
 fn set_window_theme(window: tauri::Window, theme: String) -> Result<(), String> {
     let normalized = theme.trim().to_lowercase();
 
@@ -1159,263 +1002,6 @@ fn set_window_theme(window: tauri::Window, theme: String) -> Result<(), String> 
     };
 
     window.set_theme(next_theme).map_err(|err| err.to_string())
-}
-
-fn get_pdf_string(info: &PdfDictionary, key: &[u8]) -> String {
-    let Ok(value) = info.get(key) else {
-        return String::new();
-    };
-
-    match value {
-        PdfObject::String(bytes, _) => String::from_utf8_lossy(bytes).to_string(),
-        PdfObject::Name(name) => String::from_utf8_lossy(name).to_string(),
-        _ => String::new(),
-    }
-}
-
-fn set_pdf_string(info: &mut PdfDictionary, key: &[u8], value: &str) {
-    if value.trim().is_empty() {
-        info.remove(key);
-        return;
-    }
-
-    info.set(
-        key,
-        PdfObject::String(value.as_bytes().to_vec(), StringFormat::Literal),
-    );
-}
-
-fn normalize_pdf_date_for_display(value: &str) -> String {
-    let trimmed = value.trim();
-    if trimmed.is_empty() {
-        return String::new();
-    }
-
-    parse_pdf_date_to_iso(trimmed).unwrap_or_else(|| trimmed.to_string())
-}
-
-fn normalize_pdf_date_for_write(value: &str) -> String {
-    let trimmed = value.trim();
-    if trimmed.is_empty() {
-        return String::new();
-    }
-
-    if trimmed.starts_with("D:") {
-        return trimmed.to_string();
-    }
-
-    iso_like_date_to_pdf(trimmed).unwrap_or_else(|| trimmed.to_string())
-}
-
-fn parse_pdf_date_to_iso(value: &str) -> Option<String> {
-    let raw = value.strip_prefix("D:").unwrap_or(value);
-    if raw.len() < 4 {
-        return None;
-    }
-
-    let year = raw.get(0..4)?;
-    if !year.chars().all(|ch| ch.is_ascii_digit()) {
-        return None;
-    }
-
-    let month = extract_pdf_date_component(raw, 4, 2, "01")?;
-    let day = extract_pdf_date_component(raw, 6, 2, "01")?;
-    let hour = extract_pdf_date_component(raw, 8, 2, "00")?;
-    let minute = extract_pdf_date_component(raw, 10, 2, "00")?;
-    let second = extract_pdf_date_component(raw, 12, 2, "00")?;
-
-    let mut result = format!("{}-{}-{}T{}:{}:{}", year, month, day, hour, minute, second);
-
-    if let Some((sign, tz_hour, tz_minute)) = parse_pdf_offset(raw) {
-        result.push(sign);
-        result.push_str(&tz_hour);
-        result.push(':');
-        result.push_str(&tz_minute);
-    }
-
-    Some(result)
-}
-
-fn extract_pdf_date_component(raw: &str, start: usize, len: usize, default: &str) -> Option<String> {
-    if let Some(chunk) = raw.get(start..start + len) {
-        if chunk.chars().all(|ch| ch.is_ascii_digit()) {
-            return Some(chunk.to_string());
-        }
-        return None;
-    }
-
-    Some(default.to_string())
-}
-
-fn parse_pdf_offset(raw: &str) -> Option<(char, String, String)> {
-    let sign_index = raw
-        .char_indices()
-        .find(|(_, ch)| matches!(*ch, '+' | '-'))
-        .map(|(idx, _)| idx)?;
-
-    let sign = raw.get(sign_index..=sign_index)?.chars().next()?;
-    let after_sign = raw.get(sign_index + 1..)?;
-    let tz_hour = after_sign.get(0..2)?;
-    if !tz_hour.chars().all(|ch| ch.is_ascii_digit()) {
-        return None;
-    }
-
-    let mut tz_minute = "00".to_string();
-
-    if let Some(minute_block) = after_sign.get(3..5) {
-        if minute_block.chars().all(|ch| ch.is_ascii_digit()) {
-            tz_minute = minute_block.to_string();
-        }
-    } else if let Some(minute_block) = after_sign.get(2..4) {
-        if minute_block.chars().all(|ch| ch.is_ascii_digit()) {
-            tz_minute = minute_block.to_string();
-        }
-    }
-
-    Some((sign, tz_hour.to_string(), tz_minute))
-}
-
-fn iso_like_date_to_pdf(value: &str) -> Option<String> {
-    let normalized = value.replace(' ', "T");
-    let (date_part, time_part) = normalized.split_once('T')?;
-
-    let mut date_iter = date_part.split('-');
-    let year = date_iter.next()?;
-    let month = date_iter.next()?;
-    let day = date_iter.next()?;
-    if year.len() != 4 || month.len() != 2 || day.len() != 2 {
-        return None;
-    }
-    if !(year.chars().all(|ch| ch.is_ascii_digit())
-        && month.chars().all(|ch| ch.is_ascii_digit())
-        && day.chars().all(|ch| ch.is_ascii_digit()))
-    {
-        return None;
-    }
-
-    let (time_only, offset_part) = split_time_and_offset(time_part);
-    let mut time_iter = time_only.split(':');
-    let hour = time_iter.next()?;
-    let minute = time_iter.next().unwrap_or("00");
-    let second_raw = time_iter.next().unwrap_or("00");
-    let second = second_raw.split('.').next().unwrap_or("00");
-
-    if !(hour.len() == 2
-        && minute.len() == 2
-        && second.len() == 2
-        && hour.chars().all(|ch| ch.is_ascii_digit())
-        && minute.chars().all(|ch| ch.is_ascii_digit())
-        && second.chars().all(|ch| ch.is_ascii_digit()))
-    {
-        return None;
-    }
-
-    let mut pdf = format!("D:{}{}{}{}{}{}", year, month, day, hour, minute, second);
-
-    if let Some(offset) = offset_part {
-        if offset == "Z" {
-            pdf.push('Z');
-        } else if let Some((sign, hour, minute)) = parse_iso_offset(offset) {
-            pdf.push(sign);
-            pdf.push_str(&hour);
-            pdf.push('\'');
-            pdf.push_str(&minute);
-            pdf.push('\'');
-        }
-    }
-
-    Some(pdf)
-}
-
-fn split_time_and_offset(time_part: &str) -> (&str, Option<&str>) {
-    if let Some(index) = time_part.find('Z') {
-        let head = &time_part[..index];
-        return (head, Some("Z"));
-    }
-
-    if let Some(index) = time_part
-        .char_indices()
-        .skip(1)
-        .find(|(_, ch)| matches!(*ch, '+' | '-'))
-        .map(|(idx, _)| idx)
-    {
-        let head = &time_part[..index];
-        let tail = &time_part[index..];
-        return (head, Some(tail));
-    }
-
-    (time_part, None)
-}
-
-fn parse_iso_offset(offset: &str) -> Option<(char, String, String)> {
-    let sign = offset.chars().next()?;
-    if !matches!(sign, '+' | '-') {
-        return None;
-    }
-
-    let digits = &offset[1..];
-    if let Some((hour, minute)) = digits.split_once(':') {
-        if hour.len() == 2
-            && minute.len() == 2
-            && hour.chars().all(|ch| ch.is_ascii_digit())
-            && minute.chars().all(|ch| ch.is_ascii_digit())
-        {
-            return Some((sign, hour.to_string(), minute.to_string()));
-        }
-        return None;
-    }
-
-    if digits.len() == 4 && digits.chars().all(|ch| ch.is_ascii_digit()) {
-        return Some((
-            sign,
-            digits[0..2].to_string(),
-            digits[2..4].to_string(),
-        ));
-    }
-
-    None
-}
-
-fn get_pdf_info_object_id(document: &PdfDocument) -> Option<ObjectId> {
-    let info_object = document.trailer.get(b"Info").ok()?;
-    info_object.as_reference().ok()
-}
-
-fn get_pdf_info_dict(document: &PdfDocument) -> Result<Option<&PdfDictionary>, String> {
-    let Some(info_id) = get_pdf_info_object_id(document) else {
-        return Ok(None);
-    };
-
-    let object = document.get_object(info_id).map_err(|err| err.to_string())?;
-    let PdfObject::Dictionary(info) = object else {
-        return Ok(None);
-    };
-
-    Ok(Some(info))
-}
-
-fn ensure_pdf_info_dict_mut(document: &mut PdfDocument) -> Result<&mut PdfDictionary, String> {
-    let info_id = if let Some(existing_id) = get_pdf_info_object_id(document) {
-        existing_id
-    } else {
-        let new_id = document.new_object_id();
-        document
-            .objects
-            .insert(new_id, PdfObject::Dictionary(PdfDictionary::new()));
-        document
-            .trailer
-            .set(b"Info", PdfObject::Reference(new_id));
-        new_id
-    };
-
-    let object = document
-        .get_object_mut(info_id)
-        .map_err(|err| err.to_string())?;
-    let PdfObject::Dictionary(info) = object else {
-        return Err("无法创建 PDF 信息字典".to_string());
-    };
-
-    Ok(info)
 }
 
 fn build_updated_docx_bytes(file_bytes: Vec<u8>, metadata: &DocumentMetadata) -> Result<Vec<u8>, String> {
@@ -2025,6 +1611,8 @@ pub fn run() {
             batch_save_doc_metadata_to_source,
             save_doc_metadata_as,
             batch_clear_and_save_doc_metadata,
+            compare_metadata,
+            write_text_file,
             set_window_theme
         ])
         .on_page_load(|webview, payload| {

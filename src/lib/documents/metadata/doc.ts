@@ -1,9 +1,5 @@
 import type { MetadataSchema } from "@/types/metadata"
-import {
-  commonDocumentFieldSchemas,
-  commonDublinCoreFieldSchemas,
-  defaultSyncRules,
-} from "./base"
+import { commonDocumentFieldSchemas, commonDublinCoreFieldSchemas, defaultSyncRules } from "./base"
 
 export const docMetadataSchema: MetadataSchema = {
   fileType: "doc",

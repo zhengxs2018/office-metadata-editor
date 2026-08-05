@@ -18,6 +18,8 @@
         "title": "Office 元数据编辑器",
         "width": 1200,
         "height": 800,
+        "minWidth": 1080,
+        "minHeight": 720,
         "center": true,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,

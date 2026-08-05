@@ -3,6 +3,15 @@ import { open } from "@tauri-apps/plugin-dialog"
 import { OPEN_FILE_DIALOG_FILTER } from "@/lib/documents/supported-formats"
 
 export type FileStatus = "idle" | "reading" | "ready" | "processing" | "error"
+export type CompanySide = "left" | "right"
+
+export interface CompanyEntry {
+  id: string
+  name: string
+  side: CompanySide
+  /** 目录来源的规范化绝对路径；仅当通过"选择目录/拖拽目录"导入时设置。 */
+  sourceDir?: string
+}
 
 export interface FileEntry {
   id: string
@@ -10,18 +19,25 @@ export interface FileEntry {
   status: FileStatus
   progressMessage: string
   error?: string
+  companyId?: string
 }
 
 export interface FileContextValue {
   files: FileEntry[]
   activeFileId: string | null
   isLoading: boolean
+  companies: CompanyEntry[]
+  companyById: Record<string, CompanyEntry>
   openFiles: () => Promise<number>
-  addFilesByPaths: (paths: string[]) => number
+  addFilesByPaths: (paths: string[], companyId?: string) => number
   selectFile: (fileId: string) => void
   removeFile: (fileId: string) => void
   clearFiles: () => void
+  /** Drops every file and company, returning the session to a blank state. */
+  clearAll: () => void
   updateFileStatus: (fileId: string, patch: Partial<Omit<FileEntry, "id" | "filePath">>) => void
+  ensureCompany: (side: CompanySide, name: string, sourceDir?: string) => string
+  removeCompany: (companyId: string) => void
 }
 
 const FileContext = createContext<FileContextValue | null>(null)
@@ -30,6 +46,45 @@ export const FileProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   const [files, setFiles] = useState<FileEntry[]>([])
   const [activeFileId, setActiveFileId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [companies, setCompanies] = useState<CompanyEntry[]>([])
+
+  const companyById = useMemo(() => {
+    const map: Record<string, CompanyEntry> = {}
+    for (const c of companies) map[c.id] = c
+    return map
+  }, [companies])
+
+  const ensureCompany = useCallback(
+    (side: CompanySide, name: string, sourceDir?: string): string => {
+      const existing = companies.find(c => c.side === side)
+      if (existing) {
+        if (existing.name !== name || existing.sourceDir !== sourceDir) {
+          setCompanies(prev =>
+            prev.map(c =>
+              c.id === existing.id
+                ? { ...c, name, ...(sourceDir !== undefined ? { sourceDir } : {}) }
+                : c,
+            ),
+          )
+        }
+        return existing.id
+      }
+      const id = crypto.randomUUID()
+      setCompanies(prev => [
+        ...prev,
+        { id, side, name, ...(sourceDir !== undefined ? { sourceDir } : {}) },
+      ])
+      return id
+    },
+    [companies],
+  )
+
+  const removeCompany = useCallback((companyId: string) => {
+    setCompanies(prev => prev.filter(c => c.id !== companyId))
+    setFiles(prev =>
+      prev.map(f => (f.companyId === companyId ? { ...f, companyId: undefined } : f)),
+    )
+  }, [])
 
   const openFiles = useCallback(async (): Promise<number> => {
     setIsLoading(true)
@@ -70,24 +125,28 @@ export const FileProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     }
   }, [activeFileId, files])
 
-  const addFilesByPaths = useCallback((paths: string[]): number => {
-    if (paths.length === 0) return 0
+  const addFilesByPaths = useCallback(
+    (paths: string[], companyId?: string): number => {
+      if (paths.length === 0) return 0
 
-    const existingPathSet = new Set(files.map(item => item.filePath))
-    const pathsToLoad = paths.filter(path => !existingPathSet.has(path))
-    if (pathsToLoad.length === 0) return 0
+      const existingPathSet = new Set(files.map(item => item.filePath))
+      const pathsToLoad = paths.filter(path => !existingPathSet.has(path))
+      if (pathsToLoad.length === 0) return 0
 
-    const addedFiles: FileEntry[] = pathsToLoad.map(filePath => ({
-      id: crypto.randomUUID(),
-      filePath,
-      status: "idle",
-      progressMessage: "待处理",
-    }))
+      const addedFiles: FileEntry[] = pathsToLoad.map(filePath => ({
+        id: crypto.randomUUID(),
+        filePath,
+        status: "idle",
+        progressMessage: "待处理",
+        ...(companyId ? { companyId } : {}),
+      }))
 
-    setFiles(prev => [...prev, ...addedFiles])
-    setActiveFileId(prev => prev ?? addedFiles[0]?.id ?? null)
-    return addedFiles.length
-  }, [files])
+      setFiles(prev => [...prev, ...addedFiles])
+      setActiveFileId(prev => prev ?? addedFiles[0]?.id ?? null)
+      return addedFiles.length
+    },
+    [files],
+  )
 
   const selectFile = useCallback((fileId: string) => {
     setActiveFileId(fileId)
@@ -116,6 +175,12 @@ export const FileProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     setActiveFileId(null)
   }, [])
 
+  const clearAll = useCallback(() => {
+    setFiles([])
+    setActiveFileId(null)
+    setCompanies([])
+  }, [])
+
   const updateFileStatus = useCallback(
     (fileId: string, patch: Partial<Omit<FileEntry, "id" | "filePath">>) => {
       setFiles(prev =>
@@ -137,23 +202,33 @@ export const FileProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       files,
       activeFileId,
       isLoading,
+      companies,
+      companyById,
       openFiles,
       addFilesByPaths,
       selectFile,
       removeFile,
       clearFiles,
+      clearAll,
       updateFileStatus,
+      ensureCompany,
+      removeCompany,
     }),
     [
       files,
       activeFileId,
       isLoading,
+      companies,
+      companyById,
       openFiles,
       addFilesByPaths,
       selectFile,
       removeFile,
       clearFiles,
+      clearAll,
       updateFileStatus,
+      ensureCompany,
+      removeCompany,
     ],
   )
 

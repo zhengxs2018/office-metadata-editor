@@ -2,60 +2,18 @@
  * Zustand Store - 工作流状态管理
  */
 
-import { create } from 'zustand'
-import { subscribeWithSelector } from 'zustand/middleware'
-import { invoke } from '@tauri-apps/api/core'
-import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs'
+import { create } from "zustand"
+import { subscribeWithSelector } from "zustand/middleware"
+import { invoke } from "@tauri-apps/api/core"
 import type {
   FileEntry,
   LoadedDocument,
   DocumentMetadata,
-  MetadataTemplate,
   DirectoryScanResult,
   DirectoryInfo,
   BatchOperation,
   Workspace,
-} from '../types/om-workflow'
-
-const TEMPLATE_STORAGE_KEY = 'om.templates'
-
-const persistTemplates = (templates: MetadataTemplate[]) => {
-  localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(templates))
-}
-
-const toText = (value: unknown): string => {
-  return typeof value === 'string' ? value.trim() : ''
-}
-
-const normalizeTemplate = (input: MetadataTemplate): MetadataTemplate => {
-  const legacyFields = Array.isArray(input.fields) ? input.fields : []
-  const legacyAuthor = legacyFields.find(field => field.key === 'creator')?.defaultValue
-  const legacyOrganization =
-    legacyFields.find(field => field.key === 'company' || field.key === 'organization')?.defaultValue
-  const legacyManager = legacyFields.find(field => field.key === 'manager')?.defaultValue
-  const legacyLanguage =
-    legacyFields.find(field => field.key === 'language' || field.key === 'dcLanguage')?.defaultValue
-
-  return {
-    ...input,
-    id: input.id || `tpl_${Date.now()}`,
-    name: toText(input.name) || '未命名模板',
-    description: toText(input.description),
-    author: toText(input.author) || toText(legacyAuthor),
-    organization: toText(input.organization) || toText(legacyOrganization),
-    manager: toText(input.manager) || toText(legacyManager),
-    language: toText(input.language) || toText(legacyLanguage) || 'zh-CN',
-    version: toText(input.version) || '1.0.0',
-    fields: legacyFields,
-    createdAt: input.createdAt || Date.now(),
-    updatedAt: Date.now(),
-  }
-}
-
-const parseTemplateFile = (content: string): MetadataTemplate => {
-  const raw = JSON.parse(content) as MetadataTemplate
-  return normalizeTemplate(raw)
-}
+} from "../types/om-workflow"
 
 // ==================== File Store ====================
 
@@ -110,11 +68,11 @@ export const useFileStore = create<FileStore>()(
       try {
         const now = Date.now()
         const newFiles: FileEntry[] = paths.map(path => {
-          const name = path.split('/').pop() || path
-          const extension = name.split('.').pop()?.toLowerCase() || ''
-          const type = ['docx', 'xlsx', 'pptx', 'pdf'].includes(extension)
-            ? extension as any
-            : 'unknown'
+          const name = path.split("/").pop() || path
+          const extension = name.split(".").pop()?.toLowerCase() || ""
+          const type = ["docx", "xlsx", "pptx", "pdf"].includes(extension)
+            ? (extension as any)
+            : "unknown"
 
           return {
             id: `file_${now}_${Math.random().toString(36).substr(2, 9)}`,
@@ -123,7 +81,7 @@ export const useFileStore = create<FileStore>()(
             extension,
             type,
             size: 0,
-            status: 'ready' as const,
+            status: "ready" as const,
             createdAt: now,
             updatedAt: now,
           }
@@ -135,7 +93,7 @@ export const useFileStore = create<FileStore>()(
         }))
       } catch (error) {
         set({
-          error: error instanceof Error ? error.message : '添加文件失败',
+          error: error instanceof Error ? error.message : "添加文件失败",
           isLoading: false,
         })
         throw error
@@ -190,7 +148,7 @@ export const useFileStore = create<FileStore>()(
 
     loadDocument: async (fileId: string) => {
       const file = get().files.find(f => f.id === fileId)
-      if (!file) throw new Error('文件不存在')
+      if (!file) throw new Error("文件不存在")
 
       const existingDoc = get().documents.get(fileId)
       if (existingDoc) {
@@ -221,7 +179,7 @@ export const useFileStore = create<FileStore>()(
         return doc
       } catch (error) {
         set({
-          error: error instanceof Error ? error.message : '加载文档失败',
+          error: error instanceof Error ? error.message : "加载文档失败",
           isLoading: false,
         })
         throw error
@@ -247,7 +205,7 @@ export const useFileStore = create<FileStore>()(
 
     saveDocument: async (documentId: string) => {
       const doc = get().documents.get(documentId)
-      if (!doc) throw new Error('文档不存在')
+      if (!doc) throw new Error("文档不存在")
 
       set({ isLoading: true, error: null })
       try {
@@ -265,7 +223,7 @@ export const useFileStore = create<FileStore>()(
         })
       } catch (error) {
         set({
-          error: error instanceof Error ? error.message : '保存失败',
+          error: error instanceof Error ? error.message : "保存失败",
           isLoading: false,
         })
         throw error
@@ -301,11 +259,11 @@ export const useFileStore = create<FileStore>()(
     scanDirectory: async (path: string, options?: { recursive?: boolean }) => {
       set({ isLoading: true, error: null })
       try {
-        const result = await invoke<DirectoryScanResult>('scan_directory', {
+        const result = await invoke<DirectoryScanResult>("scan_directory", {
           path,
           options: {
             recursive: options?.recursive ?? true,
-            extensions: ['docx', 'doc', 'xlsx', 'pdf'],
+            extensions: ["docx", "doc", "xlsx", "pdf"],
           },
         })
         const files = result.files.map(file => ({ ...file, selected: false })) as DirectoryInfo[]
@@ -320,7 +278,7 @@ export const useFileStore = create<FileStore>()(
         })
       } catch (error) {
         set({
-          error: error instanceof Error ? error.message : '扫描目录失败',
+          error: error instanceof Error ? error.message : "扫描目录失败",
           isLoading: false,
         })
         throw error
@@ -360,170 +318,7 @@ export const useFileStore = create<FileStore>()(
 
     setLoading: (loading: boolean) => set({ isLoading: loading }),
     setError: (error: string | null) => set({ error }),
-  }))
-)
-
-// ==================== Template Store ====================
-
-interface TemplateState {
-  templates: MetadataTemplate[]
-  activeTemplateId: string | null
-  isLoading: boolean
-  error: string | null
-}
-
-interface TemplateActions {
-  loadTemplates: () => Promise<void>
-  createTemplate: (template: Omit<MetadataTemplate, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string>
-  updateTemplate: (template: MetadataTemplate) => Promise<void>
-  deleteTemplate: (id: string) => Promise<void>
-  setActiveTemplate: (id: string | null) => void
-  exportTemplate: (id: string, outputPath: string) => Promise<void>
-  importTemplate: (inputPath: string) => Promise<MetadataTemplate>
-}
-
-type TemplateStore = TemplateState & TemplateActions
-
-export const useTemplateStore = create<TemplateStore>()(
-  subscribeWithSelector((set) => ({
-    templates: [],
-    activeTemplateId: null,
-    isLoading: false,
-    error: null,
-
-    loadTemplates: async () => {
-      set({ isLoading: true, error: null })
-      try {
-        const raw = localStorage.getItem(TEMPLATE_STORAGE_KEY)
-        const templates = raw ? (JSON.parse(raw) as MetadataTemplate[]) : []
-        const normalized = templates.map(item => normalizeTemplate(item))
-        persistTemplates(normalized)
-        set({ templates: normalized, isLoading: false })
-      } catch (error) {
-        set({
-          error: error instanceof Error ? error.message : '加载模板失败',
-          isLoading: false,
-        })
-      }
-    },
-
-    createTemplate: async (template) => {
-      set({ isLoading: true, error: null })
-      try {
-        const now = Date.now()
-        const id = `tpl_${now}`
-
-        const newTemplate = normalizeTemplate({
-          ...template,
-          id,
-          createdAt: now,
-          updatedAt: now,
-        } as MetadataTemplate)
-
-        set(state => ({
-          templates: (() => {
-            const next = [...state.templates, newTemplate]
-            persistTemplates(next)
-            return next
-          })(),
-          activeTemplateId: id,
-          isLoading: false,
-        }))
-
-        return id
-      } catch (error) {
-        set({
-          error: error instanceof Error ? error.message : '创建模板失败',
-          isLoading: false,
-        })
-        throw error
-      }
-    },
-
-    updateTemplate: async (template) => {
-      set({ isLoading: true, error: null })
-      try {
-        set(state => ({
-          templates: (() => {
-            const next = state.templates.map(t =>
-              t.id === template.id ? normalizeTemplate({ ...template, updatedAt: Date.now() }) : t,
-            )
-            persistTemplates(next)
-            return next
-          })(),
-          isLoading: false,
-        }))
-      } catch (error) {
-        set({
-          error: error instanceof Error ? error.message : '更新模板失败',
-          isLoading: false,
-        })
-        throw error
-      }
-    },
-
-    deleteTemplate: async (id: string) => {
-      set({ isLoading: true, error: null })
-      try {
-        set(state => ({
-          templates: (() => {
-            const next = state.templates.filter(t => t.id !== id)
-            persistTemplates(next)
-            return next
-          })(),
-          activeTemplateId: state.activeTemplateId === id ? null : state.activeTemplateId,
-          isLoading: false,
-        }))
-      } catch (error) {
-        set({
-          error: error instanceof Error ? error.message : '删除模板失败',
-          isLoading: false,
-        })
-        throw error
-      }
-    },
-
-    setActiveTemplate: (id: string | null) => set({ activeTemplateId: id }),
-
-    exportTemplate: async (id, outputPath) => {
-      const template = useTemplateStore.getState().templates.find(t => t.id === id)
-      if (!template) {
-        throw new Error('模板不存在')
-      }
-      await writeTextFile(outputPath, JSON.stringify(template, null, 2))
-    },
-
-    importTemplate: async (inputPath) => {
-      set({ isLoading: true, error: null })
-      try {
-        const content = await readTextFile(inputPath)
-        const parsed = parseTemplateFile(content)
-        const template = normalizeTemplate({
-          ...parsed,
-          id: `tpl_${Date.now()}`,
-          updatedAt: Date.now(),
-        })
-
-        set(state => ({
-          templates: (() => {
-            const next = [...state.templates, template]
-            persistTemplates(next)
-            return next
-          })(),
-          activeTemplateId: template.id,
-          isLoading: false,
-        }))
-
-        return template
-      } catch (error) {
-        set({
-          error: error instanceof Error ? error.message : '导入模板失败',
-          isLoading: false,
-        })
-        throw error
-      }
-    },
-  }))
+  })),
 )
 
 // ==================== Batch Operation Store ====================
@@ -534,7 +329,7 @@ interface BatchState {
 }
 
 interface BatchActions {
-  createOperation: (type: BatchOperation['type'], totalItems: number) => string
+  createOperation: (type: BatchOperation["type"], totalItems: number) => string
   updateOperationProgress: (operationId: string, progress: Partial<BatchOperation>) => void
   completeOperation: (operationId: string, successfulItems: number, failedItems: number) => void
   failOperation: (operationId: string, error: string) => void
@@ -545,7 +340,7 @@ interface BatchActions {
 type BatchStore = BatchState & BatchActions
 
 export const useBatchStore = create<BatchStore>()(
-  subscribeWithSelector((set) => ({
+  subscribeWithSelector(set => ({
     operations: [],
     currentOperationId: null,
 
@@ -554,7 +349,7 @@ export const useBatchStore = create<BatchStore>()(
       const operation: BatchOperation = {
         id,
         type,
-        status: 'pending',
+        status: "pending",
         totalItems,
         processedItems: 0,
         successfulItems: 0,
@@ -573,9 +368,7 @@ export const useBatchStore = create<BatchStore>()(
     updateOperationProgress: (operationId, progress) => {
       set(state => ({
         operations: state.operations.map(op =>
-          op.id === operationId
-            ? { ...op, ...progress, status: progress.status ?? op.status }
-            : op
+          op.id === operationId ? { ...op, ...progress, status: progress.status ?? op.status } : op,
         ),
       }))
     },
@@ -586,14 +379,14 @@ export const useBatchStore = create<BatchStore>()(
           op.id === operationId
             ? {
                 ...op,
-                status: 'completed',
+                status: "completed",
                 processedItems: op.totalItems,
                 successfulItems,
                 failedItems,
                 progress: 100,
                 completedAt: Date.now(),
               }
-            : op
+            : op,
         ),
       }))
     },
@@ -601,25 +394,24 @@ export const useBatchStore = create<BatchStore>()(
     failOperation: (operationId, error) => {
       set(state => ({
         operations: state.operations.map(op =>
-          op.id === operationId
-            ? { ...op, status: 'failed', error, completedAt: Date.now() }
-            : op
+          op.id === operationId ? { ...op, status: "failed", error, completedAt: Date.now() } : op,
         ),
       }))
     },
 
-    setCurrentOperation: (id) => set({ currentOperationId: id }),
+    setCurrentOperation: id => set({ currentOperationId: id }),
 
     clearCompletedOperations: () => {
       set(state => ({
-        operations: state.operations.filter(op => op.status !== 'completed'),
-        currentOperationId: state.currentOperationId &&
-          state.operations.find(op => op.id === state.currentOperationId)?.status !== 'completed'
-          ? state.currentOperationId
-          : null,
+        operations: state.operations.filter(op => op.status !== "completed"),
+        currentOperationId:
+          state.currentOperationId &&
+          state.operations.find(op => op.id === state.currentOperationId)?.status !== "completed"
+            ? state.currentOperationId
+            : null,
       }))
     },
-  }))
+  })),
 )
 
 // ==================== Workspace Store ====================
@@ -640,7 +432,7 @@ interface WorkspaceActions {
 type WorkspaceStore = WorkspaceState & WorkspaceActions
 
 export const useWorkspaceStore = create<WorkspaceStore>()(
-  subscribeWithSelector((set) => ({
+  subscribeWithSelector(set => ({
     workspaces: [],
     activeWorkspaceId: null,
 
@@ -663,21 +455,21 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
     updateWorkspace: (id, updates) => {
       set(state => ({
-        workspaces: state.workspaces.map(ws => ws.id === id ? { ...ws, ...updates } : ws),
+        workspaces: state.workspaces.map(ws => (ws.id === id ? { ...ws, ...updates } : ws)),
       }))
     },
 
-    deleteWorkspace: (id) => {
+    deleteWorkspace: id => {
       set(state => ({
         workspaces: state.workspaces.filter(ws => ws.id !== id),
         activeWorkspaceId: state.activeWorkspaceId === id ? null : state.activeWorkspaceId,
       }))
     },
 
-    setActiveWorkspace: (id) => set({ activeWorkspaceId: id }),
+    setActiveWorkspace: id => set({ activeWorkspaceId: id }),
 
-    loadWorkspace: async (id) => {
+    loadWorkspace: async id => {
       set({ activeWorkspaceId: id })
     },
-  }))
+  })),
 )

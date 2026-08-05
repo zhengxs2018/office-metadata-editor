@@ -1,28 +1,32 @@
-import React, { useMemo } from "react"
-import type { FileEntry } from "@/contexts/file-context"
-import type { LoadedDocument } from "@/contexts/metadata-context"
+import React from "react"
+import { FileSpreadsheet, FileText, Trash2 } from "lucide-react"
+
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarMenuAction,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FileText, X } from "lucide-react"
-import { formatRelativeTime } from "@/lib/utils"
+import { cn } from "@/lib/utils"
+import type { LoadedDocument } from "@/contexts/metadata-context"
 
 export interface EditorPageSidebarProps {
-  files: FileEntry[]
+  files: Array<{ id: string; filePath: string; status?: string }>
   documents: LoadedDocument[]
   activeFileId: string | null
-  onSelectFile: (fileId: string) => void
-  onRemoveFile: (fileId: string) => void
+  onSelectFile: (id: string) => void
+  onRemoveFile: (id: string) => void
 }
 
+/**
+ * 文件列表 sidebar（多文件时让用户切换/删除）。
+ * 必须作为 `<SidebarProvider>` 的直接 flex 子节点，与 `<SidebarInset>` 兄弟。
+ */
 export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
   files,
   documents,
@@ -30,67 +34,56 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
   onSelectFile,
   onRemoveFile,
 }) => {
-  const documentMap = useMemo(() => {
-    return new Map(documents.map(item => [item.id, item]))
-  }, [documents])
-
-  if (files.length < 2) {
-    return null
-  }
-
   return (
     <Sidebar
       collapsible="icon"
-      className="top-22 bottom-0 h-auto"
+      className="top-22 bottom-0 h-auto border-r"
+      style={{
+        top: "var(--chrome-titlebar-height, 44px)",
+        bottom: 0,
+        height: "calc(100svh - var(--chrome-titlebar-height, 44px))",
+      }}
     >
       <SidebarContent>
-        <SidebarGroup className="px-2 py-1.5">
+        <SidebarGroup>
           <SidebarGroupLabel>文件列表</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {files.map(item => {
-                const doc = documentMap.get(item.id)
-                if (!doc) return null
-                const fileName = doc.metadata.fileName
-                const hasChanges = doc.hasChanges
-                const modified = doc.metadata.documentProperties.modified
-                const created = doc.metadata.documentProperties.created
-                const displayTime = formatRelativeTime(modified || created)
-
+              {uniqueByBasename(files).map(file => {
+                const doc = documents.find(d => d.id === file.id)
+                const fileName =
+                  doc?.metadata.fileName || file.filePath.split(/[\\/]/).pop() || file.filePath
+                const Icon = file.filePath.toLowerCase().endsWith(".xlsx")
+                  ? FileSpreadsheet
+                  : FileText
+                const isActive = file.id === activeFileId
+                const status = file.status ?? doc?.status ?? "idle"
                 return (
-                  <SidebarMenuItem key={item.id}>
+                  <SidebarMenuItem key={file.id}>
                     <SidebarMenuButton
-                      isActive={activeFileId === item.id}
-                      tooltip={`${fileName}\n${displayTime}`}
-                      onClick={() => onSelectFile(item.id)}
-                      className="relative h-auto min-h-12 items-start gap-2 rounded-lg border border-transparent px-2 py-1.5 pr-9 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:min-h-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-md group-data-[collapsible=icon]:p-0 hover:bg-sidebar-accent/70 data-[active=true]:border-primary/35 data-[active=true]:bg-primary/10 data-[active=true]:text-foreground data-[active=true]:hover:bg-primary/12"
+                      isActive={isActive}
+                      onClick={() => onSelectFile(file.id)}
+                      tooltip={fileName}
+                      className={cn(
+                        "w-full items-center justify-between gap-2",
+                        status === "error" && "text-destructive",
+                      )}
                     >
-                      <FileText className="mt-0.5 h-4 w-4 shrink-0" />
-                      <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-                        <div className="truncate pr-1 text-sm font-medium">{fileName}</div>
-                        {hasChanges ? (
-                          <div className="truncate pr-1 text-xs text-primary">有未保存修改</div>
-                        ) : (
-                          <div className="truncate pr-1 text-xs text-muted-foreground">
-                            {displayTime}
-                          </div>
-                        )}
-                        {item.status !== "ready" && (
-                          <div className="truncate pr-1 text-xs text-muted-foreground">
-                            {item.progressMessage}
-                          </div>
-                        )}
-                      </div>
+                      <Icon className="size-4 shrink-0" />
+                      <span className="min-w-0 flex-1 truncate text-left">{fileName}</span>
+                      <span className="text-[10px] text-muted-foreground tabular-nums">
+                        {statusLabel(status)}
+                      </span>
                     </SidebarMenuButton>
                     <SidebarMenuAction
-                      aria-label={`移除 ${fileName}`}
-                      className="top-1.5 right-1.5 rounded-md text-muted-foreground peer-data-active/menu-button:text-muted-foreground hover:bg-destructive/12 hover:text-destructive"
-                      onClick={event => {
-                        event.stopPropagation()
-                        onRemoveFile(item.id)
+                      showOnHover
+                      aria-label="删除文件"
+                      onClick={e => {
+                        e.stopPropagation()
+                        onRemoveFile(file.id)
                       }}
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <Trash2 />
                     </SidebarMenuAction>
                   </SidebarMenuItem>
                 )
@@ -103,4 +96,22 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
   )
 }
 
-export default EditorPageSidebar
+function statusLabel(status: string): string {
+  if (status === "ready") return "就绪"
+  if (status === "error") return "失败"
+  if (status === "loading") return "加载中"
+  return "待处理"
+}
+
+/** 按 basename 去重（同名文件保留第一个），避免跨目录同名重复显示。 */
+function uniqueByBasename<T extends { filePath: string }>(items: T[]): T[] {
+  const seen = new Set<string>()
+  const out: T[] = []
+  for (const item of items) {
+    const base = item.filePath.split(/[\\/]/).pop() ?? item.filePath
+    if (seen.has(base)) continue
+    seen.add(base)
+    out.push(item)
+  }
+  return out
+}

@@ -1,4 +1,4 @@
-import React, { useCallback } from "react"
+import React, { useCallback, useEffect } from "react"
 import { open as showDirectoryPicker } from "@tauri-apps/plugin-dialog"
 
 import {
@@ -14,6 +14,7 @@ import { useFileStore } from "@/stores/om-workflow-store"
 interface OmShowDirectoryPickerDialogProps {
   open: boolean
   existingFilePaths?: string[]
+  initialDirectory?: string
   onOpenChange: (open: boolean) => void
   onImportComplete?: (paths: string[]) => void
 }
@@ -23,6 +24,7 @@ export const OmShowDirectoryPickerDialog: React.FC<OmShowDirectoryPickerDialogPr
   onOpenChange,
   onImportComplete,
   existingFilePaths = [],
+  initialDirectory,
 }) => {
   const {
     scanResults,
@@ -33,6 +35,16 @@ export const OmShowDirectoryPickerDialog: React.FC<OmShowDirectoryPickerDialogPr
     toggleDirectoryFileSelection,
     importSelectedFiles,
   } = useFileStore()
+
+  useEffect(() => {
+    if (open && initialDirectory) {
+      scanDirectory(initialDirectory, { recursive: true }).catch(err => {
+        console.error("扫描初始目录失败:", err)
+      })
+    }
+    // 依赖 open/initialDirectory：每次打开都重新扫描
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialDirectory])
 
   const handleSelectDirectory = useCallback(async () => {
     const selected = await showDirectoryPicker({ directory: true, multiple: false })
@@ -90,13 +102,13 @@ export const OmShowDirectoryPickerDialog: React.FC<OmShowDirectoryPickerDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="min-w-200">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] min-w-200 flex-col gap-0 overflow-hidden p-0">
+        <DialogHeader className="gap-2 border-b border-border px-6 py-4">
           <DialogTitle>选择目录</DialogTitle>
           <DialogDescription>将目录中文件导入到工作区。</DialogDescription>
         </DialogHeader>
-        <div className="flex h-full min-h-0 w-full flex-col bg-background">
-          <div className="flex items-center border-b border-border pb-4">
+        <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-background">
+          <div className="flex shrink-0 items-center border-b border-border px-6 pt-4 pb-4">
             <button
               onClick={handleSelectDirectory}
               className="rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"

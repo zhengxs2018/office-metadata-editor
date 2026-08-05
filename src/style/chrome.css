@@ -3,27 +3,45 @@
   --chrome-safe-right: env(safe-area-inset-right, 0px);
   --chrome-safe-bottom: env(safe-area-inset-bottom, 0px);
   --chrome-safe-left: env(safe-area-inset-left, 0px);
-  --chrome-window-toobar-height: 32px;
+
+  /* Height of the app title bar itself, excluding any OS inset. */
+  --chrome-titlebar-height: 44px;
+
+  /* Width reserved for the macOS traffic lights rendered over the webview. */
+  --chrome-traffic-light-inset: 0px;
+
   --chrome-window-toobar-index: 80;
 }
 
+/*
+ * On macOS the window uses `titleBarStyle: "Overlay"` with `hiddenTitle`, so the
+ * traffic lights float above the top-left of the webview. Reserve room for them
+ * instead of padding the whole title bar down.
+ */
+:root[data-platform="macos"] {
+  --chrome-traffic-light-inset: 78px;
+}
+
 .chrome-window-shell {
-  padding-top: var(--chrome-safe-top);
+  height: 100svh;
+  overflow: hidden;
   padding-right: var(--chrome-safe-right);
   padding-bottom: var(--chrome-safe-bottom);
   padding-left: var(--chrome-safe-left);
   box-sizing: border-box;
 }
 
+/*
+ * Full-width drag strip used by layouts that render no title bar of their own.
+ */
 .chrome-window-toolbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: var(--chrome-window-toobar-index);
-  height: calc(var(--chrome-safe-top) + var(--chrome-window-toobar-height));
+  height: calc(var(--chrome-safe-top) + var(--chrome-titlebar-height));
   user-select: none;
   pointer-events: auto;
-  cursor: pointer;
   -webkit-app-region: drag;
 }

@@ -2,9 +2,7 @@ import React from "react"
 import { useFileContext } from "@/contexts/file-context"
 import { useMetadata } from "@/contexts/metadata-context"
 import type { ExportFieldOption } from "@/components/om/om-export-center"
-import {
-  OmExportDialog,
-} from "@/components/om/om-common-dialogs"
+import { OmExportDialog } from "@/components/om/om-common-dialogs"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -22,7 +20,6 @@ import {
   Settings,
   FolderOpen,
 } from "lucide-react"
-import { OmTemplateApplyDialog } from "./om-template-apply-dialog"
 import { OmShowDirectoryPickerDialog } from "./om-show-directory-picker"
 
 export const OmEditorToolbar: React.FC = () => {
@@ -40,7 +37,6 @@ export const OmEditorToolbar: React.FC = () => {
 
   const [showImportDialog, setShowImportDialog] = React.useState(false)
   const [showExportDialog, setShowExportDialog] = React.useState(false)
-  const [showTemplateApplyDialog, setShowTemplateApplyDialog] = React.useState(false)
 
   const exportFieldOptions = React.useMemo<ExportFieldOption[]>(() => {
     const targetDocs = activeDocumentId
@@ -78,16 +74,6 @@ export const OmEditorToolbar: React.FC = () => {
   return (
     <>
       <div className="flex items-center gap-1.5">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowTemplateApplyDialog(true)}
-          className="h-8 gap-1.5 rounded-lg"
-        >
-          <Settings className="h-4 w-4" />
-          <span>选择模板</span>
-        </Button>
-
         <Button
           variant="default"
           size="sm"
@@ -162,12 +148,6 @@ export const OmEditorToolbar: React.FC = () => {
         onOpenChange={setShowExportDialog}
         fileIds={activeDocumentId ? [activeDocumentId] : []}
         availableFields={exportFieldOptions}
-      />
-
-      <OmTemplateApplyDialog
-        open={showTemplateApplyDialog}
-        onOpenChange={setShowTemplateApplyDialog}
-        documentIds={activeDocumentId ? [activeDocumentId] : []}
       />
     </>
   )

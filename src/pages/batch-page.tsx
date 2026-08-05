@@ -15,9 +15,9 @@ import { OmExportDialog } from "@/components/om/om-common-dialogs"
 import type { ExportFieldOption } from "@/components/om/om-export-center"
 import { type FileStatus, useFileContext } from "@/contexts/file-context"
 import { useMetadata } from "@/contexts/metadata-context"
+import { ROUTES } from "@/router/paths"
 import { formatFileSize } from "@/lib/utils"
-import { FolderOpen, Settings, FileSpreadsheet } from "lucide-react"
-import { OmTemplateApplyDialog } from "@/components/om/om-template-apply-dialog"
+import { FolderOpen, FileSpreadsheet } from "lucide-react"
 import { OmShowDirectoryPickerDialog } from "@/components/om/om-show-directory-picker"
 
 export const BatchPage: React.FC = () => {
@@ -38,7 +38,6 @@ export const BatchPage: React.FC = () => {
   const [actionStatus, setActionStatus] = useState<string | null>(null)
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
-  const [showTemplateDialog, setShowTemplateDialog] = useState(false)
 
   const documentMap = useMemo(() => {
     return new Map(documents.map(item => [item.id, item]))
@@ -172,7 +171,7 @@ export const BatchPage: React.FC = () => {
 
   return (
     <PageLayout
-      backTo="/"
+      backTo={ROUTES.home}
       header={
         <div className="flex flex-col leading-tight select-none">
           <span className="text-sm font-medium text-foreground">批量处理</span>
@@ -188,15 +187,6 @@ export const BatchPage: React.FC = () => {
           >
             <FolderOpen className="h-4 w-4" />
             目录导入
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTemplateDialog(true)}
-            className="gap-2"
-          >
-            <Settings className="h-4 w-4" />
-            模板
           </Button>
           <Button
             variant="outline"
@@ -349,12 +339,6 @@ export const BatchPage: React.FC = () => {
         onOpenChange={setShowExportDialog}
         fileIds={rows.map(item => item.id)}
         availableFields={exportFieldOptions}
-      />
-
-      <OmTemplateApplyDialog
-        open={showTemplateDialog}
-        onOpenChange={setShowTemplateDialog}
-        documentIds={rows.map(item => item.id)}
       />
     </PageLayout>
   )
