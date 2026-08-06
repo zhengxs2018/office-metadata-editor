@@ -134,3 +134,7 @@
 - `OmMetadataSection`：`border-border/70` → `border-zinc-200`（Card 边框可见）
 - `OmPropertyPreview`：`border-border/50` → `border-zinc-200`（预览面板边框可见）
 - `OmMetadataFieldItem`：`border-border/55` → `border-zinc-200`（Input 下划线可见）
+
+### compare-page file-metadata-grid 应用（2026-08-06）
+- `file-metadata-grid.tsx`：CSS Grid → `<table border-separate border-spacing-0>`，公司（sticky left）+ 状态（sticky right）双固定列
+- 去掉 `min-[860px]` 响应式隐藏逻辑，所有列常驻 + 横向滚动，小屏下固定列保活
