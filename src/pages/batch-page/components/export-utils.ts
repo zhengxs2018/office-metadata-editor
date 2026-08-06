@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx"
 import type { LoadedDocument } from "@/contexts/metadata-context"
-import type { ExportFormat, ExportFieldOption } from "./export-types"
+import type { ExportFormat } from "./export-types"
 
 export const FORMAT_META: Record<ExportFormat, { label: string; description: string }> = {
   json: { label: "JSON", description: "程序处理 / 备份" },

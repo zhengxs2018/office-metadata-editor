@@ -85,9 +85,12 @@ export interface DirectoryInfo {
 }
 
 // ==================== 导出系统 ====================
+// 类型以 src-tauri/src/export/mod.rs 的 Rust 模型为权威源
 
+/** 导出格式枚举（对应 Rust ExportFormat） */
 export type ExportFormat = "json" | "excel" | "csv" | "xml"
 
+/** 导出选项（对应 Rust ExportOptions） */
 export interface ExportOptions {
   format: ExportFormat
   includeFields?: string[]
@@ -96,12 +99,32 @@ export interface ExportOptions {
   prettyPrint?: boolean
 }
 
+/** 导出结果（对应 Rust ExportResult） */
 export interface ExportResult {
   success: boolean
   outputPath?: string
   error?: string
   exportedCount: number
 }
+
+/** 导出字段选项（key = 字段名, label = 中文标签） */
+export interface ExportFieldOption {
+  key: string
+  label: string
+}
+
+/** Rust 端默认导出字段（9 个），与 src-tauri/src/export/mod.rs 的 DEFAULT_FIELDS 对齐 */
+export const DEFAULT_EXPORT_FIELDS = [
+  "title",
+  "subject",
+  "creator",
+  "keywords",
+  "description",
+  "lastModifiedBy",
+  "created",
+  "modified",
+  "category",
+] as const
 
 // ==================== 批量操作 ====================
 

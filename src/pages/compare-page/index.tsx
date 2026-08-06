@@ -55,7 +55,7 @@ function toCompareInputs(
 }
 
 export const ComparePage: React.FC = () => {
-  const { companyById, companies, clearAll, companyCount } = useFileContext()
+  const { companyById, clearAll, companyCount } = useFileContext()
   const { documents } = useMetadata()
   const [findings, setFindings] = useState<RiskFinding[]>([])
   const [comparing, setComparing] = useState(false)

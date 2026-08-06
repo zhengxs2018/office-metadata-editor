@@ -8,23 +8,23 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { HugeIcon } from "@/components/icons/huge-icon"
 import {
+  ChevronDownIcon,
+  Delete01Icon,
   FileAddIcon,
-  Download01Icon,
-  MoreHorizontalIcon,
+  FileExportIcon,
+  FloppyDiskIcon,
   RotateLeft01Icon,
   SaveEnergy01Icon,
-  Delete01Icon,
-  Settings01Icon,
-  FolderOpenIcon,
 } from "@hugeicons/core-free-icons"
-import { OmShowDirectoryPickerDialog } from "./om-show-directory-picker"
 
 export const OmEditorToolbar: React.FC = () => {
-  const { files, openFiles, addFilesByPaths } = useFileContext()
+  const { openFiles } = useFileContext()
   const {
     documents,
     activeDocumentId,
@@ -36,7 +36,6 @@ export const OmEditorToolbar: React.FC = () => {
     documentTaskRequestIds,
   } = useMetadata()
 
-  const [showImportDialog, setShowImportDialog] = React.useState(false)
   const [showExportDialog, setShowExportDialog] = React.useState(false)
 
   const exportFieldOptions = React.useMemo<ExportFieldOption[]>(() => {
@@ -74,75 +73,74 @@ export const OmEditorToolbar: React.FC = () => {
 
   return (
     <>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <Button
           variant="default"
           size="sm"
-          onClick={() => void saveCurrent()}
+          onClick={() => void openFiles()}
           className="h-8 gap-1.5 rounded-lg"
-          disabled={!hasChanges || !!activeRequestId}
         >
-          <HugeIcon icon={SaveEnergy01Icon} size={14} />
-          <span>保存</span>
+          <HugeIcon icon={FileAddIcon} size={14} />
+          <span>添加文件</span>
         </Button>
 
-        {hasChanges ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={resetToOriginal}
-            className="h-8 gap-1.5 rounded-lg"
-          >
-            <HugeIcon icon={RotateLeft01Icon} size={14} />
-            <span>重置</span>
-          </Button>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={clearMetadata}
-            className="h-8 gap-1.5 rounded-lg"
-          >
-            <HugeIcon icon={Delete01Icon} size={14} />
-            <span>清理全部</span>
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={clearMetadata}
+          className="ml-2 h-8 gap-1.5 rounded-lg"
+        >
+          <HugeIcon icon={Delete01Icon} size={14} />
+          <span>清理</span>
+        </Button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-sm" className="rounded-lg">
-              <HugeIcon icon={MoreHorizontalIcon} size={14} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={() => void openFiles()}>
-              <HugeIcon icon={FileAddIcon} size={14} className="mr-2" />
-              <span>添加文件</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => void setShowImportDialog(true)}>
-              <HugeIcon icon={FolderOpenIcon} size={14} className="mr-2" />
-              <span>添加目录</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => void saveCurrentAs()}>
-              <HugeIcon icon={Download01Icon} size={14} className="mr-2" />
-              <span>另存为</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setShowExportDialog(true)}>
-              <HugeIcon icon={Settings01Icon} size={14} className="mr-2" />
-              <span>导出</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Split button: 保存 | ▾ */}
+        <div className="ml-2 flex rounded-lg">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => void saveCurrent()}
+            className="h-8 rounded-r-none rounded-l-lg border-r-0"
+            disabled={!hasChanges || !!activeRequestId}
+          >
+            <HugeIcon icon={SaveEnergy01Icon} size={14} />
+            <span>保存</span>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="default"
+                size="sm"
+                className="h-8 w-7 shrink-0 rounded-l-none rounded-r-lg p-0 border-l-0"
+              >
+                <HugeIcon icon={ChevronDownIcon} size={12} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuLabel className="text-fine-print font-normal text-muted-foreground">
+                更多操作
+              </DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => void saveCurrentAs()}>
+                <HugeIcon icon={FloppyDiskIcon} size={14} className="mr-2" />
+                <span>另存为</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowExportDialog(true)}>
+                <HugeIcon icon={FileExportIcon} size={14} className="mr-2" />
+                <span>导出</span>
+              </DropdownMenuItem>
+              {hasChanges ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={resetToOriginal}>
+                    <HugeIcon icon={RotateLeft01Icon} size={14} className="mr-2" />
+                    <span>重置</span>
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-
-      <OmShowDirectoryPickerDialog
-        open={showImportDialog}
-        onOpenChange={setShowImportDialog}
-        existingFilePaths={files.map(item => item.filePath)}
-        onImportComplete={paths => {
-          addFilesByPaths(paths)
-        }}
-      />
 
       <OmExportDialog
         open={showExportDialog}

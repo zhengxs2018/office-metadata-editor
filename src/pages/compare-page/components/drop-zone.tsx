@@ -179,9 +179,9 @@ export const DropZone: React.FC<DropZoneProps> = ({ mode = "both" }) => {
   }
 
   const description = {
-    both: "点击选择文件，或拖拽文件/文件夹至此处",
-    file: "点击选择文件，或拖拽文件至此处",
-    directory: "点击选择文件夹，或拖拽文件夹至此处",
+    both: "点击或拖拽文件/文件夹至此处",
+    file: "点击或拖拽文件至此处",
+    directory: "点击或拖拽文件夹至此处",
   } as const
 
   return (
@@ -222,8 +222,8 @@ export const DropZone: React.FC<DropZoneProps> = ({ mode = "both" }) => {
             )}
           </div>
           <div className="space-y-0.5">
-            <p className="text-ink text-fine-print font-medium">{description[mode]}</p>
-            <p className="text-fine-print text-muted-foreground">支持 PDF / XLSX / DOCX</p>
+            <p className="text-sm text-fine-print font-medium">{description[mode]}</p>
+            <p className="mt-4 text-xs text-fine-print text-muted-foreground">支持 PDF / XLSX / DOCX</p>
           </div>
           {mode === "both" && (
             <Button

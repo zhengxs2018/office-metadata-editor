@@ -7,11 +7,7 @@ export interface OmFileTypeIconProps {
   className?: string
 }
 
-export const OmFileTypeIcon: React.FC<OmFileTypeIconProps> = ({ type, className = "" }) => {
-  const iconProps = {
-    className: `h-5 w-5 ${className}`,
-  }
-
+export const OmFileTypeIcon: React.FC<OmFileTypeIconProps> = ({ type }) => {
   switch (type) {
     case "docx":
     case "doc":

@@ -18,6 +18,17 @@ export function formatDate(dateString: string): string {
   }
 }
 
+/**
+ * 完整时间（用于 tooltip），格式 `2024-01-15 14:30:45`，不含 T 和 Z
+ */
+export function formatFullTime(dateString: string): string {
+  if (!dateString) return "-"
+  const d = new Date(dateString)
+  if (Number.isNaN(d.getTime())) return dateString
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
 export function formatRelativeTime(dateString: string): string {
   if (!dateString) return "时间未知"
 

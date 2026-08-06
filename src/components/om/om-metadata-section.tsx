@@ -12,7 +12,7 @@ export const OmMetadataSection: React.FC<React.PropsWithChildren<OmMetadataSecti
   children,
 }) => {
   return (
-    <Card size="sm" className="rounded-lg border border-border/70 bg-card/95 shadow-none">
+    <Card size="sm" className="rounded-lg border border-zinc-200 bg-card/95 shadow-none">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold tracking-tight">{title}</CardTitle>
         <CardDescription className="text-xs">{description}</CardDescription>

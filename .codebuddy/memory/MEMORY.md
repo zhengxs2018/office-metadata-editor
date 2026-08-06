@@ -115,3 +115,22 @@
 - **公司 tag 取消"未涉及"标签**：用正文 chip 颜色替代，header 不堆叠多种 badge。
 - **风险事件清单**：file rows 合并成 `公司 · 文件名` 单行；compact spacing（py-2, gap-2.5）；公司 chip 与"涉及 N 家"合并到一行。
 - **统一卡片内部间距**：`gap-3` 段落 / `gap-2.5` 文件行 / `py-2` 文件行内 padding / `px-2.5`。
+
+## 表格与文档边框核心教训（2026-08-06 batch-page 多轮迭代）
+
+### 问题：`border-collapse: collapse` + `position: sticky` → 边框不可见
+- 根因：sticky 元素提升到独立层叠上下文，覆盖 collapse 模式下相邻 cell 共享的边框。
+- 只有数据行（无 sticky）边框正常，表头 `<th>`（有 sticky left/right）边框消失。
+
+### 正确方案
+1. **`border-separate border-spacing-0`** 替代 `border-collapse`（独立边框，sticky 不覆盖）
+2. **单边边框**：每个 cell 只加 `border-b border-r`（无双线），外缘加 `border-t border-l`
+3. **固定列分隔**：不用 `border-r-2`（会与相邻 cell `border-r` 形成双线），改用 `shadow-[2px_0_3px_-1px_rgba(0,0,0,0.08)]` box-shadow
+4. **颜色**：当表头用 `bg-muted` 时，`border-border` 颜色太接近（96% vs 92% lightness），必须用 `border-zinc-300` 硬编码灰色
+5. **所有 `<th>` 必须加 `bg-muted`**（固定列+非固定列），否则滚动透底
+6. **表头圆角**：左右固定列 `<th>` 加 `rounded-tl-lg` / `rounded-tr-lg`，配合表格容器 `overflow-hidden rounded-lg`
+
+### editor-page 应用（2026-08-06）
+- `OmMetadataSection`：`border-border/70` → `border-zinc-200`（Card 边框可见）
+- `OmPropertyPreview`：`border-border/50` → `border-zinc-200`（预览面板边框可见）
+- `OmMetadataFieldItem`：`border-border/55` → `border-zinc-200`（Input 下划线可见）

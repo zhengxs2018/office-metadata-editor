@@ -1,99 +1,63 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
 import {
-  Upload01Icon,
   Layers01Icon,
   GitCompareIcon,
-  Shield01Icon,
-  Mouse01Icon,
-  ZapIcon,
 } from "@hugeicons/core-free-icons"
 
 import { useFileContext } from "@/contexts/file-context"
 import { ThemeSwitch } from "@/components/chrome/theme-switch"
-import { Spinner } from "@/components/ui/spinner"
-import { Button } from "@/components/ui/button"
 import { APP_NAME } from "@/lib/app-config"
-import { SUPPORTED_FILE_EXTENSIONS } from "@/lib/documents/supported-formats"
 import { cn } from "@/lib/utils"
-import { invoke } from "@tauri-apps/api/core"
 import { HugeIcon } from "@/components/icons/huge-icon"
 import { BlankLayout } from "@/layouts/blank-layout"
 import { ROUTES } from "@/router/paths"
-import { useGlobalDragDrop } from "@/hooks/use-global-drag-drop"
-import type { DirectoryScanResult } from "@/types/om-workflow"
+import { FileDropZone } from "@/components/base/file-drop-zone"
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate()
-  const { openFiles, addFilesByPaths, clearAll, isLoading: ctxLoading } = useFileContext()
+  const { addFilesByPaths, clearAll } = useFileContext()
 
   React.useEffect(() => {
     clearAll()
   }, [clearAll])
 
-  const handleOpenFiles = async () => {
-    const added = await openFiles()
-    if (added > 0) navigate(ROUTES.editor)
-  }
-
-  const handleDropFiles = async (paths: string[]) => {
-    const supportedSet = new Set(SUPPORTED_FILE_EXTENSIONS.map(ext => ext.toLowerCase()))
-    const filePaths: string[] = []
-    for (const p of paths) {
-      const lower = p.toLowerCase()
-      if (supportedSet.has(lower.replace(/^.*\./, ""))) {
-        filePaths.push(p)
-      } else {
-        try {
-          const result = await invoke<DirectoryScanResult>("scan_directory", {
-            path: p,
-            options: { recursive: true, extensions: [...supportedSet] },
-          })
-          for (const f of result.files) filePaths.push(f.path)
-        } catch (err) {
-          console.warn("scan_directory failed", p, err)
-        }
-      }
-    }
-    const added = addFilesByPaths(filePaths)
+  const handleDropFiles = (paths: string[]) => {
+    const added = addFilesByPaths(paths)
     if (added > 0) navigate(ROUTES.editor)
   }
 
   return (
     <BlankLayout>
-      <div className="flex h-full w-full flex-col bg-background">
-        <header className="mt-4 mb-10 flex items-start justify-end gap-4 px-6 pb-3 pt-10">
-          <div className="shrink-0 pr-10 pt-3">
-            <ThemeSwitch />
-          </div>
-        </header>
+      <div className="flex h-full w-full flex-col bg-background relative">
+        <div className="absolute top-10 right-10 z-10">
+          <ThemeSwitch />
+        </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-6 pb-6">
-          <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 min-[820px]:grid-cols-[1.4fr_1fr]">
-            <section className="flex flex-col rounded-xl p-5 sm:p-6">
+        <div className="flex h-full flex-1 items-center flex-col gap-3 overflow-hidden mt-20 p-10">
+          <section className="flex justify-between gap-2">
+            <div className="flex flex-col items-start w-3/5">
               <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
                 {APP_NAME}
               </h2>
               <p className="mt-2 text-sm leading-5 text-muted-foreground">
                 读取、编辑、清理、批处理全部本地完成，支持多格式文档的元数据处理。
               </p>
-            </section>
-
-            <section className="flex min-h-0 flex-col rounded-xl border border-dashed border-primary/35 bg-linear-to-br from-primary/8 via-primary/3 to-transparent p-4">
-              <DragOrUploadZone
-                isLoading={ctxLoading}
-                onDropFiles={handleDropFiles}
-                onOpenFiles={handleOpenFiles}
+            </div>
+            <div className="w-2/5 p-2">
+              <FileDropZone
+                onFilesSelected={handleDropFiles}
+                className="rounded-xl border border-dashed border-primary/35 bg-linear-to-br from-primary/8 via-primary/3 to-transparent"
               />
-            </section>
-          </div>
+            </div>
+          </section>
 
           <section className="grid shrink-0 grid-cols-1 gap-3 md:grid-cols-2">
             <EntryCard
               tone="orange"
               icon={GitCompareIcon}
               title="对比视图"
-              description="深度比对多份文档的作者、编辑时间与软件环境，精准识别国际串标风险。"
+              description="深度比对多份文档的作者、编辑时间与软件环境，精准识别同一作者风险。"
               badge="核心"
               onClick={() => navigate(ROUTES.compare)}
             />
@@ -109,96 +73,6 @@ export const HomePage: React.FC = () => {
         </div>
       </div>
     </BlankLayout>
-  )
-}
-
-const FeatureChip: React.FC<{
-  icon: React.ComponentProps<typeof HugeIcon>["icon"]
-  text: string
-}> = ({ icon: Icon, text }) => (
-  <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-background/60 px-2.5 py-1 text-xs font-medium text-muted-foreground">
-    <HugeIcon icon={Icon} size={13} className="text-primary" />
-    {text}
-  </span>
-)
-
-const DragOrUploadZone: React.FC<{
-  isLoading: boolean
-  onDropFiles: (paths: string[]) => void
-  onOpenFiles: () => void
-}> = ({ isLoading, onDropFiles, onOpenFiles }) => {
-  const [isDragOver, setIsDragOver] = React.useState(false)
-
-  useGlobalDragDrop(
-    onDropFiles,
-    hovering => setIsDragOver(hovering),
-  )
-
-  const handleDrop = (event: React.DragEvent) => {
-    event.preventDefault()
-    setIsDragOver(false)
-    const paths = Array.from(event.dataTransfer.files)
-      .map(file => (file as File & { path?: string }).path)
-      .filter((path): path is string => Boolean(path))
-    if (paths.length > 0) onDropFiles(paths)
-  }
-
-  const extensions = SUPPORTED_FILE_EXTENSIONS.map(ext => `.${ext}`)
-
-  return (
-    <div
-      onDragOver={e => e.preventDefault()}
-      onDragLeave={() => setIsDragOver(false)}
-      onDrop={handleDrop}
-      onClick={() => {
-        if (!isLoading) onOpenFiles()
-      }}
-      className={cn(
-        "flex min-h-0 flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg py-4 transition-colors hover:bg-primary/5",
-        isDragOver && "bg-primary/8",
-      )}
-      role="button"
-      tabIndex={0}
-      onKeyDown={e => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          if (!isLoading) onOpenFiles()
-        }
-      }}
-    >
-      <div className="flex items-center justify-center">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-primary/15">
-          <HugeIcon icon={Upload01Icon} size={16} />
-        </span>
-      </div>
-
-      <div className="text-center">
-        <p className="text-xs font-medium text-foreground">
-          点击或拖拽文件 / 文件夹到此处
-        </p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
-          支持多格式文档，单文件或多文件皆可
-        </p>
-      </div>
-
-      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/80">
-        {extensions.map(ext => (
-          <span
-            key={ext}
-            className="rounded border border-border/60 bg-background/60 px-1.5 py-0.5"
-          >
-            {ext}
-          </span>
-        ))}
-      </div>
-
-      {isLoading && (
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <Spinner className="h-3 w-3" />
-          正在加载…
-        </div>
-      )}
-    </div>
   )
 }
 

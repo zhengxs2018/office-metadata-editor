@@ -106,10 +106,10 @@ export const ExportView: React.FC<ExportViewProps> = ({
         const content = buildContent(format, records)
         await invoke("write_text_file", { filePath: target, content })
       }
-      setResult({ success: true, path: target, count: documents.length, format })
+      setResult({ success: true, outputPath: target, exportedCount: documents.length })
     } catch (error) {
       console.error("导出失败:", error)
-      setResult({ success: false, count: 0, format })
+      setResult({ success: false, exportedCount: 0, error: String(error) })
     } finally {
       setExporting(false)
     }
@@ -372,15 +372,15 @@ export const ExportView: React.FC<ExportViewProps> = ({
                     {result.success ? (
                       <>
                         <p className="text-ink-soft mt-1 text-fine-print">
-                          已将 {result.count} 个文件的元数据写入
+                          已将 {result.exportedCount} 个文件的元数据写入
                           <span className="mx-1 font-mono uppercase">
-                            .{result.format === "excel" ? "xlsx" : result.format}
+                            .{format === "excel" ? "xlsx" : format}
                           </span>
                           文件
                         </p>
-                        {result.path ? (
+                        {result.outputPath ? (
                           <p className="text-fine-print text-muted-foreground mt-2 break-all">
-                            {result.path}
+                            {result.outputPath}
                           </p>
                         ) : null}
                       </>

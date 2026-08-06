@@ -1,13 +1,10 @@
 import React, { useState, useCallback } from "react"
 import { useMetadata } from "@/contexts/metadata-context"
-import type { ExportFormat, ExportOptions } from "@/types/om-workflow"
+import type { ExportFormat, ExportOptions, ExportResult, ExportFieldOption } from "@/types/om-workflow"
 import { open } from "@tauri-apps/plugin-dialog"
 import { writeTextFile } from "@tauri-apps/plugin-fs"
 
-export interface ExportFieldOption {
-  key: string
-  label: string
-}
+export type { ExportFieldOption } from "@/types/om-workflow"
 
 interface OmExportCenterProps {
   fileIds?: string[]
@@ -42,11 +39,7 @@ export const OmExportCenter: React.FC<OmExportCenterProps> = ({
   const [format, setFormat] = useState<ExportFormat>("json")
   const [includeFields, setIncludeFields] = useState<string[]>([])
   const [isExporting, setIsExporting] = useState(false)
-  const [exportResult, setExportResult] = useState<{
-    success: boolean
-    path?: string
-    count: number
-  } | null>(null)
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null)
 
   const selectedDocs =
     fileIds.length > 0 ? documents.filter(d => fileIds.includes(d.id)) : documents
@@ -146,17 +139,13 @@ export const OmExportCenter: React.FC<OmExportCenterProps> = ({
 
       await writeTextFile(filePath, content)
 
-      const result = {
+      const result: ExportResult = {
         success: true,
         outputPath: filePath,
         exportedCount: selectedDocs.length,
       }
 
-      setExportResult({
-        success: result.success,
-        path: result.outputPath,
-        count: result.exportedCount,
-      })
+      setExportResult(result)
 
       if (result.success) {
         // TODO: 显示成功 Toast
@@ -367,11 +356,11 @@ export const OmExportCenter: React.FC<OmExportCenterProps> = ({
                     {exportResult.success && (
                       <>
                         <p className="mt-1 text-sm text-emerald-700">
-                          成功导出 {exportResult.count} 个文件的元数据
+                          成功导出 {exportResult.exportedCount} 个文件的元数据
                         </p>
-                        {exportResult.path && (
+                        {exportResult.outputPath && (
                           <p className="mt-2 text-xs break-all text-emerald-700">
-                            {exportResult.path}
+                            {exportResult.outputPath}
                           </p>
                         )}
                       </>

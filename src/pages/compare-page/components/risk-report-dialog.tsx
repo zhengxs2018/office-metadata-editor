@@ -192,7 +192,7 @@ export const RiskReportView: React.FC<RiskReportViewProps> = ({
       <div className="fixed inset-0 z-50 flex flex-col bg-background">
         <header
           data-tauri-drag-region
-          className="app-drag flex shrink-0 items-center gap-2 border-b border-border bg-background/95 py-3 pr-4 backdrop-blur-md sm:pr-6"
+          className="app-drag pt-2 flex shrink-0 items-center gap-2 border-b border-border bg-background/95 py-3 pr-4 backdrop-blur-md sm:pr-6"
           style={{ paddingLeft: "calc(var(--chrome-traffic-light-inset, 0px) + 0.75rem)" }}
         >
           <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -210,8 +210,8 @@ export const RiskReportView: React.FC<RiskReportViewProps> = ({
             </div>
             <div className="h-4 w-px shrink-0 bg-hairline" />
             <div className="min-w-0">
-              <p className="text-ink truncate font-heading text-base font-semibold">对比报告</p>
-              <p className="truncate text-fine-print text-muted-foreground">
+              <p className="select-none text-ink truncate font-heading text-base font-semibold">对比报告</p>
+              <p className="select-none truncate text-fine-print text-muted-foreground">
                 {involvedShortNames.join(" ⟷ ")}
                 <span className="mx-1.5 text-muted-foreground/60">·</span>
                 {companies.length} 家公司 · {totalFiles} 个文件
