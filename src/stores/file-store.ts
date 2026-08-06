@@ -1,7 +1,3 @@
-/**
- * Zustand Store - 工作流状态管理
- */
-
 import { create } from "zustand"
 import { subscribeWithSelector } from "zustand/middleware"
 import { invoke } from "@tauri-apps/api/core"
@@ -11,11 +7,7 @@ import type {
   DocumentMetadata,
   DirectoryScanResult,
   DirectoryInfo,
-  BatchOperation,
-  Workspace,
 } from "../types/om-workflow"
-
-// ==================== File Store ====================
 
 interface FileState {
   files: FileEntry[]
@@ -318,158 +310,5 @@ export const useFileStore = create<FileStore>()(
 
     setLoading: (loading: boolean) => set({ isLoading: loading }),
     setError: (error: string | null) => set({ error }),
-  })),
-)
-
-// ==================== Batch Operation Store ====================
-
-interface BatchState {
-  operations: BatchOperation[]
-  currentOperationId: string | null
-}
-
-interface BatchActions {
-  createOperation: (type: BatchOperation["type"], totalItems: number) => string
-  updateOperationProgress: (operationId: string, progress: Partial<BatchOperation>) => void
-  completeOperation: (operationId: string, successfulItems: number, failedItems: number) => void
-  failOperation: (operationId: string, error: string) => void
-  setCurrentOperation: (id: string | null) => void
-  clearCompletedOperations: () => void
-}
-
-type BatchStore = BatchState & BatchActions
-
-export const useBatchStore = create<BatchStore>()(
-  subscribeWithSelector(set => ({
-    operations: [],
-    currentOperationId: null,
-
-    createOperation: (type, totalItems) => {
-      const id = `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      const operation: BatchOperation = {
-        id,
-        type,
-        status: "pending",
-        totalItems,
-        processedItems: 0,
-        successfulItems: 0,
-        failedItems: 0,
-        progress: 0,
-      }
-
-      set(state => ({
-        operations: [...state.operations, operation],
-        currentOperationId: id,
-      }))
-
-      return id
-    },
-
-    updateOperationProgress: (operationId, progress) => {
-      set(state => ({
-        operations: state.operations.map(op =>
-          op.id === operationId ? { ...op, ...progress, status: progress.status ?? op.status } : op,
-        ),
-      }))
-    },
-
-    completeOperation: (operationId, successfulItems, failedItems) => {
-      set(state => ({
-        operations: state.operations.map(op =>
-          op.id === operationId
-            ? {
-                ...op,
-                status: "completed",
-                processedItems: op.totalItems,
-                successfulItems,
-                failedItems,
-                progress: 100,
-                completedAt: Date.now(),
-              }
-            : op,
-        ),
-      }))
-    },
-
-    failOperation: (operationId, error) => {
-      set(state => ({
-        operations: state.operations.map(op =>
-          op.id === operationId ? { ...op, status: "failed", error, completedAt: Date.now() } : op,
-        ),
-      }))
-    },
-
-    setCurrentOperation: id => set({ currentOperationId: id }),
-
-    clearCompletedOperations: () => {
-      set(state => ({
-        operations: state.operations.filter(op => op.status !== "completed"),
-        currentOperationId:
-          state.currentOperationId &&
-          state.operations.find(op => op.id === state.currentOperationId)?.status !== "completed"
-            ? state.currentOperationId
-            : null,
-      }))
-    },
-  })),
-)
-
-// ==================== Workspace Store ====================
-
-interface WorkspaceState {
-  workspaces: Workspace[]
-  activeWorkspaceId: string | null
-}
-
-interface WorkspaceActions {
-  createWorkspace: (name: string) => string
-  updateWorkspace: (id: string, updates: Partial<Workspace>) => void
-  deleteWorkspace: (id: string) => void
-  setActiveWorkspace: (id: string) => void
-  loadWorkspace: (id: string) => Promise<void>
-}
-
-type WorkspaceStore = WorkspaceState & WorkspaceActions
-
-export const useWorkspaceStore = create<WorkspaceStore>()(
-  subscribeWithSelector(set => ({
-    workspaces: [],
-    activeWorkspaceId: null,
-
-    createWorkspace: (name: string) => {
-      const id = `ws_${Date.now()}`
-      const workspace: Workspace = {
-        id,
-        name,
-        directories: [],
-        lastOpenedAt: Date.now(),
-      }
-
-      set(state => ({
-        workspaces: [...state.workspaces, workspace],
-        activeWorkspaceId: id,
-      }))
-
-      return id
-    },
-
-    updateWorkspace: (id, updates) => {
-      set(state => ({
-        workspaces: state.workspaces.map(ws => (ws.id === id ? { ...ws, ...updates } : ws)),
-      }))
-    },
-
-    deleteWorkspace: id => {
-      set(state => ({
-        workspaces: state.workspaces.filter(ws => ws.id !== id),
-        activeWorkspaceId: state.activeWorkspaceId === id ? null : state.activeWorkspaceId,
-      }))
-    },
-
-    setActiveWorkspace: id => set({ activeWorkspaceId: id }),
-
-    loadWorkspace: async id => {
-      set({ activeWorkspaceId: id })
-    },
   })),
 )

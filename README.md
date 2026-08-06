@@ -41,18 +41,18 @@ Tauri 2 + React 19 + TypeScript + shadcn/ui + Tailwind CSS 4，后端 Rust（zip
 ## 本地开发
 
 ```bash
-# 环境：Node.js >= 24、pnpm >= 10、Rust stable
-pnpm install
-pnpm start
+# 环境：bun>=1.3.14、Rust stable
+bun install
+bun start
 ```
 
 构建：
 
 ```bash
-pnpm bump <new-version>
+bun bump <new-version>
 
-pnpm build:mac   # macOS
-pnpm build:win   # Windows（需 mingw-w64）
+bun build:mac   # macOS
+bun build:win   # Windows（需 mingw-w64）
 ```
 
 ## License

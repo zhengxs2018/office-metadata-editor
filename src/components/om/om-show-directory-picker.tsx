@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { useFileStore } from "@/stores/om-workflow-store"
+import { useFileStore } from "@/stores/file-store"
 
 interface OmShowDirectoryPickerDialogProps {
   open: boolean

@@ -4,9 +4,9 @@
   "version": "0.2.0",
   "identifier": "com.zhengxs.ome",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "bun dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "bun build",
     "frontendDist": "../dist",
     "removeUnusedCommands": true
   },
