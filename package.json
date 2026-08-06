@@ -1,7 +1,7 @@
 {
   "name": "office-metadata-editor",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Office 元数据编辑器",
   "type": "module",
   "author": "zhengxs2018",
@@ -19,6 +19,8 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
+    "bump": "bash scripts/version.sh",
+    "release": "bash scripts/release.sh",
     "tauri": "tauri"
   },
   "packageManager": "pnpm@10.33.4",
