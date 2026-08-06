@@ -2,12 +2,58 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/roboto";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-heading: 'SF Pro Text', 'SF Pro Display', 'PingFang SC', 'Hiragino Sans GB', 'Helvetica Neue', sans-serif;
+  --font-heading: var(--font-sans);
+  --font-sans: 'Roboto Variable', sans-serif;
     --font-mono: 'JetBrains Mono Variable', monospace;
+
+  /* --- design.md semantic surfaces --- */
+  --color-canvas: var(--canvas);
+  --color-parchment: var(--parchment);
+  --color-pearl: var(--pearl);
+  --color-hairline: var(--hairline);
+  --color-divider-soft: var(--divider-soft);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* --- design.md radius scale --- */
+  --radius-pill: 9999px;
+
+  /* --- design.md typography scale --- */
+  --text-micro-legal: 0.625rem;
+  --text-micro-legal--line-height: 1.3;
+  --text-micro-legal--letter-spacing: -0.08px;
+  --text-fine-print: 0.75rem;
+  --text-fine-print--line-height: 1;
+  --text-fine-print--letter-spacing: -0.12px;
+  --text-caption: 0.875rem;
+  --text-caption--line-height: 1.43;
+  --text-caption--letter-spacing: -0.224px;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.47;
+  --text-body--letter-spacing: -0.374px;
+  --text-tagline: 1.3125rem;
+  --text-tagline--line-height: 1.19;
+  --text-tagline--letter-spacing: 0.231px;
+  --text-kpi: 1.875rem;
+  --text-kpi--line-height: 1.2;
+  --text-kpi--letter-spacing: -0.374px;
+  --text-display-md: 2.125rem;
+  --text-display-md--line-height: 1.2;
+  --text-display-md--letter-spacing: -0.374px;
+  --text-display-lg: 2.5rem;
+  --text-display-lg--line-height: 1.1;
+  --text-display-lg--letter-spacing: -0.4px;
+
+  /* --- design.md: the single product shadow --- */
+  --shadow-product: 3px 5px 30px 0 rgb(0 0 0 / 0.22);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -50,71 +96,95 @@
 
 :root {
     --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+    --foreground: oklch(0.147 0.004 49.3);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: oklch(0.147 0.004 49.3);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.59 0.168 255.1);
-  --primary-foreground: oklch(0.985 0.004 255);
+    --popover-foreground: oklch(0.147 0.004 49.3);
+  --primary: oklch(0.5 0.134 242.749);
+  --primary-foreground: oklch(0.977 0.013 236.62);
     --secondary: oklch(0.967 0.001 286.375);
     --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.965 0.003 258);
-  --muted-foreground: oklch(0.52 0.014 258);
-  --accent: oklch(0.958 0.008 258);
-    --accent-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.96 0.002 17.2);
+  --muted-foreground: oklch(0.547 0.021 43.1);
+  --accent: oklch(0.96 0.002 17.2);
+    --accent-foreground: oklch(0.214 0.009 43.1);
     --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.916 0.01 258);
-  --input: oklch(0.916 0.01 258);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.865 0.127 207.078);
-    --chart-2: oklch(0.715 0.143 215.221);
-    --chart-3: oklch(0.609 0.126 221.723);
-    --chart-4: oklch(0.52 0.105 223.128);
-    --chart-5: oklch(0.45 0.085 224.283);
-    --radius: 0.5rem;
-    --sidebar: oklch(0.978 0.004 258);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.59 0.168 255.1);
+  --border: oklch(0.922 0.005 34.3);
+  --input: oklch(0.922 0.005 34.3);
+    --ring: oklch(0.714 0.014 41.2);
+    --chart-1: oklch(0.828 0.111 230.318);
+    --chart-2: oklch(0.685 0.169 237.323);
+    --chart-3: oklch(0.588 0.158 241.966);
+    --chart-4: oklch(0.5 0.134 242.749);
+    --chart-5: oklch(0.443 0.11 240.79);
+    --radius: 0.45rem;
+    --sidebar: oklch(0.986 0.002 67.8);
+    --sidebar-foreground: oklch(0.147 0.004 49.3);
+    --sidebar-primary: oklch(0.588 0.158 241.966);
     --sidebar-primary-foreground: oklch(0.977 0.013 236.62);
-    --sidebar-accent: oklch(0.958 0.008 258);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.916 0.01 258);
-    --sidebar-ring: oklch(0.708 0 0);
+    --sidebar-accent: oklch(0.96 0.002 17.2);
+    --sidebar-accent-foreground: oklch(0.214 0.009 43.1);
+    --sidebar-border: oklch(0.922 0.005 34.3);
+    --sidebar-ring: oklch(0.714 0.014 41.2);
+
+  /* design.md — warm neutral surface ladder (canvas < parchment < pearl) */
+  --canvas: oklch(0.974 0.003 106);
+  --parchment: oklch(0.988 0.002 106);
+  --pearl: oklch(1 0 0);
+  --hairline: oklch(0.906 0.004 106);
+  --divider-soft: oklch(0.941 0.003 106);
+  --success: oklch(0.68 0.146 152);
+  --success-foreground: oklch(0.32 0.072 152);
+  --warning: oklch(0.79 0.148 76);
+  --warning-foreground: oklch(0.38 0.086 62);
+  --destructive-foreground: oklch(0.985 0.004 27);
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
+    --background: oklch(0.147 0.004 49.3);
+    --foreground: oklch(0.986 0.002 67.8);
+    --card: oklch(0.214 0.009 43.1);
+    --card-foreground: oklch(0.986 0.002 67.8);
+    --popover: oklch(0.214 0.009 43.1);
+    --popover-foreground: oklch(0.986 0.002 67.8);
     --primary: oklch(0.443 0.11 240.79);
     --primary-foreground: oklch(0.977 0.013 236.62);
     --secondary: oklch(0.274 0.006 286.033);
     --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.268 0.011 36.5);
+    --muted-foreground: oklch(0.714 0.014 41.2);
+    --accent: oklch(0.268 0.011 36.5);
+    --accent-foreground: oklch(0.986 0.002 67.8);
     --destructive: oklch(0.704 0.191 22.216);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.865 0.127 207.078);
-    --chart-2: oklch(0.715 0.143 215.221);
-    --chart-3: oklch(0.609 0.126 221.723);
-    --chart-4: oklch(0.52 0.105 223.128);
-    --chart-5: oklch(0.45 0.085 224.283);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
+    --ring: oklch(0.547 0.021 43.1);
+    --chart-1: oklch(0.828 0.111 230.318);
+    --chart-2: oklch(0.685 0.169 237.323);
+    --chart-3: oklch(0.588 0.158 241.966);
+    --chart-4: oklch(0.5 0.134 242.749);
+    --chart-5: oklch(0.443 0.11 240.79);
+    --sidebar: oklch(0.214 0.009 43.1);
+    --sidebar-foreground: oklch(0.986 0.002 67.8);
     --sidebar-primary: oklch(0.685 0.169 237.323);
     --sidebar-primary-foreground: oklch(0.293 0.066 243.157);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.268 0.011 36.5);
+    --sidebar-accent-foreground: oklch(0.986 0.002 67.8);
     --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --sidebar-ring: oklch(0.547 0.021 43.1);
+
+  /* design.md — dark surface ladder rises with elevation */
+  --canvas: oklch(0.168 0.003 106);
+  --parchment: oklch(0.205 0.003 106);
+  --pearl: oklch(0.242 0.004 106);
+  --hairline: oklch(1 0 0 / 9%);
+  --divider-soft: oklch(1 0 0 / 6%);
+  --success: oklch(0.72 0.146 152);
+  --success-foreground: oklch(0.94 0.036 152);
+  --warning: oklch(0.82 0.148 76);
+  --warning-foreground: oklch(0.95 0.04 76);
+  --destructive-foreground: oklch(0.97 0.012 27);
 }
 
 @layer base {
@@ -126,6 +196,7 @@
     }
   html {
     font-family: var(--font-heading);
+    @apply font-sans;
   }
 
   code,
@@ -175,5 +246,44 @@ body {
   /* Opt back into selection for any generated UI surface that should behave like regular text. */
   .ui-selectable {
     @apply select-text;
+  }
+
+  /* design.md — hairline separators replace borders. */
+  .hairline-b {
+    box-shadow: inset 0 -1px 0 0 var(--hairline);
+  }
+
+  .hairline-t {
+    box-shadow: inset 0 1px 0 0 var(--hairline);
+  }
+
+  .hairline-r {
+    box-shadow: inset -1px 0 0 0 var(--hairline);
+  }
+
+  .hairline-l {
+    box-shadow: inset 1px 0 0 0 var(--hairline);
+  }
+
+  /* design.md — the one elevated surface treatment. */
+  .surface-card {
+    background-color: var(--pearl);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-product);
+  }
+
+  /* design.md — quiet inset surface for nested content. */
+  .surface-inset {
+    background-color: var(--canvas);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Tauri: the draggable window chrome region. */
+  .app-drag {
+    -webkit-app-region: drag;
+  }
+
+  .app-no-drag {
+    -webkit-app-region: no-drag;
   }
 }

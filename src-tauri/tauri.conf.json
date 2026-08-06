@@ -16,8 +16,10 @@
       {
         "label": "main",
         "title": "Office 元数据编辑器",
-        "width": 1200,
-        "height": 800,
+        "width": 880,
+        "height": 580,
+        "minWidth": 780,
+        "minHeight": 520,
         "center": true,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,

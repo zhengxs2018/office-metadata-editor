@@ -1,140 +1,11 @@
-use std::fs;
 use std::io::{Cursor, Read, Write};
-use std::path::PathBuf;
 
-use serde::{Deserialize, Serialize};
 use xmltree::{Element, XMLNode};
 use zip::{write::SimpleFileOptions, ZipArchive, ZipWriter};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct DocumentProperties {
-    pub title: String,
-    pub subject: String,
-    pub creator: String,
-    pub keywords: String,
-    pub description: String,
-    pub last_modified_by: String,
-    pub revision: String,
-    pub created: String,
-    pub modified: String,
-    pub category: String,
-    pub content_status: String,
-    pub version: String,
-    pub language: String,
-    pub identifier: String,
-    pub source: String,
-}
+use crate::export::DocumentMetadata;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct CoreProperties {
-    pub dc_title: String,
-    pub dc_subject: String,
-    pub dc_creator: String,
-    pub dc_description: String,
-    pub dc_keywords: String,
-    pub dc_language: String,
-    pub dc_identifier: String,
-    pub dc_source: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AppProperties {
-    pub application: String,
-    pub app_version: String,
-    pub company: String,
-    pub manager: String,
-    pub template: String,
-    pub total_time: String,
-    pub pages: u32,
-    pub words: u32,
-    pub characters: u32,
-    pub characters_with_spaces: u32,
-    pub paragraphs: u32,
-    pub lines: u32,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct DocumentMetadata {
-    pub file_name: String,
-    pub file_type: String,
-    pub file_size: u64,
-    pub document_properties: DocumentProperties,
-    pub core_properties: CoreProperties,
-    pub app_properties: AppProperties,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BatchSaveResultItem {
-    pub file_path: String,
-    pub success: bool,
-    pub error: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BatchSaveRequestItem {
-    pub file_path: String,
-    pub metadata: DocumentMetadata,
-}
-
-impl DocumentMetadata {
-    fn defaults(file_name: String, file_size: u64) -> Self {
-        Self {
-            file_name,
-            file_type: "docx".to_string(),
-            file_size,
-            document_properties: DocumentProperties {
-                title: String::new(),
-                subject: String::new(),
-                creator: String::new(),
-                keywords: String::new(),
-                description: String::new(),
-                last_modified_by: String::new(),
-                revision: String::new(),
-                created: String::new(),
-                modified: String::new(),
-                category: String::new(),
-                content_status: String::new(),
-                version: String::new(),
-                language: "zh-CN".to_string(),
-                identifier: String::new(),
-                source: String::new(),
-            },
-            core_properties: CoreProperties {
-                dc_title: String::new(),
-                dc_subject: String::new(),
-                dc_creator: String::new(),
-                dc_description: String::new(),
-                dc_keywords: String::new(),
-                dc_language: "zh-CN".to_string(),
-                dc_identifier: String::new(),
-                dc_source: String::new(),
-            },
-            app_properties: AppProperties {
-                application: "Microsoft Office Word".to_string(),
-                app_version: String::new(),
-                company: String::new(),
-                manager: String::new(),
-                template: String::new(),
-                total_time: "0".to_string(),
-                pages: 0,
-                words: 0,
-                characters: 0,
-                characters_with_spaces: 0,
-                paragraphs: 0,
-                lines: 0,
-            },
-        }
-    }
-}
-
-#[tauri::command]
-pub fn parse_docx_metadata(
+pub fn parse_ooxml_metadata(
     file_name: String,
     file_size: u64,
     file_bytes: Vec<u8>,
@@ -154,30 +25,7 @@ pub fn parse_docx_metadata(
     Ok(metadata)
 }
 
-#[tauri::command]
-pub fn parse_docx_metadata_from_path(file_path: String) -> Result<DocumentMetadata, String> {
-    let path = PathBuf::from(&file_path);
-    let file_name = path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("document.docx")
-        .to_string();
-
-    let file_size = fs::metadata(&path).map_err(|err| err.to_string())?.len();
-    let file_bytes = fs::read(&path).map_err(|err| err.to_string())?;
-
-    parse_docx_metadata(file_name, file_size, file_bytes)
-}
-
-#[tauri::command]
-pub fn update_docx_metadata(
-    file_bytes: Vec<u8>,
-    metadata: DocumentMetadata,
-) -> Result<Vec<u8>, String> {
-    build_updated_docx_bytes(file_bytes, &metadata)
-}
-
-pub fn build_updated_docx_bytes(
+pub fn build_updated_ooxml_bytes(
     file_bytes: Vec<u8>,
     metadata: &DocumentMetadata,
 ) -> Result<Vec<u8>, String> {
@@ -243,56 +91,6 @@ pub fn build_updated_docx_bytes(
     Ok(output.into_inner())
 }
 
-pub fn process_single_batch_clear(file_path: &str) -> Result<(), String> {
-    let path = PathBuf::from(file_path);
-    let file_name = path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("document.docx")
-        .to_string();
-    let file_size = fs::metadata(&path).map_err(|err| err.to_string())?.len();
-    let file_bytes = fs::read(&path).map_err(|err| err.to_string())?;
-
-    let mut metadata = parse_docx_metadata(file_name, file_size, file_bytes.clone())?;
-    clear_metadata_fields(&mut metadata);
-
-    let updated_file_bytes = build_updated_docx_bytes(file_bytes, &metadata)?;
-    fs::write(&path, updated_file_bytes).map_err(|err| err.to_string())?;
-    Ok(())
-}
-
-fn clear_metadata_fields(metadata: &mut DocumentMetadata) {
-    let original_created = metadata.document_properties.created.clone();
-    let original_modified = metadata.document_properties.modified.clone();
-    let original_revision = metadata.document_properties.revision.clone();
-
-    metadata.document_properties.title.clear();
-    metadata.document_properties.subject.clear();
-    metadata.document_properties.creator.clear();
-    metadata.document_properties.keywords.clear();
-    metadata.document_properties.description.clear();
-    metadata.document_properties.last_modified_by.clear();
-    metadata.document_properties.category.clear();
-    metadata.document_properties.content_status.clear();
-    metadata.document_properties.version.clear();
-    metadata.document_properties.identifier.clear();
-    metadata.document_properties.source.clear();
-    metadata.document_properties.created = original_created;
-    metadata.document_properties.modified = original_modified;
-    metadata.document_properties.revision = original_revision;
-
-    metadata.core_properties.dc_title.clear();
-    metadata.core_properties.dc_subject.clear();
-    metadata.core_properties.dc_creator.clear();
-    metadata.core_properties.dc_description.clear();
-    metadata.core_properties.dc_keywords.clear();
-    metadata.core_properties.dc_identifier.clear();
-    metadata.core_properties.dc_source.clear();
-
-    metadata.app_properties.company.clear();
-    metadata.app_properties.manager.clear();
-}
-
 fn read_zip_entry_as_string(
     archive: &mut ZipArchive<Cursor<Vec<u8>>>,
     path: &str,
@@ -302,8 +100,12 @@ fn read_zip_entry_as_string(
         Err(_) => return Ok(None),
     };
 
-    let mut content = String::new();
-    file.read_to_string(&mut content).map_err(|err| err.to_string())?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer).map_err(|e| e.to_string())?;
+
+    let content = String::from_utf8(buffer.clone())
+        .unwrap_or_else(|_| String::from_utf8_lossy(&buffer).to_string());
+
     Ok(Some(content))
 }
 
@@ -486,12 +288,10 @@ fn set_child_text(root: &mut Element, name: &str, value: &str) {
 
     for index in 0..root.children.len() {
         if let XMLNode::Element(child) = &mut root.children[index] {
-            if element_name_matches(&child.name, name) {
-                if first_match_index.is_none() {
-                    child.children.clear();
-                    child.children.push(XMLNode::Text(value.to_string()));
-                    first_match_index = Some(index);
-                }
+            if element_name_matches(&child.name, name) && first_match_index.is_none() {
+                child.children.clear();
+                child.children.push(XMLNode::Text(value.to_string()));
+                first_match_index = Some(index);
             }
         }
     }

@@ -1,15 +1,24 @@
 import React from "react"
 import { useState, useCallback } from "react"
-import { Upload, FileText } from "lucide-react"
+import { HugeIcon } from "@/components/icons/huge-icon"
+import { Upload01Icon, File01Icon } from "@hugeicons/core-free-icons"
 import { Spinner } from "@/components/ui/spinner"
 import { SUPPORTED_FILE_EXTENSIONS } from "@/lib/documents/supported-formats"
+import { cn } from "@/lib/utils"
 
 export interface OmFileUploadZoneProps {
-  onOpenFiles: () => void
+  className?: string
   isLoading: boolean
+  onOpenFiles: () => void
+  onDropFiles?: (paths: string[]) => void
 }
 
-export const OmFileUploadZone: React.FC<OmFileUploadZoneProps> = ({ onOpenFiles, isLoading }) => {
+export const OmFileUploadZone: React.FC<OmFileUploadZoneProps> = ({
+  className,
+  isLoading,
+  onOpenFiles,
+  onDropFiles,
+}) => {
   const [isDragOver, setIsDragOver] = useState(false)
   const formatText = SUPPORTED_FILE_EXTENSIONS.map(ext => `.${ext}`).join(" / ")
 
@@ -31,9 +40,18 @@ export const OmFileUploadZone: React.FC<OmFileUploadZoneProps> = ({ onOpenFiles,
       e.stopPropagation()
       setIsDragOver(false)
 
+      const droppedPaths = Array.from(e.dataTransfer.files)
+        .map(file => (file as File & { path?: string }).path)
+        .filter((path): path is string => Boolean(path))
+
+      if (droppedPaths.length > 0) {
+        onDropFiles?.(droppedPaths)
+        return
+      }
+
       void onOpenFiles()
     },
-    [onOpenFiles],
+    [onDropFiles, onOpenFiles],
   )
 
   const handleClick = useCallback(() => {
@@ -48,11 +66,14 @@ export const OmFileUploadZone: React.FC<OmFileUploadZoneProps> = ({ onOpenFiles,
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       disabled={isLoading}
-      className={`group relative flex min-h-52 w-full max-w-full flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed px-4 py-5 transition-all duration-200 ${
+      className={cn(
+        `group relative flex min-h-44 w-full max-w-full flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed px-4 py-5 transition-all duration-200`,
         isDragOver
           ? "border-primary bg-primary/12"
-          : "border-border bg-card/80 hover:border-primary/50 hover:bg-card"
-      } ${isLoading ? "cursor-wait opacity-70" : "cursor-pointer"}`}
+          : "border-border bg-card/80 hover:border-primary/50 hover:bg-card",
+        isLoading ? "cursor-wait opacity-70" : "cursor-pointer",
+        className,
+      )}
     >
       {isLoading ? (
         <div className="flex flex-col items-center gap-3">
@@ -67,9 +88,9 @@ export const OmFileUploadZone: React.FC<OmFileUploadZoneProps> = ({ onOpenFiles,
             }`}
           >
             {isDragOver ? (
-              <FileText className="h-8 w-8 text-primary" />
+              <HugeIcon icon={File01Icon} size={32} />
             ) : (
-              <Upload className="h-8 w-8 text-muted-foreground group-hover:text-primary" />
+              <HugeIcon icon={Upload01Icon} size={32} />
             )}
           </div>
           <div className="flex flex-col items-center gap-1">

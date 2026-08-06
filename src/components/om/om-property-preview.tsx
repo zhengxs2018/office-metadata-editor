@@ -1,6 +1,9 @@
 import React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { OmPropertyPreviewList, OmPropertyPreviewItem } from "@/components/om/om-property-preview-item"
+import {
+  OmPropertyPreviewList,
+  OmPropertyPreviewItem,
+} from "@/components/om/om-property-preview-item"
 
 export type OmProperty = {
   label: string
@@ -17,7 +20,7 @@ export const OmPropertyPreview: React.FC<OmPropertyPreviewProps> = ({ title, pro
   return (
     <Card
       size="sm"
-      className="rounded-lg border border-border/50 bg-background/55 shadow-none backdrop-blur-[2px]"
+      className="rounded-lg border border-zinc-200 bg-background/55 shadow-none backdrop-blur-[2px]"
     >
       <CardHeader className="pb-1.5">
         <CardTitle className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">

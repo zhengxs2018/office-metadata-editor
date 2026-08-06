@@ -2,10 +2,18 @@ import * as React from "react"
 import { Slot } from "radix-ui"
 
 import { cn } from "@/lib/utils"
-import { ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowRight01Icon, MoreHorizontalCircle01Icon } from "@hugeicons/core-free-icons"
 
 function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
-  return <nav aria-label="breadcrumb" data-slot="breadcrumb" className={cn(className)} {...props} />
+  return (
+    <nav
+      aria-label="breadcrumb"
+      data-slot="breadcrumb"
+      className={cn(className)}
+      {...props}
+    />
+  )
 }
 
 function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
@@ -13,8 +21,8 @@ function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
     <ol
       data-slot="breadcrumb-list"
       className={cn(
-        "flex flex-wrap items-center gap-1.5 text-sm wrap-break-word text-muted-foreground",
-        className,
+        "flex flex-wrap items-center gap-1.5 text-xs/relaxed wrap-break-word text-muted-foreground",
+        className
       )}
       {...props}
     />
@@ -62,7 +70,11 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
   )
 }
 
-function BreadcrumbSeparator({ children, className, ...props }: React.ComponentProps<"li">) {
+function BreadcrumbSeparator({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<"li">) {
   return (
     <li
       data-slot="breadcrumb-separator"
@@ -71,21 +83,29 @@ function BreadcrumbSeparator({ children, className, ...props }: React.ComponentP
       className={cn("[&>svg]:size-3.5", className)}
       {...props}
     >
-      {children ?? <ChevronRightIcon />}
+      {children ?? (
+        <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
+      )}
     </li>
   )
 }
 
-function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<"span">) {
+function BreadcrumbEllipsis({
+  className,
+  ...props
+}: React.ComponentProps<"span">) {
   return (
     <span
       data-slot="breadcrumb-ellipsis"
       role="presentation"
       aria-hidden="true"
-      className={cn("flex size-5 items-center justify-center [&>svg]:size-4", className)}
+      className={cn(
+        "flex size-4 items-center justify-center [&>svg]:size-3.5",
+        className
+      )}
       {...props}
     >
-      <MoreHorizontalIcon />
+      <HugeiconsIcon icon={MoreHorizontalCircle01Icon} strokeWidth={2} />
       <span className="sr-only">More</span>
     </span>
   )

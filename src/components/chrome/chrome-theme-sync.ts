@@ -1,4 +1,3 @@
-
 import { useEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { getCurrentWindow } from "@tauri-apps/api/window"
@@ -17,9 +16,11 @@ export function ChromeThemeSync() {
       const color = resolvePageBackgroundColor()
 
       if (color) {
-        void getCurrentWindow().setBackgroundColor(color).catch(() => {
-          // Ignore permission/runtime errors to avoid unhandled promise rejections.
-        })
+        void getCurrentWindow()
+          .setBackgroundColor(color)
+          .catch(() => {
+            // Ignore permission/runtime errors to avoid unhandled promise rejections.
+          })
       }
     })
 
