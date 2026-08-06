@@ -2,6 +2,7 @@ import { useCallback } from "react"
 import { getDocumentResourceByPath, type BatchSaveRequestItem } from "@/lib/resources/documents"
 import { resolveFileTypeFromPath } from "@/lib/documents/file-type"
 import type { LoadedDocument, DocumentState } from "./metadata-types"
+import type { FileStatus } from "./file-context"
 import type { DocumentMetadata } from "@/types/metadata"
 
 type SetState<T> = React.Dispatch<React.SetStateAction<T>>
@@ -12,7 +13,7 @@ interface SaveOpsDeps {
   createRequest: (filePaths: string[], source: string) => Promise<string>
   finishRequest: (requestId: string, status: "running" | "completed" | "failed" | "cancelled") => Promise<void>
   normalizeMetadata: (parsed: DocumentMetadata, filePath: string) => DocumentMetadata
-  updateFileStatus: (documentId: string, patch: { status?: string; progressMessage?: string; error?: string }) => void
+  updateFileStatus: (documentId: string, patch: { status?: FileStatus; progressMessage?: string; error?: string }) => void
   setDocumentsById: SetState<Record<string, DocumentState>>
   setDocumentTaskRequestIds: SetState<Record<string, string>>
   setBatchTaskRequestId: SetState<string | null>

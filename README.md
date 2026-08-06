@@ -19,11 +19,36 @@
 
 ## 界面预览
 
-![首页](./screenshots/home.jpg)
-
-![编辑页](./screenshots/edit.jpg)
-
-![批量操作](./screenshots/batch.jpg)
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="./screenshots/home.png" alt="首页" width="100%" />
+      <br/><sub><b>首页</b></sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="./screenshots/edit.png" alt="编辑页" width="100%" />
+      <br/><sub><b>编辑页</b></sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="./screenshots/batch.png" alt="批量操作" width="100%" />
+      <br/><sub><b>批量操作</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <img src="./screenshots/batch-export.png" alt="批量导出" width="100%" />
+      <br/><sub><b>批量导出</b></sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="./screenshots/compare.png" alt="对比视图" width="100%" />
+      <br/><sub><b>对比视图</b></sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="./screenshots/compare-report.png" alt="对比报告" width="100%" />
+      <br/><sub><b>对比报告</b></sub>
+    </td>
+  </tr>
+</table>
 
 ## 本地开发
 
