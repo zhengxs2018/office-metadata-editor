@@ -174,28 +174,35 @@ fn check_app_company_across(
     }
 }
 
-/// 对比两家公司的文件（A 公司文件 × B 公司文件全面两两对比）。
-/// 同公司文件之间不对比；空值 / stop words / 一致值不产出。
 pub fn compare_files(files: &[CompareFileInput]) -> Vec<MatchReport> {
     let mut reports: Vec<MatchReport> = Vec::new();
 
-    let unique_companies: HashSet<&str> = files
-        .iter()
-        .filter(|f| !f.company.trim().is_empty())
-        .map(|f| f.company.as_str())
-        .collect();
+    let unique_companies: Vec<&str> = {
+        let set: HashSet<&str> = files
+            .iter()
+            .filter(|f| !f.company.trim().is_empty())
+            .map(|f| f.company.as_str())
+            .collect();
+        set.into_iter().collect()
+    };
+
     if unique_companies.len() >= 2 {
-        let company_a = unique_companies.iter().copied().next().unwrap_or_default();
-        for fa in files {
-            if fa.company != company_a {
-                continue;
-            }
-            for fb in files {
-                if fb.company == company_a {
-                    continue;
+        for i in 0..unique_companies.len() {
+            for j in (i + 1)..unique_companies.len() {
+                let ca = unique_companies[i];
+                let cb = unique_companies[j];
+                for fa in files {
+                    if fa.company != ca {
+                        continue;
+                    }
+                    for fb in files {
+                        if fb.company != cb {
+                            continue;
+                        }
+                        compare_cross_company_pair(fa, fb, &mut reports);
+                        check_app_company_across(fa, fb, &mut reports);
+                    }
                 }
-                compare_cross_company_pair(fa, fb, &mut reports);
-                check_app_company_across(fa, fb, &mut reports);
             }
         }
     }
@@ -327,5 +334,20 @@ mod tests {
             input("b", "b.docx", "A公司", "高卓栋", "", "Microsoft"),
         ];
         assert!(compare_files(&files).is_empty());
+    }
+
+    #[test]
+    fn detects_cross_company_match_beyond_first() {
+        let files = vec![
+            input("a", "a.docx", "A公司", "张三", "", ""),
+            input("b", "b.docx", "B公司", "李四", "", ""),
+            input("c", "c.docx", "C公司", "李四", "", ""),
+        ];
+        let reports = compare_files(&files);
+        assert_eq!(reports.len(), 1);
+        assert_eq!(reports[0].risk_level, "high");
+        assert_eq!(reports[0].issue, "疑似同一人");
+        assert!(reports[0].files.contains(&"b.docx".to_string()));
+        assert!(reports[0].files.contains(&"c.docx".to_string()));
     }
 }

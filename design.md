@@ -175,7 +175,7 @@ Web-oriented typography (e.g., 56px hero text or 17px body) creates oversized, c
 | Role | Font Size | Weight | Line Height | Application |
 | :--- | :--- | :--- | :--- | :--- |
 | **Window Title / Nav** | 12px | 500 | 1.0 | Top custom titlebar, breadcrumbs |
-| **Page Display Title** | 20px | 600 | 1.25 | Main page heading ("欢迎使用 Office 元数据编辑器") |
+| **Page Display Title** | 20px | 600 | 1.25 | Main page heading |
 | **Section Heading** | 15px–16px | 600 | 1.3 | Panel sub-headers, card primary titles |
 | **Body Strong** | 13px | 600 | 1.4 | Form labels, table headers, key metadata keys |
 | **Body (Default)** | 13px | 400 | 1.45 | Default inputs, descriptions, list items |

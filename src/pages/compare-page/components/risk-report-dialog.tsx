@@ -744,30 +744,32 @@ const CompanyBattleRow: React.FC<CompanyBattleRowProps> = ({ snapshots, involved
     )
   }
 
+  const involved = snapshots.filter(s => involvedIds.has(s.id))
+  const uninvolved = snapshots.filter(s => !involvedIds.has(s.id))
   const n = snapshots.length
-  const useHorizontalScroll = n >= 4
+  const useHorizontalScroll = n >= 3
+
+  const cardWidth = useHorizontalScroll ? "w-[280px] sm:w-[310px]" : "min-w-0 sm:min-w-65 sm:max-w-[360px]"
 
   const colsClass =
     n === 1
       ? "grid-cols-1 [&>article]:max-w-[480px]"
-      : n === 2
-        ? "grid-cols-1 sm:grid-cols-2 [&>article]:sm:max-w-none"
-        : "grid-cols-1 sm:grid-cols-3 [&>article]:sm:max-w-none"
+      : "grid-cols-1 sm:grid-cols-2 [&>article]:sm:max-w-none"
 
-  const articleSizeClass = useHorizontalScroll
-    ? "w-65 sm:w-70"
-    : "min-w-0 sm:min-w-65 sm:max-w-[360px]"
-
-  const cards = snapshots.map((s) => {
+  const renderCard = (s: CompanySnapshot) => {
     const accent = COMPANY_ACCENTS[s.accentIndex % COMPANY_ACCENTS.length]
     const isInvolved = involvedIds.has(s.id)
+    const flaggedFiles = s.files.filter(f => f.isFlagged)
+    const cleanCount = s.files.length - flaggedFiles.length
+    const flaggedShown = flaggedFiles.slice(0, 4)
+
     return (
       <article
         key={s.id}
         className={cn(
           "flex min-w-0 flex-col gap-3 rounded-xl border-2 p-3.5",
           accent.ring,
-          articleSizeClass,
+          cardWidth,
           !isInvolved && "opacity-70",
         )}
       >
@@ -786,95 +788,93 @@ const CompanyBattleRow: React.FC<CompanyBattleRowProps> = ({ snapshots, involved
               >
                 {s.shortName}
               </p>
-              {s.accentIndex === 0 ? (
-                <span className="shrink-0 rounded bg-foreground/5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  基准方
-                </span>
-              ) : isInvolved ? (
-                <span className="shrink-0 rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-600">
-                  对手方
-                </span>
-              ) : (
-                <span className="shrink-0 rounded bg-foreground/5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  未涉及
-                </span>
-              )}
+              <CompanyTag s={s} isInvolved={isInvolved} />
             </div>
             <p className="text-fine-print mt-0.5 text-muted-foreground tabular-nums">
               {s.files.length} 个文件
             </p>
           </div>
         </header>
-        <div className="grid grid-cols-3 gap-2">
-          <BattleStat
-            tone="high"
-            label="高"
-            value={s.highCount}
-          />
-          <BattleStat
-            tone="medium"
-            label="中"
-            value={s.mediumCount}
-          />
-          <BattleStat
-            tone="pass"
-            label="通过"
-            value={s.cleanCount}
-          />
-        </div>
-        {s.files.length > 0 ? (
-          <ul className="flex min-h-0 flex-1 flex-col gap-1 border-t border-border/40 pt-2">
-            {s.files.slice(0, 5).map(file => (
-              <li
-                key={file.id}
-                className={cn(
-                  "flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-fine-print",
-                  file.isFlagged ? "bg-red-500/5" : "hover:bg-muted/40",
-                )}
-                title={
-                  file.isFlagged && file.matchingField && file.matchingValue
-                    ? `「${file.matchingField}」相同：${file.matchingValue}`
-                    : file.fileName
-                }
-              >
-                <HugeIcon
-                  icon={
-                    file.riskLevel === "high"
-                      ? Alert02Icon
-                      : file.riskLevel === "medium"
-                        ? Alert01Icon
-                        : CheckmarkCircle02Icon
-                  }
-                  size={11}
-                  className={cn(
-                    "shrink-0",
-                    file.riskLevel === "high" && "text-red-600",
-                    file.riskLevel === "medium" && "text-amber-600",
-                    !file.riskLevel && "text-emerald-600",
-                  )}
+
+        {isInvolved ? (
+          <>
+            {(s.highCount > 0 || s.mediumCount > 0) ? (
+              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${statsColCount(s)}, minmax(0, 1fr))` }}>
+                {s.highCount > 0 ? (
+                  <BattleStat
+                    tone="high"
+                    label="高"
+                    value={s.highCount}
+                  />
+                ) : null}
+                {s.mediumCount > 0 ? (
+                  <BattleStat
+                    tone="medium"
+                    label="中"
+                    value={s.mediumCount}
+                  />
+                ) : null}
+                <BattleStat
+                  tone="pass"
+                  label="通过"
+                  value={cleanCount}
                 />
-                <span
-                  className={cn(
-                    "min-w-0 flex-1 truncate",
-                    file.isFlagged ? "text-ink" : "text-ink-soft",
-                  )}
-                >
-                  {file.fileName}
-                </span>
-              </li>
-            ))}
-            {s.files.length > 5 ? (
-              <li className="text-fine-print mt-0.5 px-2 text-muted-foreground">
-                +{s.files.length - 5} 个文件未列出
-              </li>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-emerald-700">
+                <HugeIcon icon={CheckmarkCircle02Icon} size={14} />
+                <p className="text-fine-print font-medium">
+                  {s.files.length} 个文件全部通过
+                </p>
+              </div>
+            )}
+
+            {flaggedShown.length > 0 ? (
+              <ul className="flex min-h-0 flex-1 flex-col gap-2.5 border-t border-border/40 pt-3">
+                {flaggedShown.map(file => (
+                  <li
+                    key={file.id}
+                    className="flex min-w-0 items-center gap-2 rounded-md bg-red-500/5 px-2.5 py-2 text-fine-print"
+                    title={
+                      file.matchingField && file.matchingValue
+                        ? `「${file.matchingField}」相同：${file.matchingValue}`
+                        : file.fileName
+                    }
+                  >
+                    <HugeIcon
+                      icon={
+                        file.riskLevel === "medium" ? Alert01Icon : Alert02Icon
+                      }
+                      size={12}
+                      className={cn(
+                        "shrink-0",
+                        file.riskLevel === "medium" ? "text-amber-600" : "text-red-600",
+                      )}
+                    />
+                    <span className="text-ink min-w-0 flex-1 truncate font-medium">
+                      {file.fileName}
+                    </span>
+                  </li>
+                ))}
+                {(flaggedFiles.length > flaggedShown.length || cleanCount > 0) ? (
+                  <li className="text-fine-print px-2 text-muted-foreground">
+                    + 还有 {cleanCount + flaggedFiles.length - flaggedShown.length} 个文件未列出
+                  </li>
+                ) : null}
+              </ul>
             ) : null}
-          </ul>
+          </>
         ) : (
-          <p className="text-fine-print text-muted-foreground">无文件</p>
+          <p className="text-fine-print flex items-center gap-1.5 text-emerald-700">
+            <HugeIcon icon={CheckmarkCircle02Icon} size={12} />
+            全部 {s.files.length} 个文件均无风险
+          </p>
         )}
       </article>
     )
-  })
+  }
+
+  const cards = snapshots.map(renderCard)
 
   if (useHorizontalScroll) {
     return (
@@ -885,13 +885,63 @@ const CompanyBattleRow: React.FC<CompanyBattleRowProps> = ({ snapshots, involved
           </div>
         </ScrollArea>
         <p className="text-fine-print mt-1 px-1 text-muted-foreground">
-          共 {n} 家公司，可横向滚动查看
+          {involved.length > 0 ? (
+            <>
+              涉及 {involved.length} 家、共 {n} 家 · 卡片可横向滚动
+            </>
+          ) : (
+            <>共 {n} 家公司，可横向滚动查看</>
+          )}
         </p>
       </div>
     )
   }
 
-  return <div className={cn("grid gap-3", colsClass)}>{cards}</div>
+  return (
+    <div className="space-y-2.5">
+      <div className={cn("grid gap-3", colsClass)}>{cards}</div>
+      {uninvolved.length > 0 ? (
+        <p className="text-fine-print text-muted-foreground">
+          另有 {uninvolved.length} 家未涉及：
+          {uninvolved.map((s, idx) => (
+            <React.Fragment key={s.id}>
+              {idx > 0 ? "、" : ""}
+              <span className={cn("mx-0.5", COMPANY_ACCENTS[s.accentIndex % COMPANY_ACCENTS.length].accent)}>
+                {s.shortName}
+              </span>
+            </React.Fragment>
+          ))}
+          （共 {uninvolved.reduce((sum, s) => sum + s.files.length, 0)} 个文件全部通过）
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+function statsColCount(s: CompanySnapshot): number {
+  let n = 0
+  if (s.highCount > 0) n++
+  if (s.mediumCount > 0) n++
+  n++
+  return n
+}
+
+function CompanyTag({ s, isInvolved }: { s: CompanySnapshot; isInvolved: boolean }) {
+  if (s.accentIndex === 0) {
+    return (
+      <span className="shrink-0 rounded bg-foreground/5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+        基准方
+      </span>
+    )
+  }
+  if (isInvolved) {
+    return (
+      <span className="shrink-0 rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-600">
+        对手方
+      </span>
+    )
+  }
+  return null
 }
 
 interface RiskDistributionChartProps {
@@ -1069,7 +1119,7 @@ const RiskFindingsAdversarial: React.FC<RiskFindingsAdversarialProps> = ({
             key={`${finding.matchTag}-${idx}`}
             className={cn("overflow-hidden rounded-lg border", toneRing)}
           >
-            <div className="flex items-start gap-2 px-3 pt-2.5 pb-2">
+            <div className="flex items-start gap-2 px-3.5 pt-2.5 pb-2.5">
               <span
                 className={cn(
                   "mt-0.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold",
@@ -1089,11 +1139,12 @@ const RiskFindingsAdversarial: React.FC<RiskFindingsAdversarialProps> = ({
                 </p>
               </div>
             </div>
-            <div className="border-t border-border/40 bg-background/40 px-3 py-2">
-              <div className="text-fine-print mb-1.5 flex items-center gap-1.5 text-muted-foreground">
-                <span>涉及 {companyPairs.length} 家公司 · 共 {finding.files.length} 个文件</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <div className="border-t border-border/40 bg-background/40 px-3.5 py-2.5">
+              <div className="text-fine-print flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground">
+                <span>
+                  涉及 {companyPairs.length} 家 · {finding.files.length} 个文件
+                </span>
+                <span className="text-muted-foreground/40">|</span>
                 {companyPairs.map((cp, i) => (
                   <React.Fragment key={cp.name}>
                     {i > 0 ? (
@@ -1114,7 +1165,7 @@ const RiskFindingsAdversarial: React.FC<RiskFindingsAdversarialProps> = ({
                   </React.Fragment>
                 ))}
               </div>
-              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                 {finding.files.map((fileName, i) => {
                   const companyName = finding.companies[i]
                   const snap = companyByName.get(companyName ?? "")
@@ -1122,28 +1173,24 @@ const RiskFindingsAdversarial: React.FC<RiskFindingsAdversarialProps> = ({
                   return (
                     <div
                       key={`${fileName}-${i}`}
-                      className="flex min-w-0 items-start gap-1.5 rounded-md bg-background/60 px-2 py-1.5 ring-1 ring-border/60"
+                      className="flex min-w-0 items-center gap-2 rounded-md bg-background/60 px-2.5 py-2 ring-1 ring-border/60"
                     >
                       <HugeIcon
                         icon={File01Icon}
                         size={12}
-                        className={cn("mt-0.5 shrink-0", accent.accent)}
+                        className={cn("shrink-0", accent.accent)}
                       />
                       <div className="min-w-0 flex-1">
                         <p
-                          className="truncate text-fine-print font-medium text-ink"
-                          title={fileName}
+                          className="truncate text-fine-print text-ink-soft"
+                          title={`${snap?.shortName ?? shortenCompany(companyName ?? "")} · ${fileName}`}
                         >
+                          <span className={cn("font-medium", accent.accent)}>
+                            {snap?.shortName ?? shortenCompany(companyName ?? "")}
+                          </span>
+                          <span className="mx-1 text-muted-foreground/60">·</span>
                           {fileName}
                         </p>
-                        {companyName ? (
-                          <p
-                            className="text-fine-print truncate text-muted-foreground"
-                            title={companyName}
-                          >
-                            <span className={cn(accent.accent)}>{snap?.shortName ?? shortenCompany(companyName)}</span>
-                          </p>
-                        ) : null}
                       </div>
                     </div>
                   )
