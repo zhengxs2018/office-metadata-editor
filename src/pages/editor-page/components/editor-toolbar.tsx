@@ -1,9 +1,10 @@
-import React from "react"
-import { useFileContext } from "@/contexts/file-context"
-import { useMetadata } from "@/contexts/metadata-context"
-import type { ExportFieldOption } from "@/components/om/om-export-center"
-import { OmExportDialog } from "@/components/om/om-common-dialogs"
-import { Button } from "@/components/ui/button"
+import React from 'react';
+import { useFileContext } from '@/contexts/file-context';
+import { useMetadata } from '@/contexts/metadata-context';
+import type { ExportFieldOption } from '@/types/export';
+import { resolveFieldLabel } from '@/lib/documents/export/utils';
+import { ExportDialog } from './common-dialogs';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,8 +12,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { HugeIcon } from "@/components/icons/huge-icon"
+} from '@/components/ui/dropdown-menu';
+import { HugeIcon } from '@/components/icons/huge-icon';
 import {
   ChevronDownIcon,
   Delete01Icon,
@@ -21,10 +22,10 @@ import {
   FloppyDiskIcon,
   RotateLeft01Icon,
   SaveEnergy01Icon,
-} from "@hugeicons/core-free-icons"
+} from '@hugeicons/core-free-icons';
 
-export const OmEditorToolbar: React.FC = () => {
-  const { openFiles } = useFileContext()
+export const EditorToolbar: React.FC = () => {
+  const { openFiles } = useFileContext();
   const {
     documents,
     activeDocumentId,
@@ -34,42 +35,28 @@ export const OmEditorToolbar: React.FC = () => {
     saveCurrent,
     saveCurrentAs,
     documentTaskRequestIds,
-  } = useMetadata()
+  } = useMetadata();
 
-  const [showExportDialog, setShowExportDialog] = React.useState(false)
+  const [showExportDialog, setShowExportDialog] = React.useState(false);
 
   const exportFieldOptions = React.useMemo<ExportFieldOption[]>(() => {
     const targetDocs = activeDocumentId
       ? documents.filter(doc => doc.id === activeDocumentId)
-      : documents
+      : documents;
 
-    const fieldSet = new Set<string>()
+    const fieldSet = new Set<string>();
     targetDocs.forEach(doc => {
-      Object.keys(doc.metadata.documentProperties).forEach(key => fieldSet.add(key))
-      Object.keys(doc.metadata.appProperties).forEach(key => fieldSet.add(key))
-    })
-
-    const labels: Record<string, string> = {
-      title: "标题",
-      subject: "主题",
-      creator: "作者",
-      keywords: "关键词",
-      description: "描述",
-      lastModifiedBy: "最后修改者",
-      created: "创建时间",
-      modified: "修改时间",
-      category: "分类",
-      manager: "管理者",
-      company: "组织机构",
-    }
+      Object.keys(doc.metadata.documentProperties).forEach(key => fieldSet.add(key));
+      Object.keys(doc.metadata.appProperties).forEach(key => fieldSet.add(key));
+    });
 
     return Array.from(fieldSet).map(key => ({
       key,
-      label: labels[key] || key,
-    }))
-  }, [activeDocumentId, documents])
+      label: resolveFieldLabel(key),
+    }));
+  }, [activeDocumentId, documents]);
 
-  const activeRequestId = activeDocumentId ? documentTaskRequestIds[activeDocumentId] : undefined
+  const activeRequestId = activeDocumentId ? documentTaskRequestIds[activeDocumentId] : undefined;
 
   return (
     <>
@@ -94,7 +81,6 @@ export const OmEditorToolbar: React.FC = () => {
           <span>清理</span>
         </Button>
 
-        {/* Split button: 保存 | ▾ */}
         <div className="ml-2 flex rounded-lg">
           <Button
             variant="default"
@@ -142,14 +128,14 @@ export const OmEditorToolbar: React.FC = () => {
         </div>
       </div>
 
-      <OmExportDialog
+      <ExportDialog
         open={showExportDialog}
         onOpenChange={setShowExportDialog}
         fileIds={activeDocumentId ? [activeDocumentId] : []}
         availableFields={exportFieldOptions}
       />
     </>
-  )
-}
+  );
+};
 
-export default OmEditorToolbar
+export default EditorToolbar;

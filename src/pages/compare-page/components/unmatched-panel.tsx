@@ -1,28 +1,28 @@
-import React from "react"
+import React from 'react';
 
-import type { CompanySnapshot, UnmatchedFile } from "@/lib/documents/compare/types"
+import type { CompanySnapshot, UnmatchedFile } from '@/lib/documents/compare/types';
 
 interface UnmatchedPanelProps {
-  items: UnmatchedFile[]
-  companies: CompanySnapshot[]
+  items: UnmatchedFile[];
+  companies: CompanySnapshot[];
 }
 
 export const UnmatchedPanel: React.FC<UnmatchedPanelProps> = ({ items, companies }) => {
-  const nameOf = new Map(companies.map(c => [c.companyId, c.companyName]))
+  const nameOf = new Map(companies.map(c => [c.companyId, c.companyName]));
 
   if (items.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-border/60 p-4 text-center text-fine-print text-muted-foreground">
         所有文件均已成功对齐。
       </p>
-    )
+    );
   }
 
-  const grouped = new Map<string, UnmatchedFile[]>()
+  const grouped = new Map<string, UnmatchedFile[]>();
   for (const item of items) {
-    const list = grouped.get(item.companyId) ?? []
-    list.push(item)
-    grouped.set(item.companyId, list)
+    const list = grouped.get(item.companyId) ?? [];
+    list.push(item);
+    grouped.set(item.companyId, list);
   }
 
   return (
@@ -47,5 +47,5 @@ export const UnmatchedPanel: React.FC<UnmatchedPanelProps> = ({ items, companies
         </div>
       ))}
     </div>
-  )
-}
+  );
+};

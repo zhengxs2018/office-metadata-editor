@@ -1,24 +1,25 @@
-import React, { useState } from "react"
+import React, { useState } from 'react';
 
-import { ArrowDown01Icon, ArrowRight01Icon, CheckCircle } from "@hugeicons/core-free-icons"
+import { ArrowDown01Icon, ArrowRight01Icon, CheckCircle } from '@hugeicons/core-free-icons';
 
-import { HugeIcon } from "@/components/icons/huge-icon"
-import { cn } from "@/lib/utils"
-import {
-  RISK_LEVEL_LABEL,
-  type CompanySnapshot,
-} from "@/lib/documents/compare/types"
-import type { FindingCluster, FindingClusterField, FindingClusterFile } from "@/lib/documents/compare/selectors"
+import { HugeIcon } from '@/components/icons/huge-icon';
+import { cn } from '@/lib/utils';
+import { RISK_LEVEL_LABEL, type CompanySnapshot } from '@/lib/documents/compare/types';
+import type {
+  FindingCluster,
+  FindingClusterField,
+  FindingClusterFile,
+} from '@/lib/documents/compare/selectors';
 
-import { RISK_TONE } from "./compare-tokens"
+import { RISK_TONE } from './compare-tokens';
 
 interface FindingsListProps {
-  clusters: FindingCluster[]
-  companies: CompanySnapshot[]
-  activeGroupId: string | null
-  onLocate: (cluster: FindingCluster) => void
+  clusters: FindingCluster[];
+  companies: CompanySnapshot[];
+  activeGroupId: string | null;
+  onLocate: (cluster: FindingCluster) => void;
   /** 无任何高/中风险线索时为 true，用于展示积极状态 */
-  positive?: boolean
+  positive?: boolean;
 }
 
 export const FindingsList: React.FC<FindingsListProps> = ({
@@ -33,20 +34,18 @@ export const FindingsList: React.FC<FindingsListProps> = ({
       return (
         <div className="flex flex-col items-center gap-2 rounded-lg border border-emerald-300/50 bg-emerald-50/40 p-6 text-center">
           <HugeIcon icon={CheckCircle} size={28} className="text-emerald-600" />
-          <p className="text-fine-print font-medium text-emerald-700">
-            未发现任何高风险关联线索
-          </p>
+          <p className="text-fine-print font-medium text-emerald-700">未发现任何高风险关联线索</p>
           <p className="text-fine-print text-muted-foreground">
             基于当前文件，未检测到可判定为同源或同一主体的元数据线索。
           </p>
         </div>
-      )
+      );
     }
     return (
       <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-fine-print text-muted-foreground">
         未发现符合当前筛选条件的线索。
       </div>
-    )
+    );
   }
 
   return (
@@ -56,19 +55,19 @@ export const FindingsList: React.FC<FindingsListProps> = ({
           key={cluster.clusterId}
           cluster={cluster}
           nameOf={new Map(companies.map(c => [c.companyId, c.companyName]))}
-          active={cluster.groupIds.length > 0 && cluster.groupIds.includes(activeGroupId ?? "")}
+          active={cluster.groupIds.length > 0 && cluster.groupIds.includes(activeGroupId ?? '')}
           onLocate={onLocate}
         />
       ))}
     </ul>
-  )
-}
+  );
+};
 
 interface FindingClusterItemProps {
-  cluster: FindingCluster
-  nameOf: Map<string, string>
-  active: boolean
-  onLocate: (cluster: FindingCluster) => void
+  cluster: FindingCluster;
+  nameOf: Map<string, string>;
+  active: boolean;
+  onLocate: (cluster: FindingCluster) => void;
 }
 
 const FindingClusterItem: React.FC<FindingClusterItemProps> = ({
@@ -77,18 +76,18 @@ const FindingClusterItem: React.FC<FindingClusterItemProps> = ({
   active,
   onLocate,
 }) => {
-  const [open, setOpen] = useState(false)
-  const tone = RISK_TONE[cluster.level]
+  const [open, setOpen] = useState(false);
+  const tone = RISK_TONE[cluster.level];
   const companyChain = cluster.companies
     .map(c => nameOf.get(c.companyId) ?? c.companyId)
-    .join(" - ")
+    .join(' - ');
 
   return (
     <li>
       <div
         className={cn(
-          "rounded-lg border px-2.5 py-2 transition-colors",
-          active ? "border-primary/40 bg-primary/5" : "border-border/60",
+          'rounded-lg border px-2.5 py-2 transition-colors',
+          active ? 'border-primary/40 bg-primary/5' : 'border-border/60',
         )}
       >
         <button
@@ -99,15 +98,15 @@ const FindingClusterItem: React.FC<FindingClusterItemProps> = ({
           <div className="flex flex-wrap items-center gap-1.5">
             <span
               className={cn(
-                "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-fine-print",
+                'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-fine-print',
                 tone.chip,
               )}
             >
-              <span className={cn("size-1.5 rounded-full", tone.dot)} />
+              <span className={cn('size-1.5 rounded-full', tone.dot)} />
               {RISK_LEVEL_LABEL[cluster.level]}
             </span>
             <span className="text-fine-print text-muted-foreground">
-              {cluster.evidenceKind === "sameEntity" ? "同一主体" : "同源制作"}
+              {cluster.evidenceKind === 'sameEntity' ? '同一主体' : '同源制作'}
             </span>
             <span className="ml-auto text-fine-print tabular-nums text-muted-foreground">
               {Math.round(cluster.score * 100)}%
@@ -128,7 +127,7 @@ const FindingClusterItem: React.FC<FindingClusterItemProps> = ({
             <HugeIcon
               icon={open ? ArrowDown01Icon : ArrowRight01Icon}
               size={12}
-              className={cn("transition-transform", open && "rotate-90")}
+              className={cn('transition-transform', open && 'rotate-90')}
             />
             来源文件（{cluster.files.length}）
           </button>
@@ -142,11 +141,11 @@ const FindingClusterItem: React.FC<FindingClusterItemProps> = ({
         </div>
       </div>
     </li>
-  )
-}
+  );
+};
 
 interface SourceFileRowProps {
-  file: FindingClusterFile
+  file: FindingClusterFile;
 }
 
 const SourceFileRow: React.FC<SourceFileRowProps> = ({ file }) => {
@@ -159,17 +158,17 @@ const SourceFileRow: React.FC<SourceFileRowProps> = ({ file }) => {
         <FieldLine key={`${field.key}-${idx}`} field={field} />
       ))}
     </li>
-  )
-}
+  );
+};
 
 interface FieldLineProps {
-  field: FindingClusterField
+  field: FindingClusterField;
 }
 
 const FieldLine: React.FC<FieldLineProps> = ({ field }) => {
   return (
     <p className="mt-0.5 text-muted-foreground">
-      {field.label}：{field.rawValue || "—"}
+      {field.label}：{field.rawValue || '—'}
     </p>
-  )
-}
+  );
+};

@@ -1,31 +1,31 @@
-import React from "react"
-import { HugeIcon } from "@/components/icons/huge-icon"
-import type { IconSvgElement } from "@hugeicons/react"
+import React from 'react';
+import { HugeIcon } from '@/components/icons/huge-icon';
+import type { IconSvgElement } from '@hugeicons/react';
 
 export interface RiskFindingColumn<T> {
-  key: string
-  header: string
-  width?: string
-  render: (row: T, index: number) => React.ReactNode
+  key: string;
+  header: string;
+  width?: string;
+  render: (row: T, index: number) => React.ReactNode;
 }
 
 export interface RiskFindingTableProps<T> {
-  columns: RiskFindingColumn<T>[]
-  rows: T[]
-  loading?: boolean
-  emptyText?: string
-  loadingText?: string
+  columns: RiskFindingColumn<T>[];
+  rows: T[];
+  loading?: boolean;
+  emptyText?: string;
+  loadingText?: string;
 }
 
 export function RiskFindingTable<T>({
   columns,
   rows,
   loading,
-  emptyText = "未发现风险项",
-  loadingText = "正在分析…",
+  emptyText = '未发现风险项',
+  loadingText = '正在分析…',
 }: RiskFindingTableProps<T>) {
   if (loading) {
-    return <div className="text-ink-soft py-8 text-center text-sm">{loadingText}</div>
+    return <div className="text-ink-soft py-8 text-center text-sm">{loadingText}</div>;
   }
 
   if (rows.length === 0) {
@@ -33,7 +33,7 @@ export function RiskFindingTable<T>({
       <div className="text-ink-soft rounded-lg border border-dashed border-border/70 bg-card/50 py-8 text-center text-sm">
         {emptyText}
       </div>
-    )
+    );
   }
 
   return (
@@ -61,22 +61,34 @@ export function RiskFindingTable<T>({
         </tbody>
       </table>
     </div>
-  )
+  );
 }
 
 export interface LevelBadgeProps {
-  level: "high" | "medium" | "low"
-  labels?: Record<string, string>
-  className?: string
-  icon?: IconSvgElement
-  iconSize?: number
+  level: 'high' | 'medium' | 'low';
+  labels?: Record<string, string>;
+  className?: string;
+  icon?: IconSvgElement;
+  iconSize?: number;
 }
 
 const LEVEL_BADGE_DEFAULTS = {
-  high: { label: "高风险", className: "bg-red-500/10 text-red-600", icon: null as IconSvgElement | null },
-  medium: { label: "中风险", className: "bg-amber-500/10 text-amber-600", icon: null as IconSvgElement | null },
-  low: { label: "低风险", className: "bg-blue-500/10 text-blue-600", icon: null as IconSvgElement | null },
-}
+  high: {
+    label: '高风险',
+    className: 'bg-red-500/10 text-red-600',
+    icon: null as IconSvgElement | null,
+  },
+  medium: {
+    label: '中风险',
+    className: 'bg-amber-500/10 text-amber-600',
+    icon: null as IconSvgElement | null,
+  },
+  low: {
+    label: '低风险',
+    className: 'bg-blue-500/10 text-blue-600',
+    icon: null as IconSvgElement | null,
+  },
+};
 
 export const LevelBadge: React.FC<LevelBadgeProps> = ({
   level,
@@ -85,9 +97,9 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({
   icon,
   iconSize = 14,
 }) => {
-  const defaults = LEVEL_BADGE_DEFAULTS[level]
-  const label = labels?.[level] ?? defaults.label
-  const cls = className ?? defaults.className
+  const defaults = LEVEL_BADGE_DEFAULTS[level];
+  const label = labels?.[level] ?? defaults.label;
+  const cls = className ?? defaults.className;
 
   return (
     <span
@@ -96,5 +108,5 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({
       {icon ? <HugeIcon icon={icon} size={iconSize} /> : null}
       {label}
     </span>
-  )
-}
+  );
+};

@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react"
+import React, { useMemo, useState } from 'react';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 import {
   DIFF_STATE_LABEL,
   RISK_LEVEL_LABEL,
@@ -8,50 +8,46 @@ import {
   type AlignedGroup,
   type CompanySnapshot,
   type RiskFinding,
-} from "@/lib/documents/compare/types"
+} from '@/lib/documents/compare/types';
 
-import { DIFF_TONE, RISK_TONE } from "./compare-tokens"
+import { DIFF_TONE, RISK_TONE } from './compare-tokens';
 
 interface FieldDiffPanelProps {
-  group: AlignedGroup | null
-  companies: CompanySnapshot[]
-  findings: RiskFinding[]
+  group: AlignedGroup | null;
+  companies: CompanySnapshot[];
+  findings: RiskFinding[];
 }
 
-export const FieldDiffPanel: React.FC<FieldDiffPanelProps> = ({
-  group,
-  companies,
-  findings,
-}) => {
-  const [showIdentical, setShowIdentical] = useState(false)
+export const FieldDiffPanel: React.FC<FieldDiffPanelProps> = ({ group, companies, findings }) => {
+  const [showIdentical, setShowIdentical] = useState(false);
 
   const riskyFieldKeys = useMemo(() => {
-    const keys = new Set<string>()
+    const keys = new Set<string>();
     for (const finding of findings) {
-      for (const key of finding.fieldKeys) keys.add(key)
+      for (const key of finding.fieldKeys) keys.add(key);
     }
-    return keys
-  }, [findings])
+    return keys;
+  }, [findings]);
 
   const diffs = useMemo(() => {
-    if (!group) return []
+    if (!group) return [];
     return group.diffs.filter(diff => {
-      if (diff.state === "ignored") return false
-      if (diff.state === "identical" && !showIdentical) return riskyFieldKeys.has(diff.fieldKey)
-      return true
-    })
-  }, [group, showIdentical, riskyFieldKeys])
+      if (diff.state === 'ignored') return false;
+      if (diff.state === 'identical' && !showIdentical) return riskyFieldKeys.has(diff.fieldKey);
+      return true;
+    });
+  }, [group, showIdentical, riskyFieldKeys]);
 
   if (!group) {
     return (
       <div className="flex h-full min-h-40 items-center justify-center rounded-lg border border-dashed border-border/60 p-6 text-center text-fine-print text-muted-foreground">
         选择左侧任一对齐组，查看逐字段差异。
       </div>
-    )
+    );
   }
 
-  const shown = new Set(group.cells.map(cell => cell.companyId))
-  const cols = companies.filter(company => shown.has(company.companyId))
+  const shown = new Set(group.cells.map(cell => cell.companyId));
+  const cols = companies.filter(company => shown.has(company.companyId));
 
   return (
     <div className="space-y-2.5">
@@ -81,7 +77,7 @@ export const FieldDiffPanel: React.FC<FieldDiffPanelProps> = ({
             <li
               key={finding.findingId}
               className={cn(
-                "rounded-md border px-2 py-1.5 text-fine-print",
+                'rounded-md border px-2 py-1.5 text-fine-print',
                 RISK_TONE[finding.level].chip,
               )}
             >
@@ -104,12 +100,8 @@ export const FieldDiffPanel: React.FC<FieldDiffPanelProps> = ({
           <table className="w-full border-collapse text-fine-print">
             <thead>
               <tr className="bg-muted/40">
-                <th className="w-28 px-2 py-2 text-left font-medium text-muted-foreground">
-                  字段
-                </th>
-                <th className="w-20 px-2 py-2 text-left font-medium text-muted-foreground">
-                  状态
-                </th>
+                <th className="w-28 px-2 py-2 text-left font-medium text-muted-foreground">字段</th>
+                <th className="w-20 px-2 py-2 text-left font-medium text-muted-foreground">状态</th>
                 {cols.map(company => (
                   <th
                     key={company.companyId}
@@ -123,23 +115,23 @@ export const FieldDiffPanel: React.FC<FieldDiffPanelProps> = ({
             </thead>
             <tbody>
               {diffs.map(diff => {
-                const byCompany = new Map(diff.values.map(value => [value.companyId, value]))
-                const flagged = riskyFieldKeys.has(diff.fieldKey)
+                const byCompany = new Map(diff.values.map(value => [value.companyId, value]));
+                const flagged = riskyFieldKeys.has(diff.fieldKey);
                 return (
                   <tr
                     key={diff.fieldKey}
-                    className={cn("border-t border-border/40", flagged && "bg-rose-500/4")}
+                    className={cn('border-t border-border/40', flagged && 'bg-rose-500/4')}
                   >
                     <td className="px-2 py-1.5">
                       <span className="font-medium">{diff.fieldLabel}</span>
-                      {diff.tier === "risk" ? (
+                      {diff.tier === 'risk' ? (
                         <span className="ml-1 text-muted-foreground/60">*</span>
                       ) : null}
                     </td>
                     <td className="px-2 py-1.5">
                       <span
                         className={cn(
-                          "rounded px-1.5 py-0.5 whitespace-nowrap",
+                          'rounded px-1.5 py-0.5 whitespace-nowrap',
                           DIFF_TONE[diff.state],
                         )}
                       >
@@ -147,21 +139,21 @@ export const FieldDiffPanel: React.FC<FieldDiffPanelProps> = ({
                       </span>
                     </td>
                     {cols.map(company => {
-                      const value = byCompany.get(company.companyId)
+                      const value = byCompany.get(company.companyId);
                       return (
                         <td key={company.companyId} className="max-w-64 px-2 py-1.5">
                           {value && !value.isEmpty ? (
-                            <span className="block truncate" title={value.raw ?? ""}>
+                            <span className="block truncate" title={value.raw ?? ''}>
                               {value.raw}
                             </span>
                           ) : (
                             <span className="text-muted-foreground/50">空</span>
                           )}
                         </td>
-                      )
+                      );
                     })}
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
@@ -172,5 +164,5 @@ export const FieldDiffPanel: React.FC<FieldDiffPanelProps> = ({
         带 * 为参与线索判定的风险字段。差异状态仅描述事实，取值一致不代表安全。
       </p>
     </div>
-  )
-}
+  );
+};

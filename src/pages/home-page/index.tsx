@@ -1,32 +1,28 @@
-import React from "react"
-import { useNavigate } from "react-router-dom"
-import {
-  Layers01Icon,
-  GitCompareIcon,
-  ScanEyeIcon,
-} from "@hugeicons/core-free-icons"
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Layers01Icon, GitCompareIcon, ScanEyeIcon } from '@hugeicons/core-free-icons';
 
-import { useFileContext } from "@/contexts/file-context"
-import { ThemeSwitch } from "@/components/chrome/theme-switch"
-import { APP_NAME } from "@/lib/app-config"
-import { cn } from "@/lib/utils"
-import { HugeIcon } from "@/components/icons/huge-icon"
-import { BlankLayout } from "@/layouts/blank-layout"
-import { ROUTES } from "@/router/paths"
-import { FileDropZone } from "@/components/base/file-drop-zone"
+import { useFileContext } from '@/contexts/file-context';
+import { ThemeSwitch } from '@/components/chrome/theme-switch';
+import { APP_NAME } from '@/lib/app-config';
+import { cn } from '@/lib/utils';
+import { HugeIcon } from '@/components/icons/huge-icon';
+import { BlankLayout } from '@/layouts/blank-layout';
+import { ROUTES } from '@/router/paths';
+import { FileDropZone } from '@/components/base/file-drop-zone';
 
 export const HomePage: React.FC = () => {
-  const navigate = useNavigate()
-  const { addFilesByPaths, clearAll } = useFileContext()
+  const navigate = useNavigate();
+  const { addFilesByPaths, clearAll } = useFileContext();
 
   React.useEffect(() => {
-    clearAll()
-  }, [clearAll])
+    clearAll();
+  }, [clearAll]);
 
   const handleDropFiles = (paths: string[]) => {
-    const added = addFilesByPaths(paths)
-    if (added > 0) navigate(ROUTES.editor)
-  }
+    const added = addFilesByPaths(paths);
+    if (added > 0) navigate(ROUTES.editor);
+  };
 
   return (
     <BlankLayout>
@@ -85,66 +81,64 @@ export const HomePage: React.FC = () => {
         </div>
       </div>
     </BlankLayout>
-  )
-}
+  );
+};
 
 const TONE_STYLES: Record<string, { card: string; icon: string; badge: string }> = {
   orange: {
-    card: "from-orange-500/15 to-orange-500/0 border-orange-500/20",
-    icon: "bg-orange-500/10 text-orange-600 dark:text-orange-300",
-    badge: "bg-red-500 text-white",
+    card: 'from-orange-500/15 to-orange-500/0 border-orange-500/20',
+    icon: 'bg-orange-500/10 text-orange-600 dark:text-orange-300',
+    badge: 'bg-red-500 text-white',
   },
   violet: {
-    card: "from-violet-500/15 to-violet-500/0 border-violet-500/20",
-    icon: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
-    badge: "bg-blue-500 text-white",
+    card: 'from-violet-500/15 to-violet-500/0 border-violet-500/20',
+    icon: 'bg-violet-500/10 text-violet-600 dark:text-violet-300',
+    badge: 'bg-blue-500 text-white',
   },
   emerald: {
-    card: "from-emerald-500/15 to-emerald-500/0 border-emerald-500/20",
-    icon: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-    badge: "bg-emerald-600 text-white",
+    card: 'from-emerald-500/15 to-emerald-500/0 border-emerald-500/20',
+    icon: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
+    badge: 'bg-emerald-600 text-white',
   },
-}
+};
 
 const EntryCard: React.FC<{
-  tone: "orange" | "violet" | "emerald"
-  icon: React.ComponentProps<typeof HugeIcon>["icon"]
-  title: string
-  description: string
-  badge: string
-  cta: string
-  onClick: () => void
+  tone: 'orange' | 'violet' | 'emerald';
+  icon: React.ComponentProps<typeof HugeIcon>['icon'];
+  title: string;
+  description: string;
+  badge: string;
+  cta: string;
+  onClick: () => void;
 }> = ({ tone, icon: Icon, title, description, badge, cta, onClick }) => {
-  const style = TONE_STYLES[tone]
+  const style = TONE_STYLES[tone];
 
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative flex flex-col rounded-xl border bg-linear-to-br p-4 text-left transition-shadow hover:shadow-md",
+        'group relative flex flex-col rounded-xl border bg-linear-to-br p-4 text-left transition-shadow hover:shadow-md',
         style.card,
       )}
     >
       <div className="flex items-start justify-between">
-        <span className={cn("flex h-8 w-8 items-center justify-center rounded-md", style.icon)}>
+        <span className={cn('flex h-8 w-8 items-center justify-center rounded-md', style.icon)}>
           <HugeIcon icon={Icon} size={16} />
         </span>
-        <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-semibold", style.badge)}>
+        <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-semibold', style.badge)}>
           {badge}
         </span>
       </div>
       <div className="mt-3 flex-1">
         <p className="text-sm font-semibold text-foreground">{title}</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          {description}
-        </p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
       </div>
       <div className="mt-3 flex items-center justify-end text-xs font-medium text-primary transition-transform group-hover:translate-x-0.5">
         {cta} →
       </div>
     </button>
-  )
-}
+  );
+};
 
-export default HomePage
+export default HomePage;

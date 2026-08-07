@@ -1,59 +1,55 @@
-import React from "react"
+import React from 'react';
 
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import type {
-  CompareFilterState,
-  GroupFilter,
-  GroupSort,
-} from "@/lib/documents/compare/selectors"
-import type { CompanySnapshot } from "@/lib/documents/compare/types"
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import type { CompareFilterState, GroupFilter, GroupSort } from '@/lib/documents/compare/selectors';
+import type { CompanySnapshot } from '@/lib/documents/compare/types';
 
 interface CompareToolbarProps {
-  state: CompareFilterState
-  onChange: (next: CompareFilterState) => void
-  companies: CompanySnapshot[]
-  fields: { key: string; label: string }[]
-  groupCount: number
-  totalGroups: number
+  state: CompareFilterState;
+  onChange: (next: CompareFilterState) => void;
+  companies: CompanySnapshot[];
+  fields: { key: string; label: string }[];
+  groupCount: number;
+  totalGroups: number;
 }
 
 const FILTERS: { value: GroupFilter; label: string }[] = [
-  { value: "all", label: "全部" },
-  { value: "risky", label: "有线索" },
-  { value: "different", label: "有差异" },
-  { value: "missing", label: "有缺失" },
-]
+  { value: 'all', label: '全部' },
+  { value: 'risky', label: '有线索' },
+  { value: 'different', label: '有差异' },
+  { value: 'missing', label: '有缺失' },
+];
 
 const SORTS: { value: GroupSort; label: string }[] = [
-  { value: "risk", label: "线索优先" },
-  { value: "diffCount", label: "差异最多" },
-  { value: "name", label: "文件名" },
-  { value: "confidence", label: "置信度低优先" },
-]
+  { value: 'risk', label: '线索优先' },
+  { value: 'diffCount', label: '差异最多' },
+  { value: 'name', label: '文件名' },
+  { value: 'confidence', label: '置信度低优先' },
+];
 
 function toggle(list: string[], value: string): string[] {
-  return list.includes(value) ? list.filter(item => item !== value) : [...list, value]
+  return list.includes(value) ? list.filter(item => item !== value) : [...list, value];
 }
 
 const Chip: React.FC<{
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
 }> = ({ active, onClick, children }) => (
   <button
     type="button"
     onClick={onClick}
     className={cn(
-      "rounded-md border px-2 py-1 text-fine-print transition-colors",
+      'rounded-md border px-2 py-1 text-fine-print transition-colors',
       active
-        ? "border-primary/30 bg-primary/10 text-primary"
-        : "border-border/60 text-muted-foreground hover:bg-muted/60",
+        ? 'border-primary/30 bg-primary/10 text-primary'
+        : 'border-border/60 text-muted-foreground hover:bg-muted/60',
     )}
   >
     {children}
   </button>
-)
+);
 
 export const CompareToolbar: React.FC<CompareToolbarProps> = ({
   state,
@@ -63,12 +59,12 @@ export const CompareToolbar: React.FC<CompareToolbarProps> = ({
   groupCount,
   totalGroups,
 }) => {
-  const patch = (next: Partial<CompareFilterState>): void => onChange({ ...state, ...next })
+  const patch = (next: Partial<CompareFilterState>): void => onChange({ ...state, ...next });
   const hasNarrowing =
-    state.filter !== "all" ||
+    state.filter !== 'all' ||
     state.companyIds.length > 0 ||
     state.fieldKeys.length > 0 ||
-    state.keyword.trim() !== ""
+    state.keyword.trim() !== '';
 
   return (
     <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-2.5">
@@ -128,9 +124,7 @@ export const CompareToolbar: React.FC<CompareToolbarProps> = ({
             variant="ghost"
             size="sm"
             className="h-6 rounded-md px-2 text-fine-print text-muted-foreground"
-            onClick={() =>
-              patch({ filter: "all", companyIds: [], fieldKeys: [], keyword: "" })
-            }
+            onClick={() => patch({ filter: 'all', companyIds: [], fieldKeys: [], keyword: '' })}
           >
             重置
           </Button>
@@ -167,5 +161,5 @@ export const CompareToolbar: React.FC<CompareToolbarProps> = ({
         </div>
       ) : null}
     </div>
-  )
-}
+  );
+};

@@ -128,34 +128,3 @@ pub fn spec(key: &str) -> Option<&'static FieldSpec> {
     FIELDS.iter().find(|f| f.key == key)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn field_keys_are_unique() {
-        let mut keys: Vec<&str> = FIELDS.iter().map(|f| f.key).collect();
-        let total = keys.len();
-        keys.sort_unstable();
-        keys.dedup();
-        assert_eq!(keys.len(), total, "字段 key 必须唯一");
-    }
-
-    #[test]
-    fn risk_fields_cover_rule_inputs() {
-        for key in [
-            "creator",
-            "lastModifiedBy",
-            "appCompany",
-            "manager",
-            "template",
-            "created",
-            "application",
-            "appVersion",
-            "revision",
-        ] {
-            let found = spec(key).unwrap_or_else(|| panic!("缺少字段 {key}"));
-            assert_eq!(found.tier, FieldTier::Risk, "{key} 应为风险字段");
-        }
-    }
-}

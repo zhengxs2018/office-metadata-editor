@@ -1,20 +1,20 @@
-import React from "react"
+import React from 'react';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 import {
   MATCH_SOURCE_LABEL,
   RISK_LEVEL_LABEL,
   type AlignedGroup,
   type CompanySnapshot,
-} from "@/lib/documents/compare/types"
+} from '@/lib/documents/compare/types';
 
-import { MATCH_TONE, RISK_TONE } from "./compare-tokens"
+import { MATCH_TONE, RISK_TONE } from './compare-tokens';
 
 interface AlignmentMatrixProps {
-  groups: AlignedGroup[]
-  companies: CompanySnapshot[]
-  selectedGroupId: string | null
-  onSelect: (groupId: string) => void
+  groups: AlignedGroup[];
+  companies: CompanySnapshot[];
+  selectedGroupId: string | null;
+  onSelect: (groupId: string) => void;
 }
 
 export const AlignmentMatrix: React.FC<AlignmentMatrixProps> = ({
@@ -28,7 +28,7 @@ export const AlignmentMatrix: React.FC<AlignmentMatrixProps> = ({
       <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-fine-print text-muted-foreground">
         没有符合当前筛选条件的对齐组。
       </div>
-    )
+    );
   }
 
   return (
@@ -56,21 +56,21 @@ export const AlignmentMatrix: React.FC<AlignmentMatrixProps> = ({
         </thead>
         <tbody>
           {groups.map(group => {
-            const byCompany = new Map(group.cells.map(cell => [cell.companyId, cell]))
-            const selected = group.groupId === selectedGroupId
+            const byCompany = new Map(group.cells.map(cell => [cell.companyId, cell]));
+            const selected = group.groupId === selectedGroupId;
             return (
               <tr
                 key={group.groupId}
                 onClick={() => onSelect(group.groupId)}
                 className={cn(
-                  "cursor-pointer border-t border-border/40 transition-colors",
-                  selected ? "bg-primary/5" : "hover:bg-muted/30",
+                  'cursor-pointer border-t border-border/40 transition-colors',
+                  selected ? 'bg-primary/5' : 'hover:bg-muted/30',
                 )}
               >
                 <td
                   className={cn(
-                    "sticky left-0 z-10 max-w-64 px-3 py-2",
-                    selected ? "bg-primary/5" : "bg-background",
+                    'sticky left-0 z-10 max-w-64 px-3 py-2',
+                    selected ? 'bg-primary/5' : 'bg-background',
                   )}
                 >
                   <span className="block truncate font-medium" title={group.label}>
@@ -81,12 +81,12 @@ export const AlignmentMatrix: React.FC<AlignmentMatrixProps> = ({
                   {group.riskLevel ? (
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1 rounded border px-1.5 py-0.5",
+                        'inline-flex items-center gap-1 rounded border px-1.5 py-0.5',
                         RISK_TONE[group.riskLevel].chip,
                       )}
                     >
                       <span
-                        className={cn("size-1.5 rounded-full", RISK_TONE[group.riskLevel].dot)}
+                        className={cn('size-1.5 rounded-full', RISK_TONE[group.riskLevel].dot)}
                       />
                       {RISK_LEVEL_LABEL[group.riskLevel]}
                     </span>
@@ -109,15 +109,15 @@ export const AlignmentMatrix: React.FC<AlignmentMatrixProps> = ({
                   )}
                 </td>
                 <td className="px-2 py-2">
-                  <span className={cn("whitespace-nowrap", MATCH_TONE[group.matchSource])}>
+                  <span className={cn('whitespace-nowrap', MATCH_TONE[group.matchSource])}>
                     {MATCH_SOURCE_LABEL[group.matchSource]}
-                    {group.matchSource === "fuzzy"
+                    {group.matchSource === 'fuzzy'
                       ? ` ${Math.round(group.matchConfidence * 100)}%`
-                      : ""}
+                      : ''}
                   </span>
                 </td>
                 {companies.map(company => {
-                  const cell = byCompany.get(company.companyId)
+                  const cell = byCompany.get(company.companyId);
                   return (
                     <td key={company.companyId} className="max-w-56 px-2 py-2">
                       {cell?.fileName ? (
@@ -128,13 +128,13 @@ export const AlignmentMatrix: React.FC<AlignmentMatrixProps> = ({
                         <span className="text-muted-foreground/50">缺</span>
                       )}
                     </td>
-                  )
+                  );
                 })}
               </tr>
-            )
+            );
           })}
         </tbody>
       </table>
     </div>
-  )
-}
+  );
+};

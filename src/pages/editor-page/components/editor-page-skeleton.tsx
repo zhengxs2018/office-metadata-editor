@@ -1,5 +1,5 @@
-import React from "react"
-import { Skeleton } from "@/components/ui/skeleton"
+import React from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const EditorPageSkeleton: React.FC = () => {
   return (
@@ -15,7 +15,7 @@ export const EditorPageSkeleton: React.FC = () => {
         <Skeleton className="h-40 w-full" />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default EditorPageSkeleton
+export default EditorPageSkeleton;

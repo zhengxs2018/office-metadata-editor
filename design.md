@@ -35,36 +35,36 @@ seo:
 
 colors:
   # --- Core Sky Primary (oklch, resolved in base.css) ---
-  primary: 'oklch(0.5 0.134 242.749)'       # Sky — primary buttons, active tabs, focus rings
-  primary-hover: 'oklch(0.443 0.11 240.79)'   # Darker sky — hover state
-  primary-light: 'oklch(0.974 0.003 106)'     # Warm-tinted canvas — drop zone backgrounds, subtle fills
+  primary: 'oklch(0.5 0.134 242.749)' # Sky — primary buttons, active tabs, focus rings
+  primary-hover: 'oklch(0.443 0.11 240.79)' # Darker sky — hover state
+  primary-light: 'oklch(0.974 0.003 106)' # Warm-tinted canvas — drop zone backgrounds, subtle fills
   # --- Neutral Ink Scale (oklch) ---
-  ink: '#0f172a'                              # Slate 900 — headings, strong text
-  body: '#334155'                             # Slate 700 — default body text
-  body-muted: '#64748b'                       # Slate 500 — secondary / muted text
+  ink: '#0f172a' # Slate 900 — headings, strong text
+  body: '#334155' # Slate 700 — default body text
+  body-muted: '#64748b' # Slate 500 — secondary / muted text
   # --- Surface Ladder (oklch, warm-tinted) ---
-  divider-soft: 'oklch(0.941 0.003 106)'      # Soft dividers between sections
-  hairline: 'oklch(0.906 0.004 106)'          # Hairline separators (inset box-shadow)
-  canvas: 'oklch(0.974 0.003 106)'            # Main content background (warm white)
-  canvas-parchment: 'oklch(0.988 0.002 106)'  # Slightly warmer — sidebar backgrounds
-  surface-pearl: 'oklch(1 0 0)'              # Pure white — cards, elevated surfaces
+  divider-soft: 'oklch(0.941 0.003 106)' # Soft dividers between sections
+  hairline: 'oklch(0.906 0.004 106)' # Hairline separators (inset box-shadow)
+  canvas: 'oklch(0.974 0.003 106)' # Main content background (warm white)
+  canvas-parchment: 'oklch(0.988 0.002 106)' # Slightly warmer — sidebar backgrounds
+  surface-pearl: 'oklch(1 0 0)' # Pure white — cards, elevated surfaces
   # --- Feature Card Accent Palette (verified from home-page source) ---
-  card-compare-bg: 'from-orange-500/15 to-orange-500/0'   # Orange gradient
+  card-compare-bg: 'from-orange-500/15 to-orange-500/0' # Orange gradient
   card-compare-border: 'border-orange-500/20'
   card-compare-icon: 'bg-orange-500/10 text-orange-600 dark:text-orange-300'
-  card-compare-badge: 'bg-red-500 text-white'             # "核心" badge
-  card-batch-bg: 'from-violet-500/15 to-violet-500/0'     # Violet gradient
+  card-compare-badge: 'bg-red-500 text-white' # "核心" badge
+  card-batch-bg: 'from-violet-500/15 to-violet-500/0' # Violet gradient
   card-batch-border: 'border-violet-500/20'
   card-batch-icon: 'bg-violet-500/10 text-violet-600 dark:text-violet-300'
-  card-batch-badge: 'bg-blue-500 text-white'               # "高效" badge
-  card-hidden-bg: 'from-emerald-500/15 to-emerald-500/0'   # Emerald gradient
+  card-batch-badge: 'bg-blue-500 text-white' # "高效" badge
+  card-hidden-bg: 'from-emerald-500/15 to-emerald-500/0' # Emerald gradient
   card-hidden-border: 'border-emerald-500/20'
   card-hidden-icon: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
-  card-hidden-badge: 'bg-emerald-600 text-white'           # "检视" badge
+  card-hidden-badge: 'bg-emerald-600 text-white' # "检视" badge
   # --- Semantic States (oklch) ---
-  destructive: 'oklch(0.577 0.245 27.325)'     # Red — errors, destructive actions
-  success: 'oklch(0.68 0.146 152)'             # Green — success states
-  warning: 'oklch(0.79 0.148 76)'              # Amber — warnings
+  destructive: 'oklch(0.577 0.245 27.325)' # Red — errors, destructive actions
+  success: 'oklch(0.68 0.146 152)' # Green — success states
+  warning: 'oklch(0.79 0.148 76)' # Amber — warnings
 
 typography:
   display-lg:
@@ -81,25 +81,25 @@ typography:
     letterSpacing: -0.15px
   tagline:
     fontFamily: 'Roboto Variable, sans-serif'
-    fontSize: 21px                           # 1.3125rem — home page main title (text-2xl ≈ 24px is too large; prefer 20–21px)
-    fontWeight: 600                          # font-semibold
-    lineHeight: 1.19                         # tracking-tight
+    fontSize: 21px # 1.3125rem — home page main title (text-2xl ≈ 24px is too large; prefer 20–21px)
+    fontWeight: 600 # font-semibold
+    lineHeight: 1.19 # tracking-tight
     letterSpacing: 0.231px
   body-strong:
     fontFamily: 'Roboto Variable, sans-serif'
-    fontSize: 13px                           # 1.0625rem — text-body scale
+    fontSize: 13px # 1.0625rem — text-body scale
     fontWeight: 600
     lineHeight: 1.47
     letterSpacing: -0.374px
   body:
     fontFamily: 'Roboto Variable, sans-serif'
-    fontSize: 13px                           # 1.0625rem — text-body scale
+    fontSize: 13px # 1.0625rem — text-body scale
     fontWeight: 400
     lineHeight: 1.47
     letterSpacing: -0.374px
   caption:
     fontFamily: 'Roboto Variable, sans-serif'
-    fontSize: 12px                           # 0.875rem — text-caption scale
+    fontSize: 12px # 0.875rem — text-caption scale
     fontWeight: 400
     lineHeight: 1.43
     letterSpacing: -0.224px
@@ -111,14 +111,14 @@ typography:
     letterSpacing: -0.224px
   fine-print:
     fontFamily: 'Roboto Variable, sans-serif'
-    fontSize: 11px                           # 0.75rem — text-fine-print scale
+    fontSize: 11px # 0.75rem — text-fine-print scale
     fontWeight: 400
     lineHeight: 1
     letterSpacing: -0.12px
   micro-legal:
     fontFamily: 'Roboto Variable, sans-serif'
-    fontSize: 10px                           # 0.625rem — badges, micro labels
-    fontWeight: 600                          # font-semibold for badges
+    fontSize: 10px # 0.625rem — badges, micro labels
+    fontWeight: 600 # font-semibold for badges
     lineHeight: 1.3
     letterSpacing: -0.08px
   code-mono:
@@ -129,18 +129,18 @@ typography:
     fontVariantNumeric: 'tabular-nums'
   kpi:
     fontFamily: 'Roboto Variable, sans-serif'
-    fontSize: 30px                           # 1.875rem — summary numbers
+    fontSize: 30px # 1.875rem — summary numbers
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: -0.374px
 
 rounded:
   none: 0px
-  xs: 4px                                  # radius-sm (0.6 × base)
-  sm: 6px                                  # radius-md (0.8 × base)
-  md: 8px                                  # radius-lg (base = 0.45rem)
-  lg: 12px                                 # radius-xl (1.4 × base) — cards, inputs
-  xl: 16px                                 # radius-2xl (1.8 × base) — drop zones, entry cards
+  xs: 4px # radius-sm (0.6 × base)
+  sm: 6px # radius-md (0.8 × base)
+  md: 8px # radius-lg (base = 0.45rem)
+  lg: 12px # radius-xl (1.4 × base) — cards, inputs
+  xl: 16px # radius-2xl (1.8 × base) — drop zones, entry cards
   pill: 9999px
 
 spacing:
@@ -157,37 +157,37 @@ components:
   title-bar:
     backgroundColor: '{colors.surface-pearl}'
     textColor: '{colors.ink}'
-    height: 44px                             # Actual: chrome.css --chrome-titlebar-height
-    paddingLeftMac: 78px                     # Actual: chrome.css --chrome-traffic-light-inset
+    height: 44px # Actual: chrome.css --chrome-titlebar-height
+    paddingLeftMac: 78px # Actual: chrome.css --chrome-traffic-light-inset
   drop-zone:
-    backgroundColor: 'bg-primary/3'          # Very subtle primary tint
-    borderColor: 'border-primary/30'         # Dashed border
-    borderHoverColor: 'border-primary/60'    # Hover state
-    rounded: '{rounded.xl}'                  # rounded-xl (12px) — actual code
-    padding: 'px-4 py-8'                    # Actual FileDropZone internal padding
-    iconContainerSize: 48px                 # size-12 rounded-2xl
-    iconSize: 22px                           # FolderOpen / Upload01 icons
-    loadingIconSize: 28px                   # Loading02 spinner
+    backgroundColor: 'bg-primary/3' # Very subtle primary tint
+    borderColor: 'border-primary/30' # Dashed border
+    borderHoverColor: 'border-primary/60' # Hover state
+    rounded: '{rounded.xl}' # rounded-xl (12px) — actual code
+    padding: 'px-4 py-8' # Actual FileDropZone internal padding
+    iconContainerSize: 48px # size-12 rounded-2xl
+    iconSize: 22px # FolderOpen / Upload01 icons
+    loadingIconSize: 28px # Loading02 spinner
   entry-card:
-    rounded: '{rounded.xl}'                  # rounded-xl (12px) — actual code
-    padding: 16px                            # p-4 — actual code
-    iconContainerSize: 32px                 # h-8 w-8 rounded-md
-    iconSize: 16px                           # HugeIcon size prop — actual code
-    badgeFontSize: 10px                     # text-[10px] — actual code
-    badgeFontWeight: 600                    # font-semibold
-    titleFontSize: 14px                     # text-sm font-semibold — actual code
-    descriptionFontSize: 12px              # text-xs — actual code
-    ctaFontSize: 12px                       # text-xs — actual code
+    rounded: '{rounded.xl}' # rounded-xl (12px) — actual code
+    padding: 16px # p-4 — actual code
+    iconContainerSize: 32px # h-8 w-8 rounded-md
+    iconSize: 16px # HugeIcon size prop — actual code
+    badgeFontSize: 10px # text-[10px] — actual code
+    badgeFontWeight: 600 # font-semibold
+    titleFontSize: 14px # text-sm font-semibold — actual code
+    descriptionFontSize: 12px # text-xs — actual code
+    ctaFontSize: 12px # text-xs — actual code
   sidebar-summary:
     width: 220px
     backgroundColor: '{colors.canvas-parchment}'
     borderColor: '{colors.hairline}'
-
 ---
 
 # Office Metadata Editor - Desktop Design System (v2.1)
 
 > **v2.1 变更摘要**（2026-08-07）：与实际源码对齐审计后全面修正。
+>
 > - 字体族从 `Inter` 更正为 `Roboto Variable`（`base.css` L11 实际导入）。
 > - 标题栏高度从 `32px` 更正为 `44px`（`chrome.css` L8 实际值）；macOS traffic light 预留从 `72px` 更正为 `78px`（`chrome.css` L22）。
 > - 排版表新增 `tagline`(21px)、`kpi`(30px)、`micro-legal`(10px) 三级，补全 `base.css` 已注册的全部 9 级类型尺度。
@@ -197,6 +197,7 @@ components:
 > - 图标库更正为 `@hugeicons/core-free-icons`（实际 import 源）。
 >
 > **后续调整**（2026-08-07）：首页布局章节移除 + 主题切换交互规范。
+>
 > - **移除「Home Page Layout」章节**：首页存在重构争议，布局不写入规范，避免误导。颜色系统（Sky 主题 + 功能卡三级调色板）全部保留，用户明确认可。
 > - **新增主题切换交互规范**：`ThemeSwitch` 当前主题始终可见（图标+标签+高亮），非当前选项默认隐藏（`max-w-0 opacity-0`），`group-hover` 时才平滑展开；无重复项、无跳动感。
 > - seo.highlights 中首页布局描述标注为 pending redesign。
@@ -206,6 +207,7 @@ components:
 Unlike web apps or SaaS dashboards that stretch infinitely across browser viewports, **Office Metadata Editor** is a native, lightweight desktop utility built with **Tauri 2**.
 
 ### Window Metrics
+
 - **Default Resolution**: `880px × 580px` (Compact, high-density 16:10 ratio)
 - **Minimum Resolution**: `780px × 520px` (`min-width: 780px; min-height: 520px`)
 - **Target Environments**:
@@ -213,6 +215,7 @@ Unlike web apps or SaaS dashboards that stretch infinitely across browser viewpo
   - **Windows 10/11**: 1080p display with 125%~150% DPI scaling.
 
 ### Title Bar & Chrome (44px Height)
+
 - **Actual height**: `44px` (CSS variable `--chrome-titlebar-height` in `chrome.css`). This is the rendered value used by `AppShell`.
 - **macOS Traffic Lights**: System window buttons float above the webview. App reserves `78px` left inset (`--chrome-traffic-light-inset` for `[data-platform="macos"]`).
 - **Drag Region**: `.chrome-window-toolbar` class provides a fixed-position drag strip at the top. Interactive controls must use `-webkit-app-region: no-drag` or be placed outside the drag region.
@@ -226,19 +229,20 @@ Web-oriented typography (e.g., 56px hero text or 17px body) creates oversized, c
 
 All typography tokens are registered as CSS custom properties in `base.css` `@theme inline` block and consumed via Tailwind utility classes:
 
-| Role | CSS Variable | Size | Weight | Line Height | Tailwind Class | Application |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Display LG** | `--text-display-lg` | 40px | 600 | 1.1 | `text-display-lg` | Reserved for marketing/landing (not used in-app) |
-| **Display MD** | `--text-display-md` | 34px | 600 | 1.2 | `text-display-md` | Reserved for large headings |
-| **KPI** | `--text-kpi` | 30px | 600 | 1.2 | `text-kpi` | Summary numbers (finding counts, file totals) |
-| **Tagline** | `--text-tagline` | 21px | 600 | 1.19 | `text-tagline` | Home page main title (**not** 24–30px) |
-| **Body Strong** | `--text-body` | 13px | 600 | 1.47 | `text-body font-semibold` | Form labels, table headers, card titles |
-| **Body (Default)** | `--text-body` | 13px | 400 | 1.47 | `text-body` | Default descriptions, list items, paragraphs |
-| **Caption** | `--text-caption` | 12px | 400 | 1.43 | `text-caption` | Secondary text, status tags, CTA links |
-| **Fine Print** | `--text-fine-print` | 11px | 400 | 1.0 | `text-fine-print` | Format hints, file paths, status bar text |
-| **Micro Legal** | `--text-micro-legal` | 10px | 600 | 1.3 | `text-micro-legal` | Entry card badges |
+| Role               | CSS Variable         | Size | Weight | Line Height | Tailwind Class            | Application                                      |
+| :----------------- | :------------------- | :--- | :----- | :---------- | :------------------------ | :----------------------------------------------- |
+| **Display LG**     | `--text-display-lg`  | 40px | 600    | 1.1         | `text-display-lg`         | Reserved for marketing/landing (not used in-app) |
+| **Display MD**     | `--text-display-md`  | 34px | 600    | 1.2         | `text-display-md`         | Reserved for large headings                      |
+| **KPI**            | `--text-kpi`         | 30px | 600    | 1.2         | `text-kpi`                | Summary numbers (finding counts, file totals)    |
+| **Tagline**        | `--text-tagline`     | 21px | 600    | 1.19        | `text-tagline`            | Home page main title (**not** 24–30px)           |
+| **Body Strong**    | `--text-body`        | 13px | 600    | 1.47        | `text-body font-semibold` | Form labels, table headers, card titles          |
+| **Body (Default)** | `--text-body`        | 13px | 400    | 1.47        | `text-body`               | Default descriptions, list items, paragraphs     |
+| **Caption**        | `--text-caption`     | 12px | 400    | 1.43        | `text-caption`            | Secondary text, status tags, CTA links           |
+| **Fine Print**     | `--text-fine-print`  | 11px | 400    | 1.0         | `text-fine-print`         | Format hints, file paths, status bar text        |
+| **Micro Legal**    | `--text-micro-legal` | 10px | 600    | 1.3         | `text-micro-legal`        | Entry card badges                                |
 
 **Font Family**:
+
 - Sans: `Roboto Variable` (imported via `@fontsource-variable/roboto`)
 - Mono: `JetBrains Mono Variable` (imported via `@fontsource-variable/jetbrains-mono`)
 
@@ -249,6 +253,7 @@ All typography tokens are registered as CSS custom properties in `base.css` `@th
 The system uses **Tailwind v4 CSS variables / OKLCH tokens** with a **Sky Theme** core, combined with functional feature color cards.
 
 ### Core Theme Tokens (Sky Base, oklch)
+
 - **Primary Interactive (`--color-primary`)**: `oklch(0.5 0.134 242.749)` — Primary buttons, active tabs, focus rings.
 - **Primary Hover**: `oklch(0.443 0.11 240.79)` — Darker sky for hover/pressed.
 - **Surface Ladder** (warm-tinted, not pure gray):
@@ -264,15 +269,16 @@ Dark mode mirrors this ladder with rising elevation: `canvas`(0.168) < `parchmen
 
 Three semantic tones for home page entry cards. Each defines: gradient background, border tint, icon container, and badge.
 
-| Feature | Tone | Gradient BG | Border | Icon Container | Badge | Badge Text |
-|:---|:---|:---|:---|:---|:---|:---|
-| **对比视图** (Compare) | Orange | `from-orange-500/15 to-0` | `orange-500/20` | `orange-500/10 bg` + `orange-600` text | `bg-red-500` | 核心 |
-| **批量处理** (Batch) | Violet | `from-violet-500/15 to-0` | `violet-500/20` | `violet-500/10 bg` + `violet-600` text | `bg-blue-500` | 高效 |
-| **隐藏信息提取** (Hidden) | Emerald | `from-emerald-500/15 to-0` | `emerald-500/20` | `emerald-500/10 bg` + `emerald-600` text | `bg-emerald-600` | 检视 |
+| Feature                   | Tone    | Gradient BG                | Border           | Icon Container                           | Badge            | Badge Text |
+| :------------------------ | :------ | :------------------------- | :--------------- | :--------------------------------------- | :--------------- | :--------- |
+| **对比视图** (Compare)    | Orange  | `from-orange-500/15 to-0`  | `orange-500/20`  | `orange-500/10 bg` + `orange-600` text   | `bg-red-500`     | 核心       |
+| **批量处理** (Batch)      | Violet  | `from-violet-500/15 to-0`  | `violet-500/20`  | `violet-500/10 bg` + `violet-600` text   | `bg-blue-500`    | 高效       |
+| **隐藏信息提取** (Hidden) | Emerald | `from-emerald-500/15 to-0` | `emerald-500/20` | `emerald-500/10 bg` + `emerald-600` text | `bg-emerald-600` | 检视       |
 
 > Note: Badge colors intentionally cross tones (e.g., violet card uses blue badge) for visual distinction priority over color harmony.
 
 ### Semantic State Colors
+
 - **Destructive**: `oklch(0.577 0.245 27.325)` — Errors, delete actions
 - **Success**: `oklch(0.68 0.146 152)` — Completed, passed checks
 - **Warning**: `oklch(0.79 0.148 76)` — Cautions, needs attention
@@ -282,19 +288,22 @@ Three semantic tones for home page entry cards. Each defines: gradient backgroun
 ## 4. Component Layout Guidelines (Verified)
 
 ### Icon System: HugeIcons (`@hugeicons/core-free-icons`)
+
 - Import from `@hugeicons/core-free-icons` (named exports like `GitCompareIcon`, `Layers01Icon`, `ScanEyeIcon`).
 - Render via `<HugeIcon icon={IconName} size={16} />` wrapper component.
 - Standard sizes: `size={14}` (toolbar/in-button), `size={16}` (card icons), `size={22}` (drop zone), `size={28}` (loading spinner).
 
 ### Surface Utilities (Defined in `base.css`)
+
 Two official surface treatments — use these instead of ad-hoc bg/border combinations:
 
-| Utility | Background | Border Radius | Shadow | Use For |
-|:---|:---|:---|:---|:---|
-| `.surface-card` | `var(--pearl)` | `var(--radius-xl)` | `var(--shadow-product)` | Elevated floating cards, modals |
-| `.surface-inset` | `var(--canvas)` | `var(--radius-lg)` | None | Nested content areas, inner panels |
+| Utility          | Background      | Border Radius      | Shadow                  | Use For                            |
+| :--------------- | :-------------- | :----------------- | :---------------------- | :--------------------------------- |
+| `.surface-card`  | `var(--pearl)`  | `var(--radius-xl)` | `var(--shadow-product)` | Elevated floating cards, modals    |
+| `.surface-inset` | `var(--canvas)` | `var(--radius-lg)` | None                    | Nested content areas, inner panels |
 
 Hairline separator utilities (inset box-shadow, not border):
+
 - `.hairline-b` / `.hairline-t` / `.hairline-r` / `.hairline-l`
 
 ### Theme Switch (Collapsed-by-default, Hover-to-expand)
@@ -335,12 +344,14 @@ The theme toggle (`ThemeSwitch` in `src/components/chrome/theme-switch.tsx`) use
 ```
 
 **Key specifications**:
+
 - **Header**: `text-caption font-semibold` (12px semibold) — "元数据对比". Actions: ghost "清空全部" + primary "开始对比"/"重新对比".
 - **Upload Grid**: `grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3`. First slot is `DropZone` (directory mode); remaining slots are `CompanyCard` components.
 - **Workbench**: Appears after comparison runs (replaces upload grid). Contains: executive summary (KPI row + findings list + disclaimer + export hint) + findings detail sections.
 - **Company Card**: Shows company name, load count, "追加文件" action, file list with status badges ("就绪"/"就绪").
 
 ### Editor Detail Page (`Flex + Fixed Sidebar`)
+
 - **Left Main View (`flex-1`)**: Editable metadata form fields. Compact 2-column grid (`gap-3`). Field labels above or inline with `12px` font size.
 - **Right Summary Sidebar (`w-[220px]`)**: Fixed-width panel. File summary (created, modified, page count, PDF version) in compact tabular format.
 
@@ -349,6 +360,7 @@ The theme toggle (`ThemeSwitch` in `src/components/chrome/theme-switch.tsx`) use
 ## 5. UI Refinement Do's and Don'ts
 
 ### Do
+
 - Use `13px` (`text-body`) for default body UI text and `12px` (`text-caption`) for captions/helper text.
 - Use `@hugeicons/core-free-icons` via `<HugeIcon>` wrapper with consistent sizes: `14px` (toolbar), `16px` (cards), `22px` (drop zones).
 - Keep card padding between `12px` and `16px`; use `rounded-xl` (12px) for cards/drop-zones, `rounded-lg` (8px) for inputs/inner panels.
@@ -359,6 +371,7 @@ The theme toggle (`ThemeSwitch` in `src/components/chrome/theme-switch.tsx`) use
 - Follow the warm-tinted surface ladder (canvas → parchment → pearl) rather than pure grays.
 
 ### Don't
+
 - Don't use large web marketing typography (e.g., 24px+ body or 40px+ hero headers). Home page title should stay at `text-tagline` (21px) or below.
 - Don't add heavy drop shadows; use `var(--shadow-product)` only for `.surface-card` elevated elements. Everything else gets flat surfaces with hairline separators.
 - Don't place UI elements within system control safe zones (`78px` left on Mac for traffic lights).

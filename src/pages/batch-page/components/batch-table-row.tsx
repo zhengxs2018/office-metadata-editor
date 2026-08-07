@@ -1,4 +1,4 @@
-import React from "react"
+import React from 'react';
 import {
   Alert01Icon,
   Cancel01Icon,
@@ -7,24 +7,24 @@ import {
   File01Icon,
   Loading02Icon,
   SaveEnergy01Icon,
-} from "@hugeicons/core-free-icons"
-import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { HugeIcon } from "@/components/icons/huge-icon"
-import { cn, formatFileSize, formatFullTime, formatRelativeTime } from "@/lib/utils"
-import type { BatchRow } from "./batch-types"
+} from '@hugeicons/core-free-icons';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HugeIcon } from '@/components/icons/huge-icon';
+import { cn, formatFileSize, formatFullTime, formatRelativeTime } from '@/lib/utils';
+import type { BatchRow } from '@/types/batch';
 
 interface BatchTableRowProps {
-  row: BatchRow
-  isSelected: boolean
-  onToggleSelect: (id: string) => void
-  onSave: (id: string) => Promise<void>
-  onRemove: (id: string) => void
-  onCancelTask: (id: string) => void
+  row: BatchRow;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
+  onSave: (id: string) => Promise<void>;
+  onRemove: (id: string) => void;
+  onCancelTask: (id: string) => void;
 }
 
-const TOOLTIP_CLASS = "bg-zinc-900 text-zinc-50 [&_p]:text-zinc-50"
+const TOOLTIP_CLASS = 'bg-zinc-900 text-zinc-50 [&_p]:text-zinc-50';
 
 export const BatchTableRow: React.FC<BatchTableRowProps> = ({
   row,
@@ -34,20 +34,20 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
   onRemove,
   onCancelTask,
 }) => {
-  const processing = row.status === "processing" || row.status === "reading"
-  const isError = row.status === "error"
-  const hasTask = !!row.taskRequestId
+  const processing = row.status === 'processing' || row.status === 'reading';
+  const isError = row.status === 'error';
+  const hasTask = !!row.taskRequestId;
 
-  const isSynced = !processing && !isError && !row.hasChanges
-  const canSave = row.hasChanges && !processing && !hasTask
+  const isSynced = !processing && !isError && !row.hasChanges;
+  const canSave = row.hasChanges && !processing && !hasTask;
 
   const saveLabel = processing
-    ? row.progressMessage || "处理中"
+    ? row.progressMessage || '处理中'
     : isError
-      ? "查看失败原因"
+      ? '查看失败原因'
       : isSynced
-        ? "已同步"
-        : "保存"
+        ? '已同步'
+        : '保存';
 
   const saveIcon = processing
     ? Loading02Icon
@@ -55,9 +55,9 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
       ? Alert01Icon
       : isSynced
         ? CheckmarkCircle02Icon
-        : SaveEnergy01Icon
+        : SaveEnergy01Icon;
 
-  const SaveIcon = saveIcon
+  const SaveIcon = saveIcon;
 
   return (
     <TooltipProvider delayDuration={250}>
@@ -83,7 +83,7 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
                     <p className="text-ink truncate text-caption font-medium">{row.fileName}</p>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top" className={cn("text-fine-print", TOOLTIP_CLASS)}>
+                <TooltipContent side="top" className={cn('text-fine-print', TOOLTIP_CLASS)}>
                   <p>{row.fileName}</p>
                 </TooltipContent>
               </Tooltip>
@@ -91,11 +91,15 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
                 <TooltipTrigger asChild>
                   <div className="block w-full cursor-help">
                     <p className="truncate text-fine-print text-muted-foreground">
-                      {row.fileType}{row.fileSize > 0 ? ` · ${formatFileSize(row.fileSize)}` : ""}
+                      {row.fileType}
+                      {row.fileSize > 0 ? ` · ${formatFileSize(row.fileSize)}` : ''}
                     </p>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className={cn("text-fine-print max-w-xs break-all", TOOLTIP_CLASS)}>
+                <TooltipContent
+                  side="bottom"
+                  className={cn('text-fine-print max-w-xs break-all', TOOLTIP_CLASS)}
+                >
                   <p>{row.filePath}</p>
                 </TooltipContent>
               </Tooltip>
@@ -111,8 +115,8 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
                 <span className="text-ink-soft block truncate">{row.author}</span>
               </div>
             </TooltipTrigger>
-            {row.author !== "-" ? (
-              <TooltipContent side="top" className={cn("text-fine-print", TOOLTIP_CLASS)}>
+            {row.author !== '-' ? (
+              <TooltipContent side="top" className={cn('text-fine-print', TOOLTIP_CLASS)}>
                 <p>{row.author}</p>
               </TooltipContent>
             ) : null}
@@ -127,8 +131,8 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
                 <span className="text-ink-soft block truncate">{row.lastModifiedBy}</span>
               </div>
             </TooltipTrigger>
-            {row.lastModifiedBy !== "-" ? (
-              <TooltipContent side="top" className={cn("text-fine-print", TOOLTIP_CLASS)}>
+            {row.lastModifiedBy !== '-' ? (
+              <TooltipContent side="top" className={cn('text-fine-print', TOOLTIP_CLASS)}>
                 <p>{row.lastModifiedBy}</p>
               </TooltipContent>
             ) : null}
@@ -141,12 +145,12 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
             <TooltipTrigger asChild>
               <div className="block w-full cursor-default">
                 <span className="text-ink-soft">
-                  {row.modified !== "-" ? formatRelativeTime(row.modified) : "-"}
+                  {row.modified !== '-' ? formatRelativeTime(row.modified) : '-'}
                 </span>
               </div>
             </TooltipTrigger>
-            {row.modified !== "-" ? (
-              <TooltipContent side="top" className={cn("text-fine-print", TOOLTIP_CLASS)}>
+            {row.modified !== '-' ? (
+              <TooltipContent side="top" className={cn('text-fine-print', TOOLTIP_CLASS)}>
                 <p>{formatFullTime(row.modified)}</p>
               </TooltipContent>
             ) : null}
@@ -161,8 +165,8 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
                 <span className="text-ink-soft block truncate">{row.appCompany}</span>
               </div>
             </TooltipTrigger>
-            {row.appCompany !== "-" ? (
-              <TooltipContent side="top" className={cn("text-fine-print", TOOLTIP_CLASS)}>
+            {row.appCompany !== '-' ? (
+              <TooltipContent side="top" className={cn('text-fine-print', TOOLTIP_CLASS)}>
                 <p>{row.appCompany}</p>
               </TooltipContent>
             ) : null}
@@ -176,8 +180,8 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
                 <span className="text-ink-soft block truncate">{row.application}</span>
               </div>
             </TooltipTrigger>
-            {row.application !== "-" ? (
-              <TooltipContent side="top" className={cn("text-fine-print", TOOLTIP_CLASS)}>
+            {row.application !== '-' ? (
+              <TooltipContent side="top" className={cn('text-fine-print', TOOLTIP_CLASS)}>
                 <p>{row.application}</p>
               </TooltipContent>
             ) : null}
@@ -189,12 +193,12 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
             <TooltipTrigger asChild>
               <div className="block w-full cursor-default">
                 <span className="text-ink-soft">
-                  {row.created !== "-" ? formatRelativeTime(row.created) : "-"}
+                  {row.created !== '-' ? formatRelativeTime(row.created) : '-'}
                 </span>
               </div>
             </TooltipTrigger>
-            {row.created !== "-" ? (
-              <TooltipContent side="top" className={cn("text-fine-print", TOOLTIP_CLASS)}>
+            {row.created !== '-' ? (
+              <TooltipContent side="top" className={cn('text-fine-print', TOOLTIP_CLASS)}>
                 <p>{formatFullTime(row.created)}</p>
               </TooltipContent>
             ) : null}
@@ -218,37 +222,37 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
                       </Button>
                     </PopoverTrigger>
                   </TooltipTrigger>
-                  <TooltipContent side="left" className={cn("text-fine-print", TOOLTIP_CLASS)}>
+                  <TooltipContent side="left" className={cn('text-fine-print', TOOLTIP_CLASS)}>
                     {saveLabel}
                   </TooltipContent>
                 </Tooltip>
                 <PopoverContent side="left" align="start" className="w-72 p-3 text-fine-print">
-                  <p className="mb-1.5 font-semibold text-red-600">
-                    处理失败：{row.fileName}
-                  </p>
-                  <p className="break-all text-muted-foreground">
-                    {row.error || "未知错误"}
-                  </p>
+                  <p className="mb-1.5 font-semibold text-red-600">处理失败：{row.fileName}</p>
+                  <p className="break-all text-muted-foreground">{row.error || '未知错误'}</p>
                 </PopoverContent>
               </Popover>
             ) : (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant={isSynced ? "ghost" : "default"}
+                    variant={isSynced ? 'ghost' : 'default'}
                     size="icon-sm"
                     onClick={() => void onSave(row.id)}
                     disabled={!canSave && !processing}
                     className={cn(
-                      "size-7 rounded-md p-0",
-                      isSynced && "text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600",
-                      processing && "cursor-default",
+                      'size-7 rounded-md p-0',
+                      isSynced && 'text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600',
+                      processing && 'cursor-default',
                     )}
                   >
-                    <HugeIcon icon={SaveIcon} size={14} className={cn(processing && "animate-spin")} />
+                    <HugeIcon
+                      icon={SaveIcon}
+                      size={14}
+                      className={cn(processing && 'animate-spin')}
+                    />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="left" className={cn("text-fine-print", TOOLTIP_CLASS)}>
+                <TooltipContent side="left" className={cn('text-fine-print', TOOLTIP_CLASS)}>
                   {saveLabel}
                 </TooltipContent>
               </Tooltip>
@@ -266,7 +270,7 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
                     <HugeIcon icon={Cancel01Icon} size={14} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="left" className={cn("text-fine-print", TOOLTIP_CLASS)}>
+                <TooltipContent side="left" className={cn('text-fine-print', TOOLTIP_CLASS)}>
                   取消任务
                 </TooltipContent>
               </Tooltip>
@@ -283,7 +287,7 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
                     <HugeIcon icon={Delete01Icon} size={14} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="left" className={cn("text-fine-print", TOOLTIP_CLASS)}>
+                <TooltipContent side="left" className={cn('text-fine-print', TOOLTIP_CLASS)}>
                   从列表移除
                 </TooltipContent>
               </Tooltip>
@@ -292,5 +296,5 @@ export const BatchTableRow: React.FC<BatchTableRowProps> = ({
         </td>
       </tr>
     </TooltipProvider>
-  )
-}
+  );
+};

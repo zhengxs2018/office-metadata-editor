@@ -9,6 +9,7 @@ desktop (native wrapper — Tauri 2; design language is not OS-adaptive)
 ## Users
 
 Mixed professional audience, all using the tool on the desktop for document metadata work:
+
 - **Enterprise compliance reviewers** (legal / compliance / infosec): audit bid submissions, procurement documents, and other sensitive Office/PDF files for hidden authors and leakage risk.
 - **Office / administrative staff**: routinely process large volumes of Office documents, clean personal metadata before external sending.
 - **Technical / developer users**: care about metadata field structure and scriptable/large batch operations.
@@ -22,6 +23,7 @@ All roles share a desktop-native, offline workflow; no web/cloud expectation.
 ## Positioning
 
 三位一体的本地化卖点，单一相邻工具难以同时复制：
+
 - **本地离线 + 隐私安全**：纯本地处理，文档不出本机，适合敏感/涉密场景。
 - **跨公司对比追溯泄密**：按公司分组智能比对，发现同一作者跨公司、公司标识冲突等风险。
 - **批量能力 + 桌面原生**：一次性处理上百文档，紧凑原生桌面体验（880×580 高密度窗口）。

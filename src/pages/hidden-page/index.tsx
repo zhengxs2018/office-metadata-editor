@@ -1,55 +1,52 @@
-import React, { useCallback, useMemo, useState } from "react"
-import { Delete02Icon, FileAddIcon, ScanEyeIcon } from "@hugeicons/core-free-icons"
+import React, { useCallback, useMemo, useState } from 'react';
+import { Delete02Icon, FileAddIcon, ScanEyeIcon } from '@hugeicons/core-free-icons';
 
-import { FileDropZone } from "@/components/base/file-drop-zone"
-import { HugeIcon } from "@/components/icons/huge-icon"
-import { Button } from "@/components/ui/button"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { useFileContext } from "@/contexts/file-context"
-import { useMetadata } from "@/contexts/metadata-context"
-import { PageLayout } from "@/layouts/page-layout"
-import { AddFilesDialog } from "@/components/om/om-add-files-dialog"
-import { ROUTES } from "@/router/paths"
+import { FileDropZone } from '@/components/base/file-drop-zone';
+import { HugeIcon } from '@/components/icons/huge-icon';
+import { Button } from '@/components/ui/button';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { useFileContext } from '@/contexts/file-context';
+import { useMetadata } from '@/contexts/metadata-context';
+import { PageLayout } from '@/layouts/page-layout';
+import { AddFilesDialog } from '@/components/base/add-files-dialog';
+import { ROUTES } from '@/router/paths';
 
-import { HiddenWorkbench } from "./components/hidden-workbench"
+import { HiddenWorkbench } from './components/hidden-workbench';
 
 export const HiddenPage: React.FC = () => {
-  const { addFilesByPaths, clearFiles } = useFileContext()
-  const { documents } = useMetadata()
+  const { addFilesByPaths, clearFiles } = useFileContext();
+  const { documents } = useMetadata();
 
-  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
-  const readyDocs = useMemo(
-    () => documents.filter((item) => item.status === "ready"),
-    [documents],
-  )
+  const readyDocs = useMemo(() => documents.filter(item => item.status === 'ready'), [documents]);
 
-  const parsing = documents.length > 0 && readyDocs.length < documents.length
-  const hasFiles = documents.length > 0
+  const parsing = documents.length > 0 && readyDocs.length < documents.length;
+  const hasFiles = documents.length > 0;
 
   const handleDropZoneFiles = useCallback(
     (paths: string[]) => {
-      clearFiles()
-      addFilesByPaths(paths)
+      clearFiles();
+      addFilesByPaths(paths);
     },
     [addFilesByPaths, clearFiles],
-  )
+  );
 
   const handleAddFilesConfirm = useCallback(
-    (paths: string[], mode: "append" | "overwrite") => {
-      if (mode === "overwrite") clearFiles()
-      addFilesByPaths(paths)
-      setShowAddDialog(false)
+    (paths: string[], mode: 'append' | 'overwrite') => {
+      if (mode === 'overwrite') clearFiles();
+      addFilesByPaths(paths);
+      setShowAddDialog(false);
     },
     [addFilesByPaths, clearFiles],
-  )
+  );
 
   const headerContent = (
     <div className="flex min-w-0 items-center gap-2">
       <HugeIcon icon={ScanEyeIcon} size={16} className="shrink-0 text-emerald-600" />
       <p className="text-ink truncate font-heading text-base font-semibold">隐藏信息提取</p>
     </div>
-  )
+  );
 
   const headerActions = hasFiles ? (
     <div className="flex items-center gap-2">
@@ -72,7 +69,7 @@ export const HiddenPage: React.FC = () => {
         清空
       </Button>
     </div>
-  ) : undefined
+  ) : undefined;
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -106,7 +103,7 @@ export const HiddenPage: React.FC = () => {
         />
       </PageLayout>
     </TooltipProvider>
-  )
-}
+  );
+};
 
-export default HiddenPage
+export default HiddenPage;

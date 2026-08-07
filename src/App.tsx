@@ -1,17 +1,17 @@
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 
-import { MetadataProvider } from "./contexts/metadata-context"
-import { FileProvider } from "./contexts/file-context"
-import { ChromeThemeSync } from "./components/chrome/chrome-theme-sync"
-import { ChromePlatformSync } from "./components/chrome/chrome-platform-sync"
-import { Toaster } from "./components/ui/sonner"
-import { TooltipProvider } from "./components/ui/tooltip"
-import { EditorPage } from "./pages/editor-page"
-import { HomePage } from "./pages/home-page"
-import { BatchPage } from "./pages/batch-page"
-import { ComparePage } from "./pages/compare-page"
-import { HiddenPage } from "./pages/hidden-page"
-import { ROUTES } from "./router/paths"
+import { MetadataProvider } from './contexts/metadata-context';
+import { FileProvider } from './contexts/file-context';
+import { ChromeThemeSync } from './components/chrome/chrome-theme-sync';
+import { ChromePlatformSync } from './components/chrome/chrome-platform-sync';
+import { Toaster } from './components/ui/sonner';
+import { TooltipProvider } from './components/ui/tooltip';
+import { EditorPage } from './pages/editor-page';
+import { HomePage } from './pages/home-page';
+import { BatchPage } from './pages/batch-page';
+import { ComparePage } from './pages/compare-page';
+import { HiddenPage } from './pages/hidden-page';
+import { ROUTES } from './router/paths';
 
 export default function App() {
   return (
@@ -42,5 +42,5 @@ export default function App() {
         </TooltipProvider>
       </FileProvider>
     </div>
-  )
+  );
 }

@@ -1,45 +1,45 @@
-import React from "react"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { HugeIcon } from "@/components/icons/huge-icon"
-import { LockPasswordIcon } from "@hugeicons/core-free-icons"
-import type { MetadataField } from "@/types/metadata"
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { HugeIcon } from '@/components/icons/huge-icon';
+import { LockPasswordIcon } from '@hugeicons/core-free-icons';
+import type { MetadataField } from '@/types/metadata';
 
-export const OmMetadataFieldList: React.FC<React.PropsWithChildren> = ({ children }) => {
-  return <div className="grid gap-x-4 gap-y-2.5 md:grid-cols-2">{children}</div>
+export const MetadataFieldList: React.FC<React.PropsWithChildren> = ({ children }) => {
+  return <div className="grid gap-x-4 gap-y-2.5 md:grid-cols-2">{children}</div>;
+};
+
+export interface MetadataFieldItemProps {
+  field: MetadataField;
+  onChange: (key: string, value: string) => void;
 }
 
-export interface OmMetadataFieldItemProps {
-  field: MetadataField
-  onChange: (key: string, value: string) => void
-}
-
-export const OmMetadataFieldItem: React.FC<OmMetadataFieldItemProps> = ({ field, onChange }) => {
+export const MetadataFieldItem: React.FC<MetadataFieldItemProps> = ({ field, onChange }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (field.editable) {
-      onChange(field.key, e.target.value)
+      onChange(field.key, e.target.value);
     }
-  }
+  };
 
   const formatDateValue = (value: string): string => {
-    if (!value) return "-"
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return value
-    return date.toLocaleString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
-  const displayValue = field.type === "date" ? formatDateValue(field.value) : field.value
+  const displayValue = field.type === 'date' ? formatDateValue(field.value) : field.value;
 
   return (
     <div
-      className={`grid items-start gap-1 ${field.span === 2 ? "md:col-span-2" : "md:col-span-1"}`}
+      className={`grid items-start gap-1 ${field.span === 2 ? 'md:col-span-2' : 'md:col-span-1'}`}
     >
       <div className="flex min-h-6 items-center gap-1.5">
         <Label
@@ -48,11 +48,13 @@ export const OmMetadataFieldItem: React.FC<OmMetadataFieldItemProps> = ({ field,
         >
           {field.label}
         </Label>
-        {!field.editable && <HugeIcon icon={LockPasswordIcon} size={12} className="text-muted-foreground/50" />}
+        {!field.editable && (
+          <HugeIcon icon={LockPasswordIcon} size={12} className="text-muted-foreground/50" />
+        )}
       </div>
       <div className="flex items-center">
         {field.editable ? (
-          field.type === "textarea" ? (
+          field.type === 'textarea' ? (
             <Textarea
               id={field.key}
               value={field.value}
@@ -72,10 +74,10 @@ export const OmMetadataFieldItem: React.FC<OmMetadataFieldItemProps> = ({ field,
           )
         ) : (
           <div className="flex h-8 w-full items-center px-0">
-            <span className="text-sm text-foreground/90">{displayValue || "-"}</span>
+            <span className="text-sm text-foreground/90">{displayValue || '-'}</span>
           </div>
         )}
       </div>
     </div>
-  )
-}
+  );
+};

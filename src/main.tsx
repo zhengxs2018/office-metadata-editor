@@ -1,18 +1,18 @@
-import { StrictMode } from "react"
-import { createRoot } from "react-dom/client"
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 
-import { ThemeProvider } from "@/components/theme-provider.tsx"
-import { APP_WINDOW_TITLE } from "@/lib/app-config"
-import "@/style/base.css"
-import "@/style/chrome.css"
-import App from "@/App.tsx"
+import { ThemeProvider } from '@/components/theme-provider.tsx';
+import { APP_WINDOW_TITLE } from '@/lib/app-config';
+import '@/style/base.css';
+import '@/style/chrome.css';
+import App from '@/App.tsx';
 
-document.title = APP_WINDOW_TITLE
+document.title = APP_WINDOW_TITLE;
 
-createRoot(document.getElementById("root")!).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
       <App />
     </ThemeProvider>
   </StrictMode>,
-)
+);

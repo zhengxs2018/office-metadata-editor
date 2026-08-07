@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Office 元数据编辑器 · 系统架构",
+    "subtitle": "Tauri v2 桌面应用 — React 19 前端 + Rust 文档内核 (v0.3.0)",
+    "output": "architecture.html",
+    "viewBox": [1340, 820]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户", "sublabel": "拖拽 / 点选文件", "pos": [40, 330], "size": [130, 62] },
+    { "id": "fs", "type": "external", "label": "本地文件系统", "sublabel": "docx / doc / xlsx / pdf", "pos": [40, 560], "size": [130, 70] },
+
+    { "id": "pages", "type": "frontend", "label": "页面路由", "sublabel": "react-router-dom v7", "pos": [250, 90], "size": [150, 62], "tag": "5 routes" },
+    { "id": "ui", "type": "frontend", "label": "UI 组件层", "sublabel": "shadcn + Radix + Tailwind 4", "pos": [250, 200], "size": [150, 62] },
+    { "id": "ctx", "type": "frontend", "label": "状态层", "sublabel": "Context + zustand", "pos": [250, 330], "size": [150, 62], "tag": "metadata / file" },
+    { "id": "domain", "type": "frontend", "label": "领域逻辑", "sublabel": "src/lib/documents", "pos": [250, 450], "size": [150, 62] },
+    { "id": "xlsxjs", "type": "frontend", "label": "SheetJS", "sublabel": "xlsx 报表生成", "pos": [250, 570], "size": [150, 62] },
+
+    { "id": "ipc", "type": "messagebus", "label": "trackedInvoke", "sublabel": "src/lib/tauri.ts", "pos": [480, 330], "size": [150, 62], "tag": "IPC + 埋点" },
+    { "id": "debug", "type": "frontend", "label": "调试事件总线", "sublabel": "debug-events.ts", "pos": [480, 180], "size": [150, 58] },
+
+    { "id": "cmds", "type": "backend", "label": "Tauri 命令层", "sublabel": "lib.rs · 34 commands", "pos": [710, 330], "size": [160, 62], "tag": "invoke_handler" },
+    { "id": "files", "type": "backend", "label": "files", "sublabel": "对话框 / 落盘", "pos": [710, 200], "size": [160, 58] },
+    { "id": "scan", "type": "backend", "label": "目录扫描", "sublabel": "walkdir", "pos": [710, 90], "size": [160, 58] },
+
+    { "id": "parsers", "type": "backend", "label": "documents", "sublabel": "docx · xlsx · pdf", "pos": [950, 200], "size": [160, 62], "tag": "解析 + 回写" },
+    { "id": "compare", "type": "backend", "label": "compare 内核", "sublabel": "对齐 → 差异 → 规则", "pos": [950, 330], "size": [160, 62], "tag": "7 modules" },
+    { "id": "hidden", "type": "backend", "label": "extract_hidden", "sublabel": "批注 / 修订 / XMP", "pos": [950, 450], "size": [160, 62] },
+    { "id": "export", "type": "backend", "label": "export", "sublabel": "元数据构建 + 清除", "pos": [950, 570], "size": [160, 62] },
+
+    { "id": "zip", "type": "cloud", "label": "zip + xmltree", "sublabel": "OOXML 读写", "pos": [1160, 200], "size": [130, 62] },
+    { "id": "lopdf", "type": "cloud", "label": "lopdf", "sublabel": "PDF 字典", "pos": [1160, 330], "size": [130, 62] },
+    { "id": "pinyin", "type": "cloud", "label": "pinyin", "sublabel": "中文归一", "pos": [1160, 450], "size": [130, 62] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "WebView 渲染进程 (TypeScript)", "wraps": ["pages", "ui", "ctx", "domain", "xlsxjs", "ipc", "debug"] },
+    { "kind": "region", "label": "Rust 原生进程 (tauri_native_lib)", "wraps": ["cmds", "files", "scan", "parsers", "compare", "hidden", "export", "zip", "lopdf", "pinyin"] },
+    { "kind": "security-group", "label": "capabilities/default.json 白名单", "wraps": ["ipc", "cmds"] }
+  ],
+  "connections": [
+    { "from": "user", "to": "pages", "label": "交互", "variant": "emphasis", "fromSide": "top", "toSide": "left" },
+    { "from": "pages", "to": "ui" },
+    { "from": "ui", "to": "ctx" },
+    { "from": "ctx", "to": "domain" },
+    { "from": "domain", "to": "xlsxjs", "label": "导出报表", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 58 },
+    { "from": "ctx", "to": "ipc", "label": "invoke", "variant": "emphasis" },
+    { "from": "ipc", "to": "debug", "label": "耗时/入参埋点", "variant": "dashed", "fromSide": "top", "toSide": "bottom", "labelDy": -70 },
+    { "from": "ipc", "to": "cmds", "label": "IPC 序列化", "variant": "security" },
+    { "from": "cmds", "to": "scan", "label": "scan_directory", "variant": "dashed", "fromSide": "top", "toSide": "bottom", "labelAt": [790, 172] },
+    { "from": "cmds", "to": "files", "label": "保存对话框" },
+    { "from": "cmds", "to": "parsers", "label": "parse_*_metadata", "fromSide": "right", "toSide": "left" },
+    { "from": "cmds", "to": "compare", "label": "compare_metadata", "variant": "emphasis", "labelAt": [910, 410] },
+    { "from": "compare", "to": "hidden", "label": "隐藏痕迹回填", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 58 },
+    { "from": "cmds", "to": "export", "label": "save / batch_clear", "fromSide": "bottom", "toSide": "left", "labelDy": 30 },
+    { "from": "parsers", "to": "zip" },
+    { "from": "parsers", "to": "lopdf", "variant": "dashed", "fromSide": "right", "toSide": "top" },
+    { "from": "compare", "to": "pinyin", "label": "公司名归一", "fromSide": "right", "toSide": "left" },
+    { "from": "files", "to": "fs", "label": "读写", "variant": "emphasis", "fromSide": "left", "toSide": "right" },
+    { "from": "scan", "to": "fs", "label": "递归枚举", "variant": "dashed", "fromSide": "left", "toSide": "top", "labelDy": -20 }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "前端 (src/)",
+      "items": [
+        "React 19 + Vite 8 + TypeScript 7",
+        "5 个页面：home / editor / batch / compare / hidden",
+        "FileProvider + MetadataProvider 双层 Context",
+        "领域逻辑收敛在 lib/documents，页面只做编排"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Rust 内核 (src-tauri/)",
+      "items": [
+        "lib.rs 注册 34 个 invoke 命令，作为唯一入口",
+        "documents 负责四种格式的解析与回写",
+        "compare 内核 7 模块：align/diff/fields/normalize/rules/model",
+        "export 统一元数据构建与批量清除"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "边界与约束",
+      "items": [
+        "所有 IPC 经 trackedInvoke 统一埋点，便于回放",
+        "命令白名单由 capabilities/default.json 收口",
+        "文件读写只发生在 Rust 侧，前端不持有句柄",
+        "release 开启 LTO + strip，优先二进制体积"
+      ]
+    }
+  ]
+}

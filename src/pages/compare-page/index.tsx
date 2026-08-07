@@ -1,24 +1,24 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { HugeIcon } from "@/components/icons/huge-icon";
-import { PlayIcon } from "@hugeicons/core-free-icons";
-import { invoke } from "@tauri-apps/api/core";
+import React, { useCallback, useMemo, useState } from 'react';
+import { HugeIcon } from '@/components/icons/huge-icon';
+import { PlayIcon } from '@hugeicons/core-free-icons';
+import { invoke } from '@tauri-apps/api/core';
 
-import { Button } from "@/components/ui/button";
-import { PageLayout } from "@/layouts/page-layout";
-import { useFileContext, type CompanyEntry } from "@/contexts/file-context";
-import { useMetadata, type LoadedDocument } from "@/contexts/metadata-context";
+import { Button } from '@/components/ui/button';
+import { PageLayout } from '@/layouts/page-layout';
+import { useFileContext, type CompanyEntry } from '@/contexts/file-context';
+import { useMetadata, type LoadedDocument } from '@/contexts/metadata-context';
 import {
   EMPTY_COMPARE_RESULT,
   type CompareFileInput,
   type CompareResult,
-} from "@/lib/documents/compare/types";
-import { ROUTES } from "@/router/paths";
-import { DropZone } from "@/pages/compare-page/components/drop-zone";
-import { CompanyCard } from "@/pages/compare-page/components/company-card";
-import { CompareWorkbench } from "@/pages/compare-page/components/compare-workbench";
+} from '@/lib/documents/compare/types';
+import { ROUTES } from '@/router/paths';
+import { DropZone } from '@/pages/compare-page/components/drop-zone';
+import { CompanyCard } from '@/pages/compare-page/components/company-card';
+import { CompareWorkbench } from '@/pages/compare-page/components/compare-workbench';
 
 function text(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function toCompareInputs(
@@ -26,14 +26,14 @@ function toCompareInputs(
   companyById: Record<string, CompanyEntry>,
 ): CompareFileInput[] {
   return documents
-    .filter((doc) => doc.status === "ready" && doc.companyId)
-    .map((doc) => {
+    .filter(doc => doc.status === 'ready' && doc.companyId)
+    .map(doc => {
       const props = doc.metadata.documentProperties;
       const app = doc.metadata.appProperties;
       const company = doc.companyId ? companyById[doc.companyId] : undefined;
       return {
         id: doc.id,
-        companyId: doc.companyId ?? "",
+        companyId: doc.companyId ?? '',
         companyName: text(company?.name),
         fileName: doc.metadata.fileName,
         creator: text(props?.creator),
@@ -70,18 +70,12 @@ export const ComparePage: React.FC = () => {
   const [comparing, setComparing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const readyDocs = useMemo(
-    () => documents.filter((doc) => doc.status === "ready"),
-    [documents],
-  );
+  const readyDocs = useMemo(() => documents.filter(doc => doc.status === 'ready'), [documents]);
 
   const allCompanies = useMemo(() => Object.values(companyById), [companyById]);
 
   const companiesWithFiles = useMemo(
-    () =>
-      allCompanies.filter((c) =>
-        readyDocs.some((doc) => doc.companyId === c.id),
-      ),
+    () => allCompanies.filter(c => readyDocs.some(doc => doc.companyId === c.id)),
     [allCompanies, readyDocs],
   );
 
@@ -95,11 +89,11 @@ export const ComparePage: React.FC = () => {
     setError(null);
     try {
       const files = toCompareInputs(documents, companyById);
-      const next = await invoke<CompareResult>("compare_metadata", { files });
+      const next = await invoke<CompareResult>('compare_metadata', { files });
       setResult(next);
     } catch (cause) {
-      console.error("对比失败:", cause);
-      setError("对比执行失败，请重试。");
+      console.error('对比失败:', cause);
+      setError('对比执行失败，请重试。');
       setResult(EMPTY_COMPARE_RESULT);
     } finally {
       setComparing(false);
@@ -130,14 +124,9 @@ export const ComparePage: React.FC = () => {
               清空全部
             </Button>
           ) : null}
-          <Button
-            size="sm"
-            onClick={handleRun}
-            disabled={!canRun}
-            className="gap-1.5 rounded-lg"
-          >
+          <Button size="sm" onClick={handleRun} disabled={!canRun} className="gap-1.5 rounded-lg">
             <HugeIcon icon={PlayIcon} size={14} />
-            {comparing ? "对比中…" : result ? "重新对比" : "开始对比"}
+            {comparing ? '对比中…' : result ? '重新对比' : '开始对比'}
           </Button>
         </div>
       }

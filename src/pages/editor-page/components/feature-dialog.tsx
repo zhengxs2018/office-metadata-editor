@@ -1,4 +1,4 @@
-import React from "react"
+import React from 'react';
 
 import {
   Dialog,
@@ -6,20 +6,20 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog';
 
-type DialogSize = "xxl" | "xl" | "lg" | "md"
+type DialogSize = 'xxl' | 'xl' | 'lg' | 'md';
 
-interface OmFeatureDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  title: string
-  description: string
-  size?: DialogSize
-  children: React.ReactNode
+interface FeatureDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  size?: DialogSize;
+  children: React.ReactNode;
 }
 
-export const OmFeatureDialog: React.FC<OmFeatureDialogProps> = ({
+export const FeatureDialog: React.FC<FeatureDialogProps> = ({
   open,
   onOpenChange,
   title,
@@ -36,5 +36,7 @@ export const OmFeatureDialog: React.FC<OmFeatureDialogProps> = ({
         <div className="min-h-0 flex-1 overflow-auto">{children}</div>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
+
+export default FeatureDialog;

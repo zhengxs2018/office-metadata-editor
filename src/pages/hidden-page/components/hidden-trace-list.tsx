@@ -1,48 +1,48 @@
-import React, { useState } from "react"
+import React, { useState } from 'react';
 import {
   ArrowDown01Icon,
   ArrowRight01Icon,
   CheckCircle,
   File01Icon,
-} from "@hugeicons/core-free-icons"
-import { HugeIcon } from "@/components/icons/huge-icon"
-import { Badge } from "@/components/ui/badge"
-import type { HiddenTraceRow } from "./hidden-types"
+} from '@hugeicons/core-free-icons';
+import { HugeIcon } from '@/components/icons/huge-icon';
+import { Badge } from '@/components/ui/badge';
+import type { HiddenTraceRow } from '@/types/hidden';
 
 interface HiddenTraceListProps {
-  rows: HiddenTraceRow[]
+  rows: HiddenTraceRow[];
 }
 
 interface TraceGroupProps {
-  label: string
-  values: string[]
+  label: string;
+  values: string[];
 }
 
 const TraceGroup: React.FC<TraceGroupProps> = ({ label, values }) => {
-  if (values.length === 0) return null
+  if (values.length === 0) return null;
 
   return (
     <div className="flex flex-wrap items-baseline gap-2">
       <span className="text-fine-print shrink-0 text-muted-foreground">{label}</span>
       <div className="flex flex-wrap gap-1">
-        {values.map((value) => (
+        {values.map(value => (
           <Badge key={value} variant="outline" className="font-mono text-fine-print">
             {value}
           </Badge>
         ))}
       </div>
     </div>
-  )
-}
+  );
+};
 
 const TraceItem: React.FC<{ row: HiddenTraceRow }> = ({ row }) => {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   return (
     <li className="rounded-md border border-border/50 bg-background/60">
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => setOpen(prev => !prev)}
         className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
       >
         <HugeIcon
@@ -76,11 +76,11 @@ const TraceItem: React.FC<{ row: HiddenTraceRow }> = ({ row }) => {
         </div>
       ) : null}
     </li>
-  )
-}
+  );
+};
 
 export const HiddenTraceList: React.FC<HiddenTraceListProps> = ({ rows }) => {
-  const flagged = rows.filter((row) => row.hasTrace)
+  const flagged = rows.filter(row => row.hasTrace);
 
   if (flagged.length === 0) {
     return (
@@ -91,14 +91,14 @@ export const HiddenTraceList: React.FC<HiddenTraceListProps> = ({ rows }) => {
           所有文件的批注、修订与 XMP 元数据中均未检出作者信息。
         </p>
       </div>
-    )
+    );
   }
 
   return (
     <ul className="space-y-1.5">
-      {flagged.map((row) => (
+      {flagged.map(row => (
         <TraceItem key={row.id} row={row} />
       ))}
     </ul>
-  )
-}
+  );
+};

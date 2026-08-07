@@ -1,15 +1,15 @@
-import React from "react"
-import { HugeIcon } from "@/components/icons/huge-icon"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import React from 'react';
+import { HugeIcon } from '@/components/icons/huge-icon';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ReportSectionProps {
-  index?: string
-  title: string
-  hint?: string
-  hintIcon?: React.ComponentProps<typeof HugeIcon>["icon"]
-  hintHint?: string
-  actions?: React.ReactNode
-  children: React.ReactNode
+  index?: string;
+  title: string;
+  hint?: string;
+  hintIcon?: React.ComponentProps<typeof HugeIcon>['icon'];
+  hintHint?: string;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
 }
 
 export const ReportSection: React.FC<ReportSectionProps> = ({
@@ -54,4 +54,4 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
     </header>
     {children}
   </section>
-)
+);

@@ -18,7 +18,7 @@
  * traffic lights float above the top-left of the webview. Reserve room for them
  * instead of padding the whole title bar down.
  */
-:root[data-platform="macos"] {
+:root[data-platform='macos'] {
   --chrome-traffic-light-inset: 78px;
 }
 
