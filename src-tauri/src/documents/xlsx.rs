@@ -30,6 +30,7 @@ pub fn parse_metadata_from_path(file_path: String) -> Result<DocumentMetadata, S
 
     metadata.app_properties.pages = count_sheets(file_bytes)?;
 
+    crate::documents::extract_hidden_metadata(&mut metadata, &file_path);
     Ok(metadata)
 }
 

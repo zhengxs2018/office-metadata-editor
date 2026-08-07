@@ -12,6 +12,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { invoke } from "@tauri-apps/api/core"
 import { save } from "@tauri-apps/plugin-dialog"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -107,9 +108,15 @@ export const ExportView: React.FC<ExportViewProps> = ({
         await invoke("write_text_file", { filePath: target, content })
       }
       setResult({ success: true, outputPath: target, exportedCount: documents.length })
+      toast.success("导出成功", {
+        description: `已导出 ${documents.length} 个文件的元数据至 ${target}`,
+      })
+      await invoke("open_export_folder", { filePath: target }).catch(() => {})
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
       console.error("导出失败:", error)
-      setResult({ success: false, exportedCount: 0, error: String(error) })
+      setResult({ success: false, exportedCount: 0, error: message })
+      toast.error("导出失败", { description: message })
     } finally {
       setExporting(false)
     }

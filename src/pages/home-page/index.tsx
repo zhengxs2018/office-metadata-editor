@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import {
   Layers01Icon,
   GitCompareIcon,
+  ScanEyeIcon,
 } from "@hugeicons/core-free-icons"
 
 import { useFileContext } from "@/contexts/file-context"
@@ -52,13 +53,14 @@ export const HomePage: React.FC = () => {
             </div>
           </section>
 
-          <section className="grid shrink-0 grid-cols-1 gap-3 md:grid-cols-2">
+          <section className="grid shrink-0 grid-cols-1 gap-3 md:grid-cols-3">
             <EntryCard
               tone="orange"
               icon={GitCompareIcon}
               title="对比视图"
               description="深度比对多份文档的作者、编辑时间与软件环境，精准识别同一作者风险。"
               badge="核心"
+              cta="开始对比"
               onClick={() => navigate(ROUTES.compare)}
             />
             <EntryCard
@@ -67,7 +69,17 @@ export const HomePage: React.FC = () => {
               title="批量处理"
               description="一键解析数百个 Office 文档的隐藏属性、修订记录与自定义 XML 数据。"
               badge="高效"
+              cta="批量处理"
               onClick={() => navigate(ROUTES.batch)}
+            />
+            <EntryCard
+              tone="emerald"
+              icon={ScanEyeIcon}
+              title="隐藏信息提取"
+              description="提取文档中的批注作者、修订痕迹与内嵌元数据，辅助识别编辑来源。"
+              badge="检视"
+              cta="查看隐藏信息"
+              onClick={() => navigate(ROUTES.hidden)}
             />
           </section>
         </div>
@@ -76,30 +88,34 @@ export const HomePage: React.FC = () => {
   )
 }
 
-const TONE_STYLES: Record<string, { card: string; icon: string }> = {
+const TONE_STYLES: Record<string, { card: string; icon: string; badge: string }> = {
   orange: {
     card: "from-orange-500/15 to-orange-500/0 border-orange-500/20",
     icon: "bg-orange-500/10 text-orange-600 dark:text-orange-300",
+    badge: "bg-red-500 text-white",
   },
   violet: {
     card: "from-violet-500/15 to-violet-500/0 border-violet-500/20",
     icon: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
+    badge: "bg-blue-500 text-white",
+  },
+  emerald: {
+    card: "from-emerald-500/15 to-emerald-500/0 border-emerald-500/20",
+    icon: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    badge: "bg-emerald-600 text-white",
   },
 }
 
 const EntryCard: React.FC<{
-  tone: "orange" | "violet"
+  tone: "orange" | "violet" | "emerald"
   icon: React.ComponentProps<typeof HugeIcon>["icon"]
   title: string
   description: string
   badge: string
+  cta: string
   onClick: () => void
-}> = ({ tone, icon: Icon, title, description, badge, onClick }) => {
+}> = ({ tone, icon: Icon, title, description, badge, cta, onClick }) => {
   const style = TONE_STYLES[tone]
-  const badgeColor =
-    tone === "orange"
-      ? "bg-red-500 text-white"
-      : "bg-blue-500 text-white"
 
   return (
     <button
@@ -114,7 +130,7 @@ const EntryCard: React.FC<{
         <span className={cn("flex h-8 w-8 items-center justify-center rounded-md", style.icon)}>
           <HugeIcon icon={Icon} size={16} />
         </span>
-        <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-semibold", badgeColor)}>
+        <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-semibold", style.badge)}>
           {badge}
         </span>
       </div>
@@ -125,7 +141,7 @@ const EntryCard: React.FC<{
         </p>
       </div>
       <div className="mt-3 flex items-center justify-end text-xs font-medium text-primary transition-transform group-hover:translate-x-0.5">
-        {badge === "核心" ? "开始对比" : "批量处理"} →
+        {cta} →
       </div>
     </button>
   )

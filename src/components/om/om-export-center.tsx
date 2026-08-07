@@ -1,8 +1,10 @@
 import React, { useState, useCallback } from "react"
+import { toast } from "sonner"
 import { useMetadata } from "@/contexts/metadata-context"
 import type { ExportFormat, ExportOptions, ExportResult, ExportFieldOption } from "@/types/om-workflow"
 import { open } from "@tauri-apps/plugin-dialog"
 import { writeTextFile } from "@tauri-apps/plugin-fs"
+import { invoke } from "@tauri-apps/api/core"
 
 export type { ExportFieldOption } from "@/types/om-workflow"
 
@@ -148,12 +150,14 @@ export const OmExportCenter: React.FC<OmExportCenterProps> = ({
       setExportResult(result)
 
       if (result.success) {
-        // TODO: 显示成功 Toast
-        console.log(`导出成功：${result.outputPath}, 共 ${result.exportedCount} 个文件`)
+        toast.success("导出成功", {
+          description: `已导出 ${result.exportedCount} 个文件的元数据至 ${result.outputPath}`,
+        })
+        await invoke("open_export_folder", { filePath: result.outputPath }).catch(() => {})
       }
     } catch (error) {
-      console.error("导出失败:", error)
-      // TODO: 显示错误 Toast
+      const message = error instanceof Error ? error.message : String(error)
+      toast.error("导出失败", { description: message })
     } finally {
       setIsExporting(false)
     }

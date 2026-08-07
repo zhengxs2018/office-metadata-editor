@@ -1,6 +1,6 @@
 [package]
 name = "office-metadata-editor"
-version = "0.2.0"
+version = "0.3.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -30,6 +30,7 @@ zip = { version = "2", default-features = false, features = ["deflate"] }
 lopdf = "0.34"
 pinyin = "0.11"
 base64 = "0.22"
+walkdir = "2.5"
 
 
 [profile.dev]

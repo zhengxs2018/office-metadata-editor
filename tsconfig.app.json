@@ -25,7 +25,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "baseUrl": ".",
+    "rootDir": ".",
     "paths": {
       "@/*": ["./src/*"]
     }

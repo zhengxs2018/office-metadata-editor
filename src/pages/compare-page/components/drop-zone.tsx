@@ -9,8 +9,49 @@ import { cn } from "@/lib/utils"
 import { useFileContext } from "@/contexts/file-context"
 import { useGlobalDragDrop } from "@/hooks/use-global-drag-drop"
 import type { DirectoryScanResult } from "@/types/om-workflow"
+import { getStopWords } from "@/lib/documents/compare/stop-words"
 
 const ACCEPT_EXTS = ["docx", "doc", "xlsx", "pdf"]
+
+/** 非公司目录提示词（来自分类停用词词典，不在本文件硬编码）。 */
+const NON_COMPANY_DIR_HINTS = getStopWords("compare.folders.stop_words")
+
+function isHiddenSegment(seg: string): boolean {
+  return seg.startsWith(".")
+}
+
+/** 判断直接子目录名是否为投标公司目录（而非招标文件/缓存目录） */
+function isCompanyDirName(name: string): boolean {
+  if (isHiddenSegment(name)) return false
+  const lower = name.toLowerCase()
+  return !NON_COMPANY_DIR_HINTS.some(hint => lower.includes(hint))
+}
+
+/** 过滤临时文件（如 .~xxx.xlsx） */
+function isRealFile(path: string): boolean {
+  return !path.split("/").some(seg => seg.startsWith(".~"))
+}
+
+/**
+ * 从顶层文件夹的全部文件中，按「直接子目录」推断投标公司目录。
+ * 返回 公司目录名 -> 该目录递归下的支持文件列表。
+ */
+function splitCompanyDirs(baseDir: string, allFiles: string[]): Map<string, string[]> {
+  const base = normalizeDir(baseDir)
+  const children = new Map<string, string[]>()
+  for (const f of allFiles) {
+    if (!isRealFile(f)) continue
+    const rel = normalizeDir(f).slice(base.length + 1)
+    const slash = rel.indexOf("/")
+    if (slash <= 0) continue
+    const top = rel.slice(0, slash)
+    if (!isCompanyDirName(top)) continue
+    const arr = children.get(top) ?? []
+    arr.push(f)
+    children.set(top, arr)
+  }
+  return children
+}
 
 /** 文件选择模式 */
 export type DropZoneMode = "both" | "file" | "directory"
@@ -99,6 +140,23 @@ export const DropZone: React.FC<DropZoneProps> = ({ mode = "both" }) => {
         const listed = await scanFolder(p)
         if (listed.length === 0) {
           setHint(`未在 "${folderName}" 中找到支持的文件`)
+          continue
+        }
+        const companyDirs = splitCompanyDirs(p, listed)
+        if (companyDirs.size >= 2) {
+          let added = 0
+          for (const [dirName, dirFiles] of companyDirs) {
+            const dedup = dirFiles.filter(fp => !ctxFilesRef.current.some(f => f.filePath === fp))
+            if (dedup.length === 0) continue
+            const companyId = ensureCompany(dirName, normalizeDir(p) + "/" + dirName)
+            addFilesByPaths(dedup, companyId)
+            added++
+          }
+          if (added > 0) {
+            setHint(`已从 "${folderName}" 自动识别 ${added} 个投标公司目录`)
+          } else {
+            setHint(`"${folderName}" 中的文件已全部添加过`)
+          }
           continue
         }
         const companyName = folderName || "未命名公司"

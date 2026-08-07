@@ -53,6 +53,10 @@ export interface DocumentMetadata {
   documentProperties: DocumentProperties
   coreProperties: CoreProperties
   appProperties: AppProperties
+  annotationAuthors?: string[]
+  revisionAuthors?: string[]
+  xmpCreators?: string[]
+  hasHiddenMarkers?: boolean
 }
 
 export interface MetadataField {

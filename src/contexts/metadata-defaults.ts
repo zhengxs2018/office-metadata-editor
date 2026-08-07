@@ -45,4 +45,8 @@ export const defaultMetadata: DocumentMetadata = {
     paragraphs: 0,
     lines: 0,
   },
+  annotationAuthors: [],
+  revisionAuthors: [],
+  xmpCreators: [],
+  hasHiddenMarkers: false,
 }

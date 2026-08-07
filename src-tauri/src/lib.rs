@@ -972,9 +972,10 @@ fn batch_clear_and_save_doc_metadata(
 
 #[tauri::command]
 fn compare_metadata(
-    files: Vec<documents::compare::CompareFileInput>,
-) -> Vec<documents::compare::MatchReport> {
-    documents::compare::compare_files(&files)
+    files: Vec<documents::compare::model::CompareFileInput>,
+    options: Option<documents::compare::model::CompareOptions>,
+) -> documents::compare::model::CompareResult {
+    documents::compare::run_compare(&files, &options.unwrap_or_default())
 }
 
 #[tauri::command]
@@ -1017,6 +1018,19 @@ fn set_window_theme(window: tauri::Window, theme: String) -> Result<(), String> 
     };
 
     window.set_theme(next_theme).map_err(|err| err.to_string())
+}
+
+#[tauri::command]
+fn open_export_folder(app: tauri::AppHandle, file_path: String) -> Result<(), String> {
+    let path = PathBuf::from(&file_path);
+    let dir = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .map(|p| p.to_path_buf())
+        .unwrap_or(path);
+    app.opener()
+        .open_path(dir.to_string_lossy().to_string(), None::<&str>)
+        .map_err(|err| err.to_string())
 }
 
 fn build_updated_docx_bytes(file_bytes: Vec<u8>, metadata: &DocumentMetadata) -> Result<Vec<u8>, String> {
@@ -1629,7 +1643,8 @@ pub fn run() {
             compare_metadata,
             write_text_file,
             write_binary_file,
-            set_window_theme
+            set_window_theme,
+            open_export_folder
         ])
         .on_page_load(|webview, payload| {
             if webview.label() == "main" && matches!(payload.event(), PageLoadEvent::Finished) {

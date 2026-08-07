@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Office 元数据编辑器",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "identifier": "com.zhengxs.ome",
   "build": {
     "beforeDevCommand": "bun dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun build",
+    "beforeBuildCommand": "bun run build",
     "frontendDist": "../dist",
     "removeUnusedCommands": true
   },

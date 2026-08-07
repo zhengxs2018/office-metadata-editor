@@ -4,6 +4,7 @@ export const ROUTES = {
   editor: "/editor",
   batch: "/batch",
   compare: "/compare",
+  hidden: "/hidden",
 } as const
 
 export type RouteKey = keyof typeof ROUTES
