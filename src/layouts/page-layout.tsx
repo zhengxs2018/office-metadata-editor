@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { HugeIcon } from "@/components/icons/huge-icon"
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
@@ -28,6 +28,26 @@ export const PageLayout: React.FC<React.PropsWithChildren<PageLayoutProps>> = ({
   sidebar,
 }) => {
   const navigate = useNavigate()
+  const dragRef = useRef<HTMLDivElement>(null)
+
+  // 递归给标题区域所有子元素添加 data-tauri-drag-region（排除交互元素）
+  useEffect(() => {
+    const el = dragRef.current
+    if (!el) return
+
+    const EXCLUDE_TAGS = new Set(["BUTTON", "A", "INPUT", "TEXTAREA", "SELECT"])
+    const EXCLUDE_CLASSES = ["app-no-drag"]
+
+    const addDrag = (node: Element) => {
+      if (EXCLUDE_TAGS.has(node.tagName) || EXCLUDE_CLASSES.some(c => node.classList.contains(c))) return
+      node.setAttribute("data-tauri-drag-region", "")
+      for (const child of Array.from(node.children)) {
+        addDrag(child)
+      }
+    }
+
+    addDrag(el)
+  }, [header])
 
   const leading = (
     <>
@@ -52,7 +72,7 @@ export const PageLayout: React.FC<React.PropsWithChildren<PageLayoutProps>> = ({
           <div className="h-4 w-px shrink-0 bg-hairline" />
         </>
       )}
-      <div className="min-w-0 flex-1">{header}</div>
+      <div ref={dragRef} className="min-w-0 flex-1 select-none" data-tauri-drag-region>{header}</div>
     </>
   )
 

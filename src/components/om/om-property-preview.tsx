@@ -20,7 +20,7 @@ export const OmPropertyPreview: React.FC<OmPropertyPreviewProps> = ({ title, pro
   return (
     <Card
       size="sm"
-      className="rounded-lg border border-zinc-200 bg-background/55 shadow-none backdrop-blur-[2px]"
+      className="rounded-lg border border-border bg-card/60 shadow-none"
     >
       <CardHeader className="pb-1.5">
         <CardTitle className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">

@@ -69,13 +69,18 @@ function formatDateValue(value: string): string {
   if (!value) return "-"
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString("zh-CN", {
+  const dateStr = date.toLocaleDateString("zh-CN", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+  })
+  const timeStr = date.toLocaleTimeString("zh-CN", {
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
   })
+  return `${dateStr} ${timeStr}`
 }
 
 function toFieldPath(category: string, key: string): string {
@@ -148,7 +153,7 @@ export const OmMetadataEditor: React.FC<OmMetadataEditorProps> = ({ fileType }) 
                   <div className="flex min-h-6 items-center gap-1.5">
                     <Label
                       htmlFor={fieldPath}
-                      className="text-[11px] font-medium tracking-wide text-muted-foreground"
+                      className="text-xs font-medium tracking-wide text-muted-foreground"
                     >
                       {field.label}
                     </Label>
@@ -166,7 +171,7 @@ export const OmMetadataEditor: React.FC<OmMetadataEditorProps> = ({ fileType }) 
                               handleFieldChange(section.category, field.key, true)(e.target.value)
                             }}
                             placeholder="输入或筛选语言代码，例如 zh-CN / en-US"
-                            className="h-8 rounded-md border border-border/70 bg-background px-2 text-sm"
+                            className="h-7 rounded-md border border-input bg-input/20 text-sm focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
                           />
                           <datalist id={languageInputListId}>
                             {COMMON_LOCALE_CODES.map(code => (
@@ -184,7 +189,7 @@ export const OmMetadataEditor: React.FC<OmMetadataEditorProps> = ({ fileType }) 
                             handleFieldChange(section.category, field.key)(e.target.value)
                           }}
                           placeholder={`输入${field.label}`}
-                          className="min-h-16 rounded-none border-0 border-b border-border/55 bg-transparent px-0 py-1 text-sm leading-6 shadow-none focus-visible:border-primary/40 focus-visible:ring-0 focus-visible:ring-transparent focus-visible:outline-none"
+                          className="min-h-16 rounded-md border border-input bg-input/20 px-2 py-1 text-sm leading-6 shadow-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
                         />
                       ) : (
                         <Input
@@ -195,7 +200,7 @@ export const OmMetadataEditor: React.FC<OmMetadataEditorProps> = ({ fileType }) 
                             handleFieldChange(section.category, field.key)(e.target.value)
                           }}
                           placeholder={`输入${field.label}`}
-                          className="h-8 rounded-none border-0 border-b border-border/55 bg-transparent px-0 text-sm shadow-none focus-visible:border-primary/40 focus-visible:ring-0 focus-visible:ring-transparent focus-visible:outline-none"
+                          className="h-7 rounded-md border border-input bg-input/20 px-2 text-sm focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
                         />
                       )
                     ) : (

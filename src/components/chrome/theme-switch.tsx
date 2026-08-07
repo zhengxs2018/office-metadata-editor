@@ -24,29 +24,36 @@ export const ThemeSwitch: React.FC<{ className?: string }> = ({ className }) => 
       role="radiogroup"
       aria-label="主题切换"
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 backdrop-blur-sm",
+        "group inline-flex items-center gap-0.5 rounded-full border border-border/20 bg-card/40 p-0.5 backdrop-blur-sm transition-all duration-200",
+        "hover:border-border/60 hover:bg-card/70",
         className,
       )}
     >
       {OPTIONS.map(option => {
         const Icon = option.icon
         const active = theme === option.value
+
         return (
           <button
             key={option.value}
             type="button"
             role="radio"
             aria-checked={active}
+            aria-label={option.label}
             onClick={() => setTheme(option.value)}
             className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+              "inline-flex items-center rounded-full text-[11px] font-medium transition-all duration-200",
+              !active && "max-w-0 w-0 overflow-hidden p-0 gap-0 opacity-0 group-hover:max-w-none group-hover:w-auto group-hover:px-2.5 group-hover:py-1 group-hover:gap-1 group-hover:opacity-100",
               active
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "size-7 justify-center p-0 group-hover:w-auto group-hover:px-2.5 group-hover:py-1 group-hover:gap-1"
                 : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+              active && "group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-sm",
             )}
           >
             <HugeIcon icon={Icon} size={14} />
-            <span>{option.label}</span>
+            <span className={cn("overflow-hidden whitespace-nowrap transition-[width] duration-200", active ? "w-0 group-hover:w-auto" : "w-0 group-hover:w-auto")}>
+              {option.label}
+            </span>
           </button>
         )
       })}
