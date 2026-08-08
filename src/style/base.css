@@ -49,6 +49,16 @@
   --text-display-lg--line-height: 1.1;
   --text-display-lg--letter-spacing: -0.4px;
 
+  --color-content-block: var(--content-block);
+  --color-table-block: var(--table-block);
+  --color-surface-card: var(--surface-card);
+  --color-aux: var(--aux-text);
+  --color-data: var(--data-text);
+  --text-title: var(--title-text);
+  --text-body-strong: var(--body-strong-text);
+  --text-data: var(--data-text);
+  --text-aux: var(--aux-text);
+
   --shadow-product: 3px 5px 30px 0 rgb(0 0 0 / 0.22);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -129,6 +139,14 @@
   --pearl: oklch(1 0 0);
   --hairline: oklch(0.906 0.004 106);
   --divider-soft: oklch(0.941 0.003 106);
+
+  --title-text: oklch(0.21 0.01 240);
+  --body-strong-text: oklch(0.32 0.012 240);
+  --content-block: oklch(0.95 0.006 240);
+  --table-block: oklch(0.95 0.006 240);
+  --surface-card: oklch(1 0 0);
+  --data-text: oklch(0.55 0.015 240);
+  --aux-text: oklch(0.65 0.012 240);
   --success: oklch(0.68 0.146 152);
   --success-foreground: oklch(0.32 0.072 152);
   --warning: oklch(0.79 0.148 76);
@@ -174,6 +192,14 @@
   --pearl: oklch(0.242 0.004 106);
   --hairline: oklch(1 0 0 / 9%);
   --divider-soft: oklch(1 0 0 / 6%);
+
+  --title-text: oklch(0.92 0.005 240);
+  --body-strong-text: oklch(0.82 0.008 240);
+  --content-block: oklch(0.24 0.01 240);
+  --table-block: oklch(0.24 0.01 240);
+  --surface-card: oklch(0.242 0.004 106);
+  --data-text: oklch(0.72 0.02 240);
+  --aux-text: oklch(0.6 0.015 240);
   --success: oklch(0.72 0.146 152);
   --success-foreground: oklch(0.94 0.036 152);
   --warning: oklch(0.82 0.148 76);
@@ -319,6 +345,42 @@ body {
   .surface-inset {
     background-color: var(--canvas);
     border-radius: var(--radius-lg);
+  }
+
+  /* --- Semantic text tokens (single source of truth: DESIGN.md §3) --- */
+  .title-text {
+    color: var(--title-text);
+  }
+
+  .body-strong {
+    color: var(--body-strong-text);
+    font-weight: 600;
+  }
+
+  .data-text {
+    color: var(--data-text);
+  }
+
+  .aux-text {
+    color: var(--aux-text);
+  }
+
+  /* --- Semantic surface blocks (single source of truth: DESIGN.md §3) --- */
+  .content-block {
+    background-color: var(--content-block);
+    border-radius: var(--radius-lg);
+  }
+
+  .table-block {
+    background-color: var(--table-block);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .surface-card-block {
+    background-color: var(--surface-card);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
   }
 
   .app-drag {

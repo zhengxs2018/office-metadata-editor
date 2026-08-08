@@ -13,7 +13,7 @@ const Stat: React.FC<{ label: string; value: number | string; tone?: string }> =
   value,
   tone,
 }) => (
-  <div className="rounded-lg border border-border/60 bg-background px-2.5 py-2">
+  <div className="rounded-lg border border-border/60 surface-card-block px-2.5 py-2 transition-[colors,transform] duration-200 ease-out hover:-translate-y-px">
     <p className="text-fine-print text-muted-foreground">{label}</p>
     <p className={cn('font-heading text-lg font-semibold tabular-nums', tone)}>{value}</p>
   </div>

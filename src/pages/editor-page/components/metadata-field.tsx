@@ -60,7 +60,7 @@ export const MetadataFieldItem: React.FC<MetadataFieldItemProps> = ({ field, onC
               value={field.value}
               onChange={handleChange}
               placeholder={`输入${field.label}`}
-              className="min-h-16 rounded-none border-0 border-b border-zinc-200 bg-transparent px-0 py-1 text-sm leading-6 shadow-none focus-visible:border-primary/40 focus-visible:ring-0 focus-visible:ring-transparent focus-visible:outline-none"
+              className="min-h-16 rounded-none border-0 border-b border-input bg-transparent px-0 py-1 text-sm leading-6 shadow-none focus-visible:border-primary/40 focus-visible:ring-0 focus-visible:ring-transparent focus-visible:outline-none"
             />
           ) : (
             <Input
@@ -69,7 +69,7 @@ export const MetadataFieldItem: React.FC<MetadataFieldItemProps> = ({ field, onC
               value={field.value}
               onChange={handleChange}
               placeholder={`输入${field.label}`}
-              className="h-8 rounded-none border-0 border-b border-zinc-200 bg-transparent px-0 text-sm shadow-none focus-visible:border-primary/40 focus-visible:ring-0 focus-visible:ring-transparent focus-visible:outline-none"
+              className="h-8 rounded-none border-0 border-b border-input bg-transparent px-0 text-sm shadow-none focus-visible:border-primary/40 focus-visible:ring-0 focus-visible:ring-transparent focus-visible:outline-none"
             />
           )
         ) : (

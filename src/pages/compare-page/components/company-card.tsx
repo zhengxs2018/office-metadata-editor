@@ -106,14 +106,14 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({ company, index }) => {
   return (
     <div
       className={cn(
-        'flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border-2 transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md',
+        'flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border-2 bg-card transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md',
         borderColor,
       )}
     >
       <header className="flex shrink-0 items-center justify-between gap-2 px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
           <HugeIcon icon={Building01Icon} size={16} />
-          <h3 className="text-ink truncate text-caption font-semibold" title={company.name}>
+          <h3 className={cn('truncate text-caption font-semibold', 'title-text')} title={company.name}>
             {company.name || '未命名公司'}
           </h3>
         </div>

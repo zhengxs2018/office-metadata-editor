@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>批量对比算法 · 四阶段</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --line:#d8dde3; --ink:#1f2733; --muted:#6b7585;
+    --c1:#2563eb; --c2:#0891b2; --c3:#d97706; --c4:#16a34a; --accent:#7c3aed; --band:#eef2ff;
+  }
+  html[data-theme="dark"]{
+    --bg:#0e1116; --panel:#161b22; --line:#2b313c; --ink:#e6edf3; --muted:#9aa4b2;
+    --c1:#5b9bff; --c2:#34d3e6; --c3:#f5b342; --c4:#4ade80; --accent:#b388ff; --band:#1b2030;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);padding:28px}
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  h1{font-size:19px;margin:0}
+  .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .toolbar{display:flex;gap:8px}
+  button{cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+    border-radius:8px;padding:6px 12px;font-size:13px}
+  button:hover{border-color:var(--c1)}
+  svg{width:100%;height:auto;display:block;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;padding:18px}
+  .boxttl{font-size:13px;font-weight:600;fill:var(--ink)}
+  .boxlab{font-size:11px;fill:var(--muted)}
+  .edge{stroke:var(--muted);stroke-width:1.4;fill:none}
+  .elab{font-size:10.5px;fill:var(--muted)}
+  .stage{font-size:12px;font-weight:700;fill:var(--accent)}
+  .band{fill:var(--band);stroke:var(--line);stroke-dasharray:4 4}
+  .note{font-size:11px;fill:var(--c3);font-style:italic}
+  .ruletag{font-size:10px;fill:var(--c3)}
+</style>
+</head>
+<body>
+<div class="top">
+  <div>
+    <h1>批量对比算法 · 四阶段内核</h1>
+    <div class="sub">run_compare：纯函数，输入 CompareFileInput[] + CompareOptions，输出 CompareResult</div>
+  </div>
+  <div class="toolbar">
+    <button onclick="setTheme('light')">浅色</button>
+    <button onclick="setTheme('dark')">深色</button>
+    <button onclick="exportSvg('f-algorithm-stages.svg')">导出 SVG</button>
+  </div>
+</div>
+
+<svg id="svg" viewBox="0 0 1180 760">
+  <text class="stage" x="40" y="34">CompareFileInput[]（已解析语义字段）</text>
+
+  <!-- 阶段1 对齐 -->
+  <rect x="40" y="50" width="1080" height="120" rx="12" fill="var(--band)" stroke="var(--c1)" stroke-width="1.2"/>
+  <text class="boxttl" x="56" y="74" style="fill:var(--c1)">① 对齐 align_files</text>
+  <text class="boxlab" x="56" y="94">三级匹配（顺序尝试，命中即入组）：同组标注 → 文件名相似（归一化） → 标题相似兜底</text>
+  <text class="boxlab" x="56" y="114">输出：AlignedGroup[]（BTreeMap&lt;companyId, 文件下标&gt;，保证组内每公司≤1份） + unmatched（不强制归组，交人工）</text>
+  <text class="ruletag" x="900" y="74">未命中 → unmatched（合规保守：宁可漏归不误归）</text>
+
+  <!-- 箭头 -->
+  <path class="edge" d="M600 170 V200"/><text class="elab" x="616" y="190">每组</text>
+
+  <!-- 阶段2 差异 -->
+  <rect x="40" y="200" width="1080" height="130" rx="12" fill="var(--band)" stroke="var(--c2)" stroke-width="1.2"/>
+  <text class="boxttl" x="56" y="224" style="fill:var(--c2)">② 差异投影 diff_group（对每个组）</text>
+  <text class="boxlab" x="56" y="244">遍历 FIELDS 注册表（~20字段，带 tier + extract 闭包），取原始值→trim→normalize</text>
+  <text class="boxlab" x="56" y="264">字段状态机：全空→Ignored｜部分空→Missing｜全相等→Identical｜最小相似≥0.85→Similar｜否则→Conflict</text>
+  <text class="ruletag" x="700" y="224">Identical 只描述事实≠安全；风险级别由③单独给出</text>
+  <text class="boxlab" x="56" y="288">输出：FieldDiff[]（fieldKey / tier / state / 各公司 FieldValue）</text>
+
+  <!-- 箭头 -->
+  <path class="edge" d="M600 330 V360"/><text class="elab" x="616" y="350">跨组两两 O(N²)</text>
+
+  <!-- 阶段3 风险 -->
+  <rect x="40" y="360" width="1080" height="210" rx="12" fill="var(--band)" stroke="var(--c3)" stroke-width="1.4"/>
+  <text class="boxttl" x="56" y="384" style="fill:var(--c3)">③ 风险判定 rules::evaluate（跳过同公司配对）</text>
+  <text class="boxlab" x="56" y="404">八条规则两两打分（SameEntity / SameOrigin）：</text>
+  <text class="boxlab" x="56" y="424">SAME_PERSON(50) SAME_MANAGER(40) SAME_APP_COMPANY(35) SIMILAR_APP_COMPANY(20)</text>
+  <text class="boxlab" x="56" y="444">SAME_TEMPLATE(30) CLOSE_TIMESTAMP(25) SAME_APP_FINGERPRINT(5·恒弱) REVISION_TRACES(40)</text>
+  <text class="boxlab" x="56" y="468">人名匹配 check_person_match：EXACT→NAME_ANAGRAM(乱序拼音)→PINYIN_EDIT→ANAGRAM_ANCHORED→EDIT_SIM→SUBSET</text>
+  <text class="boxlab" x="56" y="492">聚合 aggregate：score += weight×置信；High 需 score≥70 且 命中≥2类规则（单一线索不定性）</text>
+  <text class="boxlab" x="56" y="512">回写 finding.level = min(公司对级别, 规则max_level)，弱信号不蹭强度</text>
+  <text class="boxlab" x="56" y="536">输出：RiskFinding[]（证据引用×2 + 人话解释）+ CompanyPairRisk[]（level/分数/规则数）</text>
+
+  <!-- 阶段4 归一化 -->
+  <rect x="40" y="590" width="1080" height="120" rx="12" fill="var(--panel)" stroke="var(--line)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text class="boxttl" x="56" y="614">④ 归一化 normalize::*（工具层，被①②③调用）</text>
+  <text class="boxlab" x="56" y="634">normalize：小写/去标点/命中停用词→None　name_fingerprint：字符排序+拼音（乱序同名）</text>
+  <text class="boxlab" x="56" y="654">similarity：Levenshtein 编辑距离　parse_timestamp / timestamp_bucket_key：时间分桶（接近判定）</text>
+  <text class="boxlab" x="56" y="674">配置驱动：5类停用词由 install_dictionaries 启动时从 engine.compare.* 装载一次（OnceLock），进程内一致</text>
+
+  <!-- 输出 -->
+  <path class="edge" d="M600 570 V590" marker-end=""/>
+  <text class="stage" x="40" y="742">CompareResult：companies / groups / unmatched / findings / companyRisks / stats（可直接渲染 + 导出）</text>
+
+  <text class="note" x="40" y="758">纯函数、无 IO、可单测：集成测试 src-tauri/tests/*.rs 直接调 run_compare，不经 Tauri 运行时。</text>
+</svg>
+
+<script>
+function setTheme(t){document.documentElement.setAttribute('data-theme',t)}
+function exportSvg(name){
+  const svg=document.getElementById('svg').outerHTML;
+  const blob=new Blob([svg],{type:'image/svg+xml'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();
+}
+setTheme('light');
+</script>
+</body>
+</html>

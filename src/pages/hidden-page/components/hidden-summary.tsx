@@ -5,6 +5,7 @@ import {
   FileSpreadsheetIcon,
   UserMultipleIcon,
 } from '@hugeicons/core-free-icons';
+import { cn } from '@/lib/utils';
 import { HugeIcon } from '@/components/icons/huge-icon';
 import type { HiddenStats } from '@/types/hidden';
 
@@ -20,15 +21,16 @@ interface StatCellProps {
 }
 
 const StatCell: React.FC<StatCellProps> = ({ label, value, tone = 'default' }) => (
-  <div className="rounded-md border border-border/50 bg-background/60 px-3 py-2">
+  <div className={cn('rounded-md px-3 py-2 surface-card-block')}>
     <div
-      className={`font-heading text-lg font-semibold tabular-nums ${
-        tone === 'danger' && value > 0 ? 'text-destructive' : 'text-ink'
-      }`}
+      className={cn(
+        'font-heading text-lg font-semibold tabular-nums',
+        tone === 'danger' && value > 0 ? 'text-destructive' : 'body-strong',
+      )}
     >
       {value}
     </div>
-    <div className="text-fine-print text-muted-foreground">{label}</div>
+    <div className={cn('text-fine-print aux-text')}>{label}</div>
   </div>
 );
 
@@ -38,24 +40,23 @@ export const HiddenSummary: React.FC<HiddenSummaryProps> = ({ stats, needExport 
   return (
     <div className="space-y-3">
       <div
-        className={`flex items-start gap-3 rounded-md border px-4 py-3 ${
-          hasRisk
-            ? 'border-destructive/30 bg-destructive/5'
-            : 'border-emerald-500/30 bg-emerald-500/5'
-        }`}
+        className={cn(
+          'flex items-start gap-3 rounded-md border px-4 py-3',
+          hasRisk ? 'border-destructive/30 bg-destructive/5' : 'border-success/30 bg-success/5',
+        )}
       >
         <HugeIcon
           icon={hasRisk ? Alert01Icon : CheckCircle}
           size={18}
-          className={hasRisk ? 'mt-0.5 text-destructive' : 'mt-0.5 text-emerald-600'}
+          className={hasRisk ? 'mt-0.5 text-destructive' : cn('mt-0.5 text-success')}
         />
         <div className="space-y-1">
-          <p className="text-ink text-body font-medium">
+          <p className={cn('text-body font-medium title-text')}>
             {hasRisk
               ? `${stats.flaggedCount} 个文件检测到隐藏痕迹`
               : `已扫描 ${stats.fileCount} 个文件，未发现隐藏痕迹`}
           </p>
-          <p className="text-fine-print text-muted-foreground">
+          <p className={cn('text-fine-print aux-text')}>
             {hasRisk
               ? '隐藏痕迹包含批注作者、修订作者、XMP 创建者与隐藏标记，可能泄露编辑者身份，建议逐项核对后清除。'
               : '未在批注、修订记录、XMP 元数据中发现作者痕迹，文件可安全对外分发。'}
@@ -72,9 +73,9 @@ export const HiddenSummary: React.FC<HiddenSummaryProps> = ({ stats, needExport 
       </div>
 
       {needExport ? (
-        <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2">
-          <HugeIcon icon={FileSpreadsheetIcon} size={14} className="mt-0.5 text-amber-600" />
-          <p className="text-fine-print text-muted-foreground">
+        <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/5 px-3 py-2">
+          <HugeIcon icon={FileSpreadsheetIcon} size={14} className={cn('mt-0.5 text-warning')} />
+          <p className={cn('text-fine-print aux-text')}>
             建议点击右上角「导出 Excel」保存完整痕迹清单，便于逐个文件核对与留档。
           </p>
         </div>

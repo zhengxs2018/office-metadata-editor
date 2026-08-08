@@ -8,6 +8,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { useFileContext } from '@/contexts/file-context';
 import { useMetadata } from '@/contexts/metadata-context';
 import { PageLayout } from '@/layouts/page-layout';
+import { cn } from '@/lib/utils';
 import { AddFilesDialog } from '@/components/base/add-files-dialog';
 import { ROUTES } from '@/router/paths';
 
@@ -43,8 +44,8 @@ export const HiddenPage: React.FC = () => {
 
   const headerContent = (
     <div className="flex min-w-0 items-center gap-2">
-      <HugeIcon icon={ScanEyeIcon} size={16} className="shrink-0 text-emerald-600" />
-      <p className="text-ink truncate font-heading text-base font-semibold">隐藏信息提取</p>
+      <HugeIcon icon={ScanEyeIcon} size={16} className={cn('shrink-0 text-success')} />
+      <p className={cn('truncate font-heading text-base font-semibold title-text')}>隐藏信息提取</p>
     </div>
   );
 

@@ -16,6 +16,7 @@ import { ExportView } from './components/export-view';
 import { BatchTableRow } from './components/batch-table-row';
 import { CleanupResultPill, type CleanupResult } from './components/cleanup-result-pill';
 import { PageLayout } from '@/layouts/page-layout';
+import { cn } from '@/lib/utils';
 import type { BatchRow } from '@/types/batch';
 
 export const BatchPage: React.FC = () => {
@@ -179,7 +180,7 @@ export const BatchPage: React.FC = () => {
 
   const headerContent = (
     <div className="min-w-0">
-      <p className="text-ink truncate font-heading text-base font-semibold">批量处理</p>
+      <p className={cn('truncate font-heading text-base font-semibold title-text')}>批量处理</p>
     </div>
   );
 
@@ -232,7 +233,7 @@ export const BatchPage: React.FC = () => {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="搜索文件名或作者…"
-                    className="text-fine-print w-40 bg-transparent text-ink-soft outline-none placeholder:text-muted-foreground/60 sm:w-52"
+                    className={cn('text-fine-print w-40 bg-transparent outline-none placeholder:text-muted-foreground/60 sm:w-52 aux-text')}
                   />
                   {search ? (
                     <button
@@ -254,7 +255,7 @@ export const BatchPage: React.FC = () => {
                   >
                     <thead className="sticky top-0 z-20 text-left text-xs text-muted-foreground">
                       <tr>
-                        <th className="sticky left-0 z-30 w-10 shrink-0 rounded-tl-lg border-t border-b border-l border-r border-zinc-300 bg-muted py-2.5 pr-1 pl-3 font-medium whitespace-nowrap shadow-[2px_0_3px_-1px_rgba(0,0,0,0.08)]">
+                        <th className="sticky left-0 z-30 w-10 shrink-0 rounded-tl-lg border-t border-b border-l border-r border-border bg-muted py-2.5 pr-1 pl-3 font-medium whitespace-nowrap shadow-[2px_0_3px_-1px_rgba(0,0,0,0.08)]">
                           <input
                             type="checkbox"
                             checked={allSelected}
@@ -265,28 +266,28 @@ export const BatchPage: React.FC = () => {
                             className="size-3.5 cursor-pointer rounded border-border text-primary"
                           />
                         </th>
-                        <th className="w-50 min-w-50 border-t border-b border-r border-zinc-300 bg-muted py-2.5 pr-3 pl-3 font-medium whitespace-nowrap">
+                        <th className="w-50 min-w-50 border-t border-b border-r border-border bg-muted py-2.5 pr-3 pl-3 font-medium whitespace-nowrap">
                           文件
                         </th>
-                        <th className="w-25 min-w-25 border-t border-b border-r border-zinc-300 bg-muted py-2.5 pr-2 pl-3 font-medium whitespace-nowrap">
+                        <th className="w-25 min-w-25 border-t border-b border-r border-border bg-muted py-2.5 pr-2 pl-3 font-medium whitespace-nowrap">
                           作者
                         </th>
-                        <th className="w-25 min-w-25 border-t border-b border-r border-zinc-300 bg-muted py-2.5 pr-2 pl-3 font-medium whitespace-nowrap">
+                        <th className="w-25 min-w-25 border-t border-b border-r border-border bg-muted py-2.5 pr-2 pl-3 font-medium whitespace-nowrap">
                           最后修改者
                         </th>
-                        <th className="w-30 min-w-30 border-t border-b border-r border-zinc-300 bg-muted py-2.5 pr-2 pl-3 font-medium whitespace-nowrap">
+                        <th className="w-30 min-w-30 border-t border-b border-r border-border bg-muted py-2.5 pr-2 pl-3 font-medium whitespace-nowrap">
                           修改时间
                         </th>
-                        <th className="w-25 min-w-25 border-t border-b border-r border-zinc-300 bg-muted py-2.5 pr-2 pl-3 font-medium whitespace-nowrap">
+                        <th className="w-25 min-w-25 border-t border-b border-r border-border bg-muted py-2.5 pr-2 pl-3 font-medium whitespace-nowrap">
                           组织名
                         </th>
-                        <th className="w-25 min-w-25 border-t border-b border-r border-zinc-300 bg-muted py-2.5 pr-2 pl-3 font-medium whitespace-nowrap">
+                        <th className="w-25 min-w-25 border-t border-b border-r border-border bg-muted py-2.5 pr-2 pl-3 font-medium whitespace-nowrap">
                           创建器
                         </th>
-                        <th className="w-27.5 min-w-27.5 border-t border-b border-r border-zinc-300 bg-muted py-2.5 pr-3 pl-3 font-medium whitespace-nowrap">
+                        <th className="w-27.5 min-w-27.5 border-t border-b border-r border-border bg-muted py-2.5 pr-3 pl-3 font-medium whitespace-nowrap">
                           创建时间
                         </th>
-                        <th className="sticky right-0 z-30 w-24 min-w-24 shrink-0 rounded-tr-lg border-t border-b border-l border-r border-zinc-300 bg-muted py-2.5 pr-3 pl-3 text-right font-medium whitespace-nowrap shadow-[-2px_0_3px_-1px_rgba(0,0,0,0.08)]">
+                        <th className="sticky right-0 z-30 w-24 min-w-24 shrink-0 rounded-tr-lg border-t border-b border-l border-r border-border bg-muted py-2.5 pr-3 pl-3 text-right font-medium whitespace-nowrap shadow-[-2px_0_3px_-1px_rgba(0,0,0,0.08)]">
                           操作
                         </th>
                       </tr>

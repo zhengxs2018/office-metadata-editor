@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 import { HugeIcon } from '@/components/icons/huge-icon';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { LoadedDocument } from '@/contexts/metadata-context';
 
 import { ReportSection } from '@/pages/compare-page/components/report-section';
@@ -112,7 +113,7 @@ export const HiddenWorkbench: React.FC<HiddenWorkbenchProps> = ({ documents }) =
             {cleanRows.map(row => (
               <li
                 key={row.id}
-                className="text-fine-print truncate rounded-md border border-border/40 bg-background/60 px-3 py-1.5 text-muted-foreground"
+                className={cn('text-fine-print truncate rounded-md px-3 py-1.5', 'surface-card-block', 'aux-text')}
                 title={row.filePath}
               >
                 {row.fileName}

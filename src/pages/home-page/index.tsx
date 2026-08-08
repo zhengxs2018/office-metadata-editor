@@ -34,10 +34,10 @@ export const HomePage: React.FC = () => {
         <div className="flex h-full flex-1 items-center flex-col gap-3 overflow-hidden mt-20 p-10">
           <section className="flex justify-between gap-2">
             <div className="flex flex-col items-start w-3/5">
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              <h2 className={cn('text-2xl font-semibold tracking-tight sm:text-3xl title-text')}>
                 {APP_NAME}
               </h2>
-              <p className="mt-2 text-sm leading-5 text-muted-foreground">
+              <p className={cn('mt-2 text-sm leading-5 aux-text')}>
                 读取、编辑、清理、批处理全部本地完成，支持多格式文档的元数据处理。
               </p>
             </div>

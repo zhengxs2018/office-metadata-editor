@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { useMetadata } from '@/contexts/metadata-context';
 import { resolveFieldLabel } from '@/lib/documents/export/utils';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -227,8 +228,8 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ fileIds = [], availa
               <div
                 className={`rounded-lg border p-4 ${
                   exportResult.success
-                    ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30'
-                    : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30'
+                    ? 'border-success/30 bg-success/5'
+                    : 'border-destructive/30 bg-destructive/5'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -236,37 +237,33 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ fileIds = [], availa
                     <HugeIcon
                       icon={CheckCircle}
                       size={24}
-                      className="shrink-0 text-emerald-600 dark:text-emerald-400"
+                      className={cn('shrink-0', 'text-success')}
                     />
                   ) : (
                     <HugeIcon
                       icon={Cancel01Icon}
                       size={24}
-                      className="shrink-0 text-red-600 dark:text-red-400"
+                      className={cn('shrink-0', 'text-destructive')}
                     />
                   )}
                   <div className="flex-1">
-                    <h4
-                      className={`font-medium ${
-                        exportResult.success ? 'text-emerald-700' : 'text-red-700'
-                      }`}
-                    >
+                    <h4 className={cn('font-medium', exportResult.success ? 'text-success' : 'text-destructive')}>
                       {exportResult.success ? '导出成功' : '导出失败'}
                     </h4>
                     {exportResult.success && (
                       <>
-                        <p className="mt-1 text-sm text-emerald-700">
+                        <p className={cn('mt-1 text-sm', 'text-success')}>
                           成功导出 {exportResult.exportedCount} 个文件的元数据
                         </p>
                         {exportResult.outputPath && (
-                          <p className="mt-2 text-xs break-all text-emerald-700">
+                          <p className={cn('mt-2 text-xs break-all', 'text-success')}>
                             {exportResult.outputPath}
                           </p>
                         )}
                       </>
                     )}
                     {!exportResult.success && (
-                      <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                      <p className={cn('mt-1 text-sm', 'text-destructive')}>
                         请检查文件格式和权限后重试
                       </p>
                     )}

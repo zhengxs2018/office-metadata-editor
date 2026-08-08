@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowDown01Icon, ArrowRight01Icon, UserMultipleIcon } from '@hugeicons/core-free-icons';
 import { HugeIcon } from '@/components/icons/huge-icon';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface HiddenAuthorPanelProps {
   authors: { name: string; files: string[] }[];
@@ -11,7 +12,7 @@ const AuthorItem: React.FC<{ name: string; files: string[] }> = ({ name, files }
   const [open, setOpen] = useState(false);
 
   return (
-    <li className="rounded-md border border-border/50 bg-background/60">
+    <li className={cn('rounded-md surface-card-block')}>
       <button
         type="button"
         onClick={() => setOpen(prev => !prev)}
@@ -23,7 +24,7 @@ const AuthorItem: React.FC<{ name: string; files: string[] }> = ({ name, files }
           className="shrink-0 text-muted-foreground"
         />
         <HugeIcon icon={UserMultipleIcon} size={14} className="shrink-0 text-muted-foreground" />
-        <span className="text-ink truncate font-mono text-body">{name}</span>
+        <span className={cn('truncate font-mono text-body body-strong')}>{name}</span>
         <Badge variant="outline" className="ml-auto shrink-0 text-fine-print tabular-nums">
           {files.length} 个文件
         </Badge>

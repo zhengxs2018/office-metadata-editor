@@ -167,10 +167,10 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
             <HugeIcon icon={hovering ? Upload01Icon : FolderOpenIcon} size={22} />
           </div>
           <div className="space-y-1">
-            <p className="text-ink text-caption font-medium">
+            <p className={cn('text-caption font-medium title-text')}>
               {hovering ? '松开以导入文件' : '点击或拖拽文件/文件夹至此处'}
             </p>
-            <p className="text-fine-print text-muted-foreground">
+            <p className={cn('text-fine-print aux-text')}>
               支持 {accept.map(e => e.toUpperCase()).join(' / ')}
             </p>
           </div>

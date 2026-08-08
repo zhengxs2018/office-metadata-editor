@@ -178,7 +178,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
           </div>
           <div className="h-4 w-px shrink-0 bg-hairline" />
           <div className="min-w-0">
-            <p className="text-ink truncate font-heading text-base font-semibold">导出元数据</p>
+            <p className={cn('truncate font-heading text-base font-semibold title-text')}>导出元数据</p>
             <p className="truncate text-fine-print text-muted-foreground">
               {documents.length} 个文件 · {allFields.length} 个可用字段
               <span className="mx-1.5 text-muted-foreground/60">·</span>
@@ -209,10 +209,10 @@ export const ExportView: React.FC<ExportViewProps> = ({
             <p className="mb-1.5 text-caption font-medium tracking-widest text-muted-foreground uppercase">
               导出 · {generatedAt}
             </p>
-            <h1 className="text-ink font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h1 className={cn('font-heading text-2xl font-semibold tracking-tight sm:text-3xl title-text')}>
               {documents.length} 个文件待导出
             </h1>
-            <p className="text-ink-soft mt-3 max-w-2xl text-fine-print">
+            <p className="text-aux mt-3 max-w-2xl text-fine-print">
               选择目标格式与字段后，点击右下角的"开始导出"即可保存到本地任意路径。
               所有元数据来自文件本身，不会上传到任何云端。
             </p>
@@ -241,7 +241,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
                       className={active ? 'text-primary' : 'text-muted-foreground'}
                     />
                     <div>
-                      <p className="text-ink text-caption font-semibold">{meta.label}</p>
+                      <p className={cn('text-caption font-semibold body-strong')}>{meta.label}</p>
                       <p className="text-fine-print text-muted-foreground">{meta.description}</p>
                     </div>
                   </button>
@@ -287,7 +287,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
                           onChange={() => toggleField(field.key)}
                           className="size-3.5 rounded border-border text-primary disabled:opacity-50"
                         />
-                        <span className="text-ink-soft truncate">{field.label}</span>
+                        <span className="text-aux truncate">{field.label}</span>
                         <span className="text-fine-print text-muted-foreground/60 ml-auto font-mono">
                           {field.key}
                         </span>
@@ -328,21 +328,21 @@ export const ExportView: React.FC<ExportViewProps> = ({
                       const fileName = doc.metadata.fileName || doc.filePath.split('/').pop();
                       return (
                         <tr key={doc.id} className="border-b border-border/40 last:border-b-0">
-                          <td className="text-ink px-3 py-2 font-medium">
+                          <td className={cn('px-3 py-2 font-medium body-strong')}>
                             <span className="line-clamp-1" title={fileName}>
                               {fileName}
                             </span>
                           </td>
-                          <td className="text-ink-soft px-3 py-2 font-mono text-xs uppercase">
+                          <td className="text-aux px-3 py-2 font-mono text-xs uppercase">
                             {doc.metadata.fileType || '-'}
                           </td>
-                          <td className="text-ink-soft px-3 py-2 whitespace-nowrap">
+                          <td className="text-aux px-3 py-2 whitespace-nowrap">
                             {doc.metadata.documentProperties.creator || '—'}
                           </td>
-                          <td className="text-ink-soft px-3 py-2 whitespace-nowrap">
+                          <td className="text-aux px-3 py-2 whitespace-nowrap">
                             {doc.metadata.documentProperties.modified || '—'}
                           </td>
-                          <td className="text-ink-soft px-3 py-2 wrap-break-word text-fine-print">
+                          <td className="text-aux px-3 py-2 wrap-break-word text-fine-print">
                             {doc.filePath}
                           </td>
                         </tr>
@@ -360,28 +360,28 @@ export const ExportView: React.FC<ExportViewProps> = ({
                 className={cn(
                   'rounded-lg border p-4',
                   result.success
-                    ? 'border-emerald-500/30 bg-emerald-500/5'
-                    : 'border-red-500/30 bg-red-500/5',
+                    ? 'border-success/30 bg-success/5'
+                    : 'border-destructive/30 bg-destructive/5',
                 )}
               >
                 <div className="flex items-start gap-3">
                   {result.success ? (
-                    <HugeIcon icon={CheckmarkCircle02Icon} size={20} className="text-emerald-600" />
+                    <HugeIcon icon={CheckmarkCircle02Icon} size={20} className="text-success" />
                   ) : (
-                    <HugeIcon icon={CancelCircleIcon} size={20} className="text-red-600" />
+                    <HugeIcon icon={CancelCircleIcon} size={20} className="text-destructive" />
                   )}
                   <div className="min-w-0 flex-1">
                     <p
                       className={cn(
                         'text-caption font-semibold',
-                        result.success ? 'text-emerald-700' : 'text-red-700',
+                        result.success ? 'text-success' : 'text-destructive',
                       )}
                     >
                       {result.success ? '导出成功' : '导出失败'}
                     </p>
                     {result.success ? (
                       <>
-                        <p className="text-ink-soft mt-1 text-fine-print">
+                        <p className="text-aux mt-1 text-fine-print">
                           已将 {result.exportedCount} 个文件的元数据写入
                           <span className="mx-1 font-mono uppercase">
                             .{format === 'excel' ? 'xlsx' : format}
@@ -395,7 +395,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
                         ) : null}
                       </>
                     ) : (
-                      <p className="text-ink-soft mt-1 text-fine-print">
+                      <p className="text-aux mt-1 text-fine-print">
                         请检查输出路径权限和文件格式后重试。
                       </p>
                     )}
@@ -425,7 +425,7 @@ interface ReportSectionProps {
 const ReportSection: React.FC<ReportSectionProps> = ({ index, title, hint, children }) => (
   <section className="mb-8 scroll-mt-24">
     <header className="mb-3 flex items-baseline justify-between border-b border-border/40 pb-2">
-      <h2 className="text-ink flex items-baseline gap-3 font-heading text-caption font-semibold tracking-wide uppercase">
+      <h2 className={cn('flex items-baseline gap-3 font-heading text-caption font-semibold tracking-wide uppercase title-text')}>
         {index ? (
           <span className="font-heading text-fine-print text-muted-foreground tabular-nums">
             {index}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { HugeIcon } from '@/components/icons/huge-icon';
 import type { IconSvgElement } from '@hugeicons/react';
 
@@ -25,12 +26,12 @@ export function RiskFindingTable<T>({
   loadingText = '正在分析…',
 }: RiskFindingTableProps<T>) {
   if (loading) {
-    return <div className="text-ink-soft py-8 text-center text-sm">{loadingText}</div>;
+    return <div className={cn('py-8 text-center text-sm aux-text')}>{loadingText}</div>;
   }
 
   if (rows.length === 0) {
     return (
-      <div className="text-ink-soft rounded-lg border border-dashed border-border/70 bg-card/50 py-8 text-center text-sm">
+      <div className={cn('rounded-lg border border-dashed border-border/70 bg-card/50 py-8 text-center text-sm aux-text')}>
         {emptyText}
       </div>
     );
@@ -39,7 +40,7 @@ export function RiskFindingTable<T>({
   return (
     <div className="overflow-auto rounded-lg border border-border/70">
       <table className="w-full border-collapse text-sm">
-        <thead className="text-ink-soft sticky top-0 bg-canvas text-left text-xs">
+        <thead className={cn('sticky top-0 bg-canvas text-left text-xs aux-text')}>
           <tr className="border-b border-border/70">
             {columns.map(col => (
               <th key={col.key} className="px-3 py-2 font-medium">
@@ -75,7 +76,7 @@ export interface LevelBadgeProps {
 const LEVEL_BADGE_DEFAULTS = {
   high: {
     label: '高风险',
-    className: 'bg-red-500/10 text-red-600',
+    className: 'bg-destructive/10 text-destructive',
     icon: null as IconSvgElement | null,
   },
   medium: {

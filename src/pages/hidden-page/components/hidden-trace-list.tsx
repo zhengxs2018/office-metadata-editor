@@ -5,6 +5,7 @@ import {
   CheckCircle,
   File01Icon,
 } from '@hugeicons/core-free-icons';
+import { cn } from '@/lib/utils';
 import { HugeIcon } from '@/components/icons/huge-icon';
 import { Badge } from '@/components/ui/badge';
 import type { HiddenTraceRow } from '@/types/hidden';
@@ -39,7 +40,7 @@ const TraceItem: React.FC<{ row: HiddenTraceRow }> = ({ row }) => {
   const [open, setOpen] = useState(false);
 
   return (
-    <li className="rounded-md border border-border/50 bg-background/60">
+    <li className={cn('rounded-md surface-card-block')}>
       <button
         type="button"
         onClick={() => setOpen(prev => !prev)}
@@ -51,7 +52,7 @@ const TraceItem: React.FC<{ row: HiddenTraceRow }> = ({ row }) => {
           className="shrink-0 text-muted-foreground"
         />
         <HugeIcon icon={File01Icon} size={14} className="shrink-0 text-muted-foreground" />
-        <span className="text-ink truncate text-body font-medium">{row.fileName}</span>
+        <span className={cn('truncate text-body font-medium body-strong')}>{row.fileName}</span>
         <span className="ml-auto flex shrink-0 items-center gap-2">
           <Badge variant="outline" className="text-fine-print uppercase">
             {row.fileType}
@@ -84,10 +85,10 @@ export const HiddenTraceList: React.FC<HiddenTraceListProps> = ({ rows }) => {
 
   if (flagged.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-4 py-8 text-center">
-        <HugeIcon icon={CheckCircle} size={28} className="text-emerald-600" />
-        <p className="text-ink text-body font-medium">未发现任何隐藏痕迹</p>
-        <p className="text-fine-print text-muted-foreground">
+      <div className="flex flex-col items-center gap-2 rounded-md border border-success/30 bg-success/5 px-4 py-8 text-center">
+        <HugeIcon icon={CheckCircle} size={28} className="text-success" />
+        <p className={cn('text-body font-medium', 'title-text')}>未发现任何隐藏痕迹</p>
+        <p className={cn('text-fine-print', 'aux-text')}>
           所有文件的批注、修订与 XMP 元数据中均未检出作者信息。
         </p>
       </div>

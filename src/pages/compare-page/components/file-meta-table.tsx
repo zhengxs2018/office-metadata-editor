@@ -52,17 +52,17 @@ export const FileMetaTable: React.FC<FileMetaTableProps> = ({
   };
 
   return (
-    <div className="max-h-[520px] overflow-auto">
-      <Table className="w-full min-w-[760px]">
-        <TableHeader className="sticky top-0 z-10 bg-canvas">
-          <TableRow>
-            <TableHead className="h-8 px-2 w-35 max-w-35 overflow-hidden">公司</TableHead>
-            <TableHead className="h-8 px-2 min-w-50">文件</TableHead>
-            <TableHead className="h-8 px-2 w-27.5 max-w-27.5 overflow-hidden">作者</TableHead>
-            <TableHead className="h-8 px-2 w-32.5 max-w-32.5 overflow-hidden">最后修改者</TableHead>
-            <TableHead className="h-8 px-2 w-30 max-w-30 overflow-hidden">组织名</TableHead>
-            <TableHead className="h-8 px-2 w-40 max-w-40 overflow-hidden">程序</TableHead>
-            <TableHead className="h-8 px-2 w-16 text-right">状态</TableHead>
+    <div className="max-h-130 overflow-auto rounded-lg border border-border/60 surface-card-block transition-[colors,transform] duration-200 ease-out hover:-translate-y-px">
+      <Table className="w-full min-w-190">
+        <TableHeader className="sticky top-0 z-10 bg-card">
+          <TableRow className="border-b border-border/60">
+            <TableHead className="h-8 px-2.5 w-35 max-w-35 overflow-hidden">公司</TableHead>
+            <TableHead className="h-8 px-2.5 min-w-50">文件</TableHead>
+            <TableHead className="h-8 px-2.5 w-27.5 max-w-27.5 overflow-hidden">作者</TableHead>
+            <TableHead className="h-8 px-2.5 w-32.5 max-w-32.5 overflow-hidden">最后修改者</TableHead>
+            <TableHead className="h-8 px-2.5 w-30 max-w-30 overflow-hidden">组织名</TableHead>
+            <TableHead className="h-8 px-2.5 w-40 max-w-40 overflow-hidden">程序</TableHead>
+            <TableHead className="h-8 px-2.5 w-16 text-right">状态</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -72,11 +72,11 @@ export const FileMetaTable: React.FC<FileMetaTableProps> = ({
             const isLocating = locatingId === file.docId;
 
             return (
-              <TableRow key={file.docId}>
-                <TableCell className="px-2 py-1.5 text-xs text-muted-foreground whitespace-nowrap max-w-35 overflow-hidden">
+              <TableRow key={file.docId} className="border-b border-border/30 last:border-b-0">
+                <TableCell className="px-2.5 py-1.5 text-caption text-muted-foreground whitespace-nowrap max-w-35 overflow-hidden">
                   <TruncatedCell value={file.companyName} />
                 </TableCell>
-                <TableCell className="px-2 py-1.5 text-xs min-w-0 whitespace-nowrap">
+                <TableCell className="px-2.5 py-1.5 text-caption min-w-0 whitespace-nowrap">
                   <button
                     type="button"
                     onClick={() => handleLocate(file.docId)}
@@ -91,19 +91,19 @@ export const FileMetaTable: React.FC<FileMetaTableProps> = ({
                     <TruncatedCell value={file.fileName} />
                   </button>
                 </TableCell>
-                <TableCell className="px-2 py-1.5 text-xs whitespace-nowrap max-w-27.5 overflow-hidden">
-                  <TruncatedCell value={file.creator || '-'} />
+                <TableCell className="px-2.5 py-1.5 text-caption whitespace-nowrap max-w-27.5 overflow-hidden">
+                  {file.creator ? <TruncatedCell value={file.creator} /> : <span className="text-muted-foreground/40">—</span>}
                 </TableCell>
-                <TableCell className="px-2 py-1.5 text-xs whitespace-nowrap max-w-32.5 overflow-hidden">
-                  <TruncatedCell value={file.lastModifiedBy || '-'} />
+                <TableCell className="px-2.5 py-1.5 text-caption whitespace-nowrap max-w-32.5 overflow-hidden">
+                  {file.lastModifiedBy ? <TruncatedCell value={file.lastModifiedBy} /> : <span className="text-muted-foreground/40">—</span>}
                 </TableCell>
-                <TableCell className="px-2 py-1.5 text-xs whitespace-nowrap max-w-30 overflow-hidden">
-                  <TruncatedCell value={file.manager || '-'} />
+                <TableCell className="px-2.5 py-1.5 text-caption whitespace-nowrap max-w-30 overflow-hidden">
+                  {file.manager ? <TruncatedCell value={file.manager} /> : <span className="text-muted-foreground/40">—</span>}
                 </TableCell>
-                <TableCell className="px-2 py-1.5 text-xs whitespace-nowrap max-w-40 overflow-hidden">
-                  <TruncatedCell value={file.application || '-'} />
+                <TableCell className="px-2.5 py-1.5 text-caption whitespace-nowrap max-w-40 overflow-hidden">
+                  {file.application ? <TruncatedCell value={file.application} /> : <span className="text-muted-foreground/40">—</span>}
                 </TableCell>
-                <TableCell className="px-2 py-1.5 text-right whitespace-nowrap w-16">
+                <TableCell className="px-2.5 py-1.5 text-right whitespace-nowrap w-16">
                   <Badge
                     variant={isRisk ? 'destructive' : 'secondary'}
                     className="text-[10px] px-1.5 py-0"

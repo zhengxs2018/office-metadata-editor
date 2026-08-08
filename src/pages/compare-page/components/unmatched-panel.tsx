@@ -26,18 +26,25 @@ export const UnmatchedPanel: React.FC<UnmatchedPanelProps> = ({ items, companies
   }
 
   return (
-    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
       {[...grouped.entries()].map(([companyId, files]) => (
-        <div key={companyId} className="rounded-lg border border-border/60 p-2.5">
-          <p className="truncate text-fine-print font-medium" title={nameOf.get(companyId)}>
-            {nameOf.get(companyId) ?? companyId}
-            <span className="ml-1.5 text-muted-foreground">{files.length}</span>
-          </p>
-          <ul className="mt-1 space-y-0.5">
+        <div
+          key={companyId}
+          className="flex flex-col rounded-lg border border-border/60 surface-card-block px-3 py-2.5 transition-[colors,transform] duration-200 ease-out hover:-translate-y-px"
+        >
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-sm font-medium" title={nameOf.get(companyId)}>
+              {nameOf.get(companyId) ?? companyId}
+            </p>
+            <span className="shrink-0 rounded-full bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground">
+              {files.length}
+            </span>
+          </div>
+          <ul className="mt-1.5 space-y-1 border-t border-border/30 pt-1.5">
             {files.map(file => (
               <li
                 key={file.docId}
-                className="truncate text-fine-print text-muted-foreground"
+                className="truncate text-xs text-muted-foreground"
                 title={`${file.fileName} — ${file.reason}`}
               >
                 {file.fileName}

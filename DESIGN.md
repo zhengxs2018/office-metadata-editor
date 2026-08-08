@@ -380,3 +380,43 @@ The theme toggle (`ThemeSwitch` in `src/components/chrome/theme-switch.tsx`) use
 - Don't specify `32px` titlebar height — the actual value is `44px`.
 - Don't use `rounded-lg` (8px) for entry cards or drop zones — actual code uses `rounded-xl` (12px).
 - Don't assume badge colors match their card tone — verify against `TONE_STYLES` in source (e.g., violet card has **blue** badge).
+- **Don't 写裸色值或裸语义类**：禁止 `text-ink` / `text-foreground` / `text-ink-soft` / `text-red-600` / `bg-zinc-300` / `border-zinc-200` 等散落字面量；一律走下方 §6 注册的语义工具类。
+- **Don't 引入中间 token 常量文件**（如 `design-tokens.ts` 导出 className 字符串）：所有语义样式必须由 `base.css` 注册的真实 Tailwind 类承载，组件直接写类名。
+- **Don't 在组件内硬编码 oklch / hex 色值**：颜色只存在于 `base.css` 的 `:root` / `.dark` 变量定义与 `@theme inline` 映射。
+
+---
+
+## 6. 全站语义工具类（唯一事实源）
+
+所有跨页面复用的「文字层级」与「表面块」语义，**仅在 `src/style/base.css` 定义一次**，经 `@theme inline` 暴露为 Tailwind 类。组件不得自行发明等价类名或常量包装。
+
+### 6.1 语义文字类（绑定 oklch 变量，light/dark 自动切换）
+
+| 类名 | 语义 | 绑定变量（light → dark） | 典型用途 |
+|------|------|--------------------------|----------|
+| `title-text` | 标题/锚点文字（最深墨色） | `--title-text: oklch(0.21 0.01 240) → oklch(0.92 0.005 240)` | 页面标题、区块标题（`h2`/`h3`）、卡片标题 |
+| `body-strong` | 正文/强调文字（次级墨色，600） | `--body-strong-text: oklch(0.32 0.012 240) → oklch(0.82 0.008 240)` | 文件名、关键标签、统计数值、强调语句 |
+| `data-text` | 数据文字（冷灰中对比） | `--data-text: oklch(0.55 0.015 240) → oklch(0.72 0.02 240)` | 表格单元格、证据值 |
+| `aux-text` | 辅助说明（纯冷灰低对比） | `--aux-text: oklch(0.65 0.012 240) → oklch(0.6 0.015 240)` | 标签、提示、空态、免责声明、文件元信息 |
+| `text-destructive` | 危险/错误（shadcn 语义色） | `--destructive` | 失败提示、删除、取消任务 |
+| `text-success` | 成功/积极（语义色） | `--success` | 清理成功、无风险、已同步 |
+| `text-warning` | 提示/进行中（语义色） | `--warning` | 清理中、警示、待复核 |
+
+### 6.2 语义表面块类
+
+| 类名 | 语义 | 绑定变量 | 用途 |
+|------|------|----------|------|
+| `.surface-card` | 浮出卡片（珍珠底+阴影） | `--pearl` + `--shadow-product` | 首页入口卡、报告外层卡 |
+| `.surface-inset` | 内嵌沉入面 | `--canvas` | 嵌套容器 |
+| `surface-card-block` | 浮出内容块（白底+hairline 边） | `--surface-card` + `--border` | 线索卡、作者卡、未检出项 |
+| `content-block` | 报告内块（冷灰轻浮出） | `--content-block: oklch(0.95 0.006 240)` | 统计卡、线索清单容器 |
+| `table-block` | 表格容器（无外框，仅底色） | `--table-block: oklch(0.95 0.006 240)` | 元数据表、比对表（避免与 Table 自身 border 双线） |
+| `.hairline-*` | 细分隔线 | `--hairline` 阶梯 | 行/列分隔 |
+
+### 6.3 助手/生成代码强制约束
+
+1. **新页面/组件一律引用 §6.1–6.2 的类名**，不得新建等价常量（如 `export const TITLE = 'text-ink'`）。
+2. **颜色增删只改 `base.css`**：新增语义色 → 在 `:root`/`.dark` 加 `--xxx` 变量 + `@theme inline` 映射 + `@layer utilities` 注册类，并在本表登记。
+3. **禁止裸色值**：`text-ink`/`text-foreground`/`text-muted-foreground`/`text-red-*`/`bg-zinc-*`/`border-zinc-*`/`emerald-*` 等一律替换为上表语义类（`text-muted-foreground` 仅在 shadcn 组件内部使用，页面级文字走 `title-text`/`body-strong`/`aux-text`）。
+4. **业务语义着色（风险/差异/匹配/功能卡调色板）属领域模块**，保留在各自 `*-tokens.ts`（如 `compare-tokens.ts` 的 `RISK_TONE`），不纳入本表。
+

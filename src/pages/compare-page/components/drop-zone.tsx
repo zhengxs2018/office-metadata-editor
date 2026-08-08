@@ -297,7 +297,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ mode = 'both' }) => {
             <Button
               onClick={e => {
                 e.stopPropagation();
-                handlePickDirectory();
+                void handlePickDirectory();
               }}
               variant="outline"
               size="sm"
