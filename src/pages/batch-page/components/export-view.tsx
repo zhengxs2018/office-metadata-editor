@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft01Icon,
   CheckmarkCircle02Icon,
@@ -9,25 +9,34 @@ import {
   Loading02Icon,
   Table01Icon,
   CancelCircleIcon,
-} from "@hugeicons/core-free-icons"
-import { invoke } from "@tauri-apps/api/core"
-import { save } from "@tauri-apps/plugin-dialog"
+} from '@hugeicons/core-free-icons';
+import { invoke } from '@tauri-apps/api/core';
+import { save } from '@tauri-apps/plugin-dialog';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
-import type { LoadedDocument } from "@/contexts/metadata-context"
-import { HugeIcon } from "@/components/icons/huge-icon"
-import { FORMAT_META, resolveFieldLabel, buildRecord, buildContent, buildExcelBase64, buildFileName } from "./export-utils"
-import type { ExportFormat, ExportResult, ExportFieldOption } from "./export-types"
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import type { LoadedDocument } from '@/contexts/metadata-context';
+import { HugeIcon } from '@/components/icons/huge-icon';
+import {
+  FORMAT_META,
+  resolveFieldLabel,
+  buildRecord,
+  buildContent,
+  buildExcelBase64,
+  buildFileName,
+} from '@/lib/documents/export/utils';
+import type { ExportFormat, ExportResult, ExportFieldOption } from '@/types/export';
+import { notifyExportSuccess } from '@/lib/configuration/reveal';
 
-export type { ExportFormat, ExportResult, ExportFieldOption } from "./export-types"
+export type { ExportFormat, ExportResult, ExportFieldOption } from '@/types/export';
 
 interface ExportViewProps {
-  open: boolean
-  onClose: () => void
-  documents: LoadedDocument[]
-  availableFields: ExportFieldOption[]
+  open: boolean;
+  onClose: () => void;
+  documents: LoadedDocument[];
+  availableFields: ExportFieldOption[];
 }
 
 export const ExportView: React.FC<ExportViewProps> = ({
@@ -36,122 +45,123 @@ export const ExportView: React.FC<ExportViewProps> = ({
   documents,
   availableFields,
 }) => {
-  const [format, setFormat] = useState<ExportFormat>("excel")
-  const [includeFields, setIncludeFields] = useState<string[]>([])
-  const [exporting, setExporting] = useState(false)
-  const [result, setResult] = useState<ExportResult | null>(null)
+  const [format, setFormat] = useState<ExportFormat>('excel');
+  const [includeFields, setIncludeFields] = useState<string[]>([]);
+  const [exporting, setExporting] = useState(false);
+  const [result, setResult] = useState<ExportResult | null>(null);
 
   useEffect(() => {
     if (!open) {
-      setResult(null)
-      setExporting(false)
+      setResult(null);
+      setExporting(false);
     }
-  }, [open])
+  }, [open]);
 
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !exporting) onClose()
-    }
-    window.addEventListener("keydown", onKey)
-    document.body.style.overflow = "hidden"
+      if (e.key === 'Escape' && !exporting) onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener("keydown", onKey)
-      document.body.style.overflow = ""
-    }
-  }, [open, exporting, onClose])
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [open, exporting, onClose]);
 
   const allFields: ExportFieldOption[] = useMemo(() => {
-    if (availableFields.length > 0) return availableFields
-    const fieldSet = new Set<string>()
+    if (availableFields.length > 0) return availableFields;
+    const fieldSet = new Set<string>();
     documents.forEach(doc => {
-      Object.keys(doc.metadata.documentProperties).forEach(k => fieldSet.add(k))
-      Object.keys(doc.metadata.appProperties).forEach(k => fieldSet.add(k))
-    })
-    return Array.from(fieldSet).map(k => ({ key: k, label: resolveFieldLabel(k) }))
-  }, [availableFields, documents])
+      Object.keys(doc.metadata.documentProperties).forEach(k => fieldSet.add(k));
+      Object.keys(doc.metadata.appProperties).forEach(k => fieldSet.add(k));
+    });
+    return Array.from(fieldSet).map(k => ({ key: k, label: resolveFieldLabel(k) }));
+  }, [availableFields, documents]);
 
   const activeFields = useMemo(() => {
-    if (includeFields.length === 0) return allFields.map(f => f.key)
-    return includeFields
-  }, [includeFields, allFields])
+    if (includeFields.length === 0) return allFields.map(f => f.key);
+    return includeFields;
+  }, [includeFields, allFields]);
 
-  const previewDocs = useMemo(() => documents.slice(0, 24), [documents])
+  const previewDocs = useMemo(() => documents.slice(0, 24), [documents]);
 
   const handleExport = useCallback(async () => {
-    if (exporting || documents.length === 0) return
-    setExporting(true)
-    setResult(null)
+    if (exporting || documents.length === 0) return;
+    setExporting(true);
+    setResult(null);
     try {
-      const records = documents.map(d => buildRecord(d, activeFields))
+      const records = documents.map(d => buildRecord(d, activeFields));
       const target = await save({
         defaultPath: buildFileName(format, new Date()),
         filters:
-          format === "excel"
-            ? [{ name: "Excel 工作簿", extensions: ["xlsx"] }]
-            : format === "json"
-              ? [{ name: "JSON 文件", extensions: ["json"] }]
-              : format === "csv"
-                ? [{ name: "CSV 文件", extensions: ["csv"] }]
-                : [{ name: "XML 文件", extensions: ["xml"] }],
-      })
+          format === 'excel'
+            ? [{ name: 'Excel 工作簿', extensions: ['xlsx'] }]
+            : format === 'json'
+              ? [{ name: 'JSON 文件', extensions: ['json'] }]
+              : format === 'csv'
+                ? [{ name: 'CSV 文件', extensions: ['csv'] }]
+                : [{ name: 'XML 文件', extensions: ['xml'] }],
+      });
       if (!target) {
-        setExporting(false)
-        return
+        setExporting(false);
+        return;
       }
-      if (format === "excel") {
-        const base64 = buildExcelBase64(records)
-        await invoke("write_binary_file", { filePath: target, base64Data: base64 })
+      if (format === 'excel') {
+        const base64 = buildExcelBase64(records);
+        await invoke('write_binary_file', { filePath: target, base64Data: base64 });
       } else {
-        const content = buildContent(format, records)
-        await invoke("write_text_file", { filePath: target, content })
+        const content = buildContent(format, records);
+        await invoke('write_text_file', { filePath: target, content });
       }
-      setResult({ success: true, outputPath: target, exportedCount: documents.length })
+      setResult({ success: true, outputPath: target, exportedCount: documents.length });
+      await notifyExportSuccess(target, `已导出 ${documents.length} 个文件的元数据`);
     } catch (error) {
-      console.error("导出失败:", error)
-      setResult({ success: false, exportedCount: 0, error: String(error) })
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('导出失败:', error);
+      setResult({ success: false, exportedCount: 0, error: message });
+      toast.error('导出失败', { description: message });
     } finally {
-      setExporting(false)
+      setExporting(false);
     }
-  }, [exporting, documents, activeFields, format])
+  }, [exporting, documents, activeFields, format]);
 
   const toggleField = (key: string) => {
-    setIncludeFields(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key],
-    )
-  }
+    setIncludeFields(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
+  };
 
   const toggleAllFields = () => {
     if (includeFields.length === allFields.length) {
-      setIncludeFields([])
+      setIncludeFields([]);
     } else {
-      setIncludeFields(allFields.map(f => f.key))
+      setIncludeFields(allFields.map(f => f.key));
     }
-  }
+  };
 
-  if (!open) return null
+  if (!open) return null;
 
-  const generatedAt = new Date().toLocaleString("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+  const generatedAt = new Date().toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
-  const FORMAT_ICONS: Record<ExportFormat, React.ComponentProps<typeof HugeIcon>["icon"]> = {
+  const FORMAT_ICONS: Record<ExportFormat, React.ComponentProps<typeof HugeIcon>['icon']> = {
     json: CodeFolderIcon,
     excel: FileSpreadsheetIcon,
     csv: Table01Icon,
     xml: DatabaseIcon,
-  }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       <header
         data-tauri-drag-region
         className="app-drag flex shrink-0 items-center gap-2 border-b border-border bg-background/95 py-3 pr-4 backdrop-blur-md sm:pr-6"
-        style={{ paddingLeft: "calc(var(--chrome-traffic-light-inset, 0px) + 0.75rem)" }}
+        style={{ paddingLeft: 'calc(var(--chrome-traffic-light-inset, 0px) + 0.75rem)' }}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <div className="app-no-drag shrink-0">
@@ -168,7 +178,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
           </div>
           <div className="h-4 w-px shrink-0 bg-hairline" />
           <div className="min-w-0">
-            <p className="text-ink truncate font-heading text-base font-semibold">导出元数据</p>
+            <p className={cn('truncate font-heading text-base font-semibold title-text')}>导出元数据</p>
             <p className="truncate text-fine-print text-muted-foreground">
               {documents.length} 个文件 · {allFields.length} 个可用字段
               <span className="mx-1.5 text-muted-foreground/60">·</span>
@@ -188,7 +198,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
             ) : (
               <HugeIcon icon={Download01Icon} size={14} />
             )}
-            {exporting ? "导出中…" : "开始导出"}
+            {exporting ? '导出中…' : '开始导出'}
           </Button>
         </div>
       </header>
@@ -199,10 +209,10 @@ export const ExportView: React.FC<ExportViewProps> = ({
             <p className="mb-1.5 text-caption font-medium tracking-widest text-muted-foreground uppercase">
               导出 · {generatedAt}
             </p>
-            <h1 className="text-ink font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h1 className={cn('font-heading text-2xl font-semibold tracking-tight sm:text-3xl title-text')}>
               {documents.length} 个文件待导出
             </h1>
-            <p className="text-ink-soft mt-3 max-w-2xl text-fine-print">
+            <p className="text-aux mt-3 max-w-2xl text-fine-print">
               选择目标格式与字段后，点击右下角的"开始导出"即可保存到本地任意路径。
               所有元数据来自文件本身，不会上传到任何云端。
             </p>
@@ -211,31 +221,31 @@ export const ExportView: React.FC<ExportViewProps> = ({
           <ReportSection index="01" title="目标格式" hint={`已选 ${FORMAT_META[format].label}`}>
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               {(Object.keys(FORMAT_META) as ExportFormat[]).map(key => {
-                const meta = FORMAT_META[key]
-                const active = format === key
-                const Icon = FORMAT_ICONS[key]
+                const meta = FORMAT_META[key];
+                const active = format === key;
+                const Icon = FORMAT_ICONS[key];
                 return (
                   <button
                     key={key}
                     onClick={() => setFormat(key)}
                     className={cn(
-                      "flex flex-col items-start gap-1.5 rounded-lg border px-3 py-2.5 text-left transition-all",
+                      'flex flex-col items-start gap-1.5 rounded-lg border px-3 py-2.5 text-left transition-all',
                       active
-                        ? "border-primary/40 bg-primary/8 ring-1 ring-primary/20"
-                        : "border-border/60 hover:border-primary/30",
+                        ? 'border-primary/40 bg-primary/8 ring-1 ring-primary/20'
+                        : 'border-border/60 hover:border-primary/30',
                     )}
                   >
                     <HugeIcon
                       icon={Icon}
                       size={16}
-                      className={active ? "text-primary" : "text-muted-foreground"}
+                      className={active ? 'text-primary' : 'text-muted-foreground'}
                     />
                     <div>
-                      <p className="text-ink text-caption font-semibold">{meta.label}</p>
+                      <p className={cn('text-caption font-semibold body-strong')}>{meta.label}</p>
                       <p className="text-fine-print text-muted-foreground">{meta.description}</p>
                     </div>
                   </button>
-                )
+                );
               })}
             </div>
           </ReportSection>
@@ -245,7 +255,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
             title="导出字段"
             hint={
               includeFields.length === 0
-                ? "已选全部"
+                ? '已选全部'
                 : `已选 ${includeFields.length}/${allFields.length}`
             }
           >
@@ -256,15 +266,15 @@ export const ExportView: React.FC<ExportViewProps> = ({
                 onClick={toggleAllFields}
                 className="gap-1.5 rounded-lg"
               >
-                {includeFields.length === allFields.length ? "清空选择" : "全选"}
+                {includeFields.length === allFields.length ? '清空选择' : '全选'}
               </Button>
             </div>
             <div className="overflow-hidden rounded-lg border border-border/60">
               <ScrollArea className="max-h-60">
                 <div className="grid grid-cols-1 gap-x-4 gap-y-1.5 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3">
                   {allFields.map(field => {
-                    const isAutoIncluded = includeFields.length === 0
-                    const checked = isAutoIncluded || includeFields.includes(field.key)
+                    const isAutoIncluded = includeFields.length === 0;
+                    const checked = isAutoIncluded || includeFields.includes(field.key);
                     return (
                       <label
                         key={field.key}
@@ -277,12 +287,12 @@ export const ExportView: React.FC<ExportViewProps> = ({
                           onChange={() => toggleField(field.key)}
                           className="size-3.5 rounded border-border text-primary disabled:opacity-50"
                         />
-                        <span className="text-ink-soft truncate">{field.label}</span>
+                        <span className="text-aux truncate">{field.label}</span>
                         <span className="text-fine-print text-muted-foreground/60 ml-auto font-mono">
                           {field.key}
                         </span>
                       </label>
-                    )
+                    );
                   })}
                 </div>
               </ScrollArea>
@@ -292,7 +302,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
           <ReportSection
             index="03"
             title="导出预览"
-            hint={`共 ${documents.length} 个文件${documents.length > previewDocs.length ? `（仅预览前 ${previewDocs.length} 个）` : ""}`}
+            hint={`共 ${documents.length} 个文件${documents.length > previewDocs.length ? `（仅预览前 ${previewDocs.length} 个）` : ''}`}
           >
             <div className="overflow-hidden rounded-lg border border-border/60">
               <div className="overflow-x-auto">
@@ -315,28 +325,28 @@ export const ExportView: React.FC<ExportViewProps> = ({
                   </thead>
                   <tbody>
                     {previewDocs.map(doc => {
-                      const fileName = doc.metadata.fileName || doc.filePath.split("/").pop()
+                      const fileName = doc.metadata.fileName || doc.filePath.split('/').pop();
                       return (
                         <tr key={doc.id} className="border-b border-border/40 last:border-b-0">
-                          <td className="text-ink px-3 py-2 font-medium">
+                          <td className={cn('px-3 py-2 font-medium body-strong')}>
                             <span className="line-clamp-1" title={fileName}>
                               {fileName}
                             </span>
                           </td>
-                          <td className="text-ink-soft px-3 py-2 font-mono text-xs uppercase">
-                            {doc.metadata.fileType || "-"}
+                          <td className="text-aux px-3 py-2 font-mono text-xs uppercase">
+                            {doc.metadata.fileType || '-'}
                           </td>
-                          <td className="text-ink-soft px-3 py-2 whitespace-nowrap">
-                            {doc.metadata.documentProperties.creator || "—"}
+                          <td className="text-aux px-3 py-2 whitespace-nowrap">
+                            {doc.metadata.documentProperties.creator || '—'}
                           </td>
-                          <td className="text-ink-soft px-3 py-2 whitespace-nowrap">
-                            {doc.metadata.documentProperties.modified || "—"}
+                          <td className="text-aux px-3 py-2 whitespace-nowrap">
+                            {doc.metadata.documentProperties.modified || '—'}
                           </td>
-                          <td className="text-ink-soft px-3 py-2 wrap-break-word text-fine-print">
+                          <td className="text-aux px-3 py-2 wrap-break-word text-fine-print">
                             {doc.filePath}
                           </td>
                         </tr>
-                      )
+                      );
                     })}
                   </tbody>
                 </table>
@@ -348,33 +358,33 @@ export const ExportView: React.FC<ExportViewProps> = ({
             <section className="mb-8">
               <div
                 className={cn(
-                  "rounded-lg border p-4",
+                  'rounded-lg border p-4',
                   result.success
-                    ? "border-emerald-500/30 bg-emerald-500/5"
-                    : "border-red-500/30 bg-red-500/5",
+                    ? 'border-success/30 bg-success/5'
+                    : 'border-destructive/30 bg-destructive/5',
                 )}
               >
                 <div className="flex items-start gap-3">
                   {result.success ? (
-                    <HugeIcon icon={CheckmarkCircle02Icon} size={20} className="text-emerald-600" />
+                    <HugeIcon icon={CheckmarkCircle02Icon} size={20} className="text-success" />
                   ) : (
-                    <HugeIcon icon={CancelCircleIcon} size={20} className="text-red-600" />
+                    <HugeIcon icon={CancelCircleIcon} size={20} className="text-destructive" />
                   )}
                   <div className="min-w-0 flex-1">
                     <p
                       className={cn(
-                        "text-caption font-semibold",
-                        result.success ? "text-emerald-700" : "text-red-700",
+                        'text-caption font-semibold',
+                        result.success ? 'text-success' : 'text-destructive',
                       )}
                     >
-                      {result.success ? "导出成功" : "导出失败"}
+                      {result.success ? '导出成功' : '导出失败'}
                     </p>
                     {result.success ? (
                       <>
-                        <p className="text-ink-soft mt-1 text-fine-print">
+                        <p className="text-aux mt-1 text-fine-print">
                           已将 {result.exportedCount} 个文件的元数据写入
                           <span className="mx-1 font-mono uppercase">
-                            .{format === "excel" ? "xlsx" : format}
+                            .{format === 'excel' ? 'xlsx' : format}
                           </span>
                           文件
                         </p>
@@ -385,7 +395,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
                         ) : null}
                       </>
                     ) : (
-                      <p className="text-ink-soft mt-1 text-fine-print">
+                      <p className="text-aux mt-1 text-fine-print">
                         请检查输出路径权限和文件格式后重试。
                       </p>
                     )}
@@ -396,26 +406,26 @@ export const ExportView: React.FC<ExportViewProps> = ({
           ) : null}
 
           <div className="mt-10 border-t border-border/60 pt-4 text-fine-print text-muted-foreground">
-            所有元数据来自文件本身，未上传到任何云端。
-            · Excel 格式使用 xlsx（SheetJS）生成并通过 write_binary_file 写入。
+            所有元数据来自文件本身，未上传到任何云端。 · Excel 格式使用 xlsx（SheetJS）生成并通过
+            write_binary_file 写入。
           </div>
         </div>
       </main>
     </div>
-  )
-}
+  );
+};
 
 interface ReportSectionProps {
-  index?: string
-  title: string
-  hint?: string
-  children: React.ReactNode
+  index?: string;
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
 }
 
 const ReportSection: React.FC<ReportSectionProps> = ({ index, title, hint, children }) => (
   <section className="mb-8 scroll-mt-24">
     <header className="mb-3 flex items-baseline justify-between border-b border-border/40 pb-2">
-      <h2 className="text-ink flex items-baseline gap-3 font-heading text-caption font-semibold tracking-wide uppercase">
+      <h2 className={cn('flex items-baseline gap-3 font-heading text-caption font-semibold tracking-wide uppercase title-text')}>
         {index ? (
           <span className="font-heading text-fine-print text-muted-foreground tabular-nums">
             {index}
@@ -427,6 +437,6 @@ const ReportSection: React.FC<ReportSectionProps> = ({ index, title, hint, child
     </header>
     {children}
   </section>
-)
+);
 
-export default ExportView
+export default ExportView;

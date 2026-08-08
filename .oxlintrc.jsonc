@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "oxc", "import", "unicorn"],
+  "env": {
+    "browser": true,
+    "es2022": true,
+  },
+  "rules": {
+    "typescript/no-redundant-type-constituents": "off",
+    "typescript/no-base-to-string": "off",
+    "typescript/explicit-function-return-type": [
+      "error",
+      {
+        "allowExpressions": true,
+        "allowTypedFunctionExpressions": true,
+        "allowDirectConstAssertionInArrowFunctions": false,
+        "allowConciseArrowFunctionExpressionsStartingWithVoid": false,
+        "allowFunctionsWithoutTypeParameters": false,
+        "allowHigherOrderFunctions": true,
+        "allowIIFEs": false,
+        "allowedNames": [],
+      },
+    ],
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/docs/**/*.html",
+    "**/docs/**/*.json",
+    "**/docs/**/*.json",
+    "**/src/components/ui/**",
+  ],
+}

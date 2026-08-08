@@ -59,6 +59,14 @@ pub struct DocumentMetadata {
     pub document_properties: DocumentProperties,
     pub core_properties: CoreProperties,
     pub app_properties: AppProperties,
+    #[serde(default)]
+    pub annotation_authors: Vec<String>,
+    #[serde(default)]
+    pub revision_authors: Vec<String>,
+    #[serde(default)]
+    pub xmp_creators: Vec<String>,
+    #[serde(default)]
+    pub has_hidden_markers: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -141,6 +149,10 @@ impl DocumentMetadata {
             document_properties: DocumentProperties::empty(),
             core_properties: CoreProperties::empty(),
             app_properties: AppProperties::for_application(application),
+            annotation_authors: Vec::new(),
+            revision_authors: Vec::new(),
+            xmp_creators: Vec::new(),
+            has_hidden_markers: false,
         }
     }
 

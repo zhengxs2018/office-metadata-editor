@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "比对引擎数据流",
+    "subtitle": "对齐 → 差分 → 规则 → 聚合：从多主体元数据到可复核的风险线索",
+    "output": "compare-pipeline.html",
+    "viewBox": [1080, 760]
+  },
+  "stages": [
+    { "label": "输入" },
+    { "label": "对齐" },
+    { "label": "差分 + 规则" },
+    { "label": "聚合" },
+    { "label": "产出" }
+  ],
+  "nodes": [
+    { "id": "files", "type": "external", "label": "CompareFileInput[]", "sublabel": "多主体元数据", "stage": 0, "row": 0, "tag": "含痕迹字段" },
+    { "id": "options", "type": "security", "label": "CompareOptions", "sublabel": "阈值 + 规则覆盖", "stage": 0, "row": 4, "tag": "可调参" },
+
+    { "id": "align", "type": "backend", "label": "align", "sublabel": "精确 → 规范化 → 模糊", "stage": 1, "row": 1, "tag": "三级降级" },
+    { "id": "unmatched", "type": "external", "label": "Unmatched", "sublabel": "落选并附原因", "stage": 1, "row": 4, "tag": "交人工" },
+
+    { "id": "diff", "type": "backend", "label": "diff", "sublabel": "组内逐字段差分", "stage": 2, "row": 0, "tag": "DiffState" },
+    { "id": "rules", "type": "security", "label": "rules", "sublabel": "8 条规则判定", "stage": 2, "row": 2, "tag": "加权命中" },
+    { "id": "stopwords", "type": "database", "label": "停用词", "sublabel": "通用值降噪", "stage": 2, "row": 4, "tag": "防误报" },
+
+    { "id": "pairs", "type": "backend", "label": "主体对聚合", "sublabel": "累加分 → 定级", "stage": 3, "row": 1, "tag": "定级单位" },
+    { "id": "clamp", "type": "security", "label": "等级钳制", "sublabel": "min(pair, ruleMax)", "stage": 3, "row": 3, "tag": "弱证据不越界" },
+
+    { "id": "result", "type": "database", "label": "CompareResult", "sublabel": "线索 + 差异 + 统计", "stage": 4, "row": 0, "tag": "含免责声明" },
+    { "id": "report", "type": "backend", "label": "报告导出", "sublabel": "可复核产物", "stage": 4, "row": 3, "tag": "线索非结论" }
+  ],
+  "flows": [
+    { "from": "files", "to": "align", "label": "待对齐文件", "classification": "元数据", "variant": "emphasis", "fromSide": "right", "toSide": "left", "via": [[184, 157], [184, 214]], "labelAt": [206, 178] },
+    { "from": "options", "to": "align", "label": "fuzzyMatchFloor", "classification": "阈值", "variant": "dashed", "fromSide": "right", "toSide": "left", "via": [[222, 385], [222, 214]], "labelAt": [226, 330] },
+    { "from": "align", "to": "unmatched", "label": "低于阈值", "classification": "需人工", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "straight", "labelAt": [452, 320] },
+    { "from": "align", "to": "diff", "label": "AlignedGroup", "classification": "分组", "variant": "emphasis", "fromSide": "right", "toSide": "left", "via": [[420, 214], [420, 157]], "labelAt": [438, 172] },
+    { "from": "align", "to": "rules", "label": "groupOf 映射", "classification": "索引", "variant": "default", "fromSide": "right", "toSide": "left", "via": [[420, 214], [420, 271]], "labelAt": [440, 250] },
+    { "from": "stopwords", "to": "rules", "label": "过滤通用值", "classification": "降噪", "variant": "dashed", "fromSide": "top", "toSide": "bottom", "route": "straight", "labelAt": [660, 340] },
+    { "from": "rules", "to": "pairs", "label": "RiskFinding", "classification": "加权线索", "variant": "emphasis", "fromSide": "right", "toSide": "left", "via": [[638, 271], [638, 214]], "labelAt": [652, 246] },
+    { "from": "pairs", "to": "clamp", "label": "回写等级", "classification": "定级", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "straight", "labelAt": [768, 314] },
+    { "from": "diff", "to": "result", "label": "字段差异", "classification": "对比表", "variant": "default", "route": "straight", "labelAt": [852, 144] },
+    { "from": "clamp", "to": "result", "label": "CompanyPairRisk", "classification": "风险线索", "variant": "emphasis", "fromSide": "right", "toSide": "bottom", "via": [[878, 328], [878, 212], [960, 212]], "labelAt": [884, 200] },
+    { "from": "result", "to": "report", "label": "导出", "classification": "含 disclaimer", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "route": "straight", "labelAt": [1000, 268] }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "对齐策略",
+      "items": [
+        "三级降级：精确 → 规范化 → 模糊匹配",
+        "低于 fuzzyMatchFloor 的文件不强行入组",
+        "matchSource 与 matchConfidence 一并输出",
+        "宁可不匹配，也不错匹配"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "风险判定",
+      "items": [
+        "权重体现鉴别力：同一作者 50 分，同软件版本仅 5 分",
+        "每条规则设 max_level，弱证据不被强证据带高",
+        "停用词过滤 Administrator、Normal.dotm 等通用值",
+        "主体对是定级单位，多条线索叠加才构成信号"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "可复核性",
+      "items": [
+        "explain 字段记录判定依据，非黑箱结论",
+        "refs 保留原始字段值可溯源",
+        "排序三级确定，相同输入产出相同结果",
+        "disclaimer 随结果下发：线索非结论"
+      ]
+    }
+  ]
+}

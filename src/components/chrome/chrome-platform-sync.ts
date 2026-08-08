@@ -1,31 +1,31 @@
-import { useEffect } from "react"
+import { useEffect } from 'react';
 
-import { isTauri } from "@/lib/tauri"
+import { isTauri } from '@/lib/tauri';
 
-type PlatformName = "macos" | "windows" | "linux" | "web"
+type PlatformName = 'macos' | 'windows' | 'linux' | 'web';
 
 export function ChromePlatformSync() {
   useEffect(() => {
-    document.documentElement.dataset.platform = resolvePlatform()
-  }, [])
+    document.documentElement.dataset.platform = resolvePlatform();
+  }, []);
 
-  return null
+  return null;
 }
 
 function resolvePlatform(): PlatformName {
   if (!isTauri()) {
-    return "web"
+    return 'web';
   }
 
-  const signature = `${navigator.userAgent} ${navigator.platform}`.toLowerCase()
+  const signature = `${navigator.userAgent} ${navigator.platform}`.toLowerCase();
 
-  if (signature.includes("mac")) {
-    return "macos"
+  if (signature.includes('mac')) {
+    return 'macos';
   }
 
-  if (signature.includes("win")) {
-    return "windows"
+  if (signature.includes('win')) {
+    return 'windows';
   }
 
-  return "linux"
+  return 'linux';
 }

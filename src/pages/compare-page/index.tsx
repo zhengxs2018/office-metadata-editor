@@ -1,36 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { HugeIcon } from "@/components/icons/huge-icon"
-import { PlayIcon } from "@hugeicons/core-free-icons"
-import { invoke } from "@tauri-apps/api/core"
+import React, { useCallback, useMemo, useState } from 'react';
+import { HugeIcon } from '@/components/icons/huge-icon';
+import { PlayIcon } from '@hugeicons/core-free-icons';
+import { invoke } from '@tauri-apps/api/core';
 
-import { Button } from "@/components/ui/button"
-import { PageLayout } from "@/layouts/page-layout"
-import { useFileContext, type CompanyEntry } from "@/contexts/file-context"
-import { useMetadata, type LoadedDocument } from "@/contexts/metadata-context"
-import { type RiskFinding } from "@/lib/documents/compare-audit"
-import { ROUTES } from "@/router/paths"
-import { DropZone } from "@/pages/compare-page/components/drop-zone"
-import { CompanyCard } from "@/pages/compare-page/components/company-card"
-import { RiskReportView } from "@/pages/compare-page/components/risk-report-dialog"
+import { Button } from '@/components/ui/button';
+import { PageLayout } from '@/layouts/page-layout';
+import { useFileContext, type CompanyEntry } from '@/contexts/file-context';
+import { useMetadata, type LoadedDocument } from '@/contexts/metadata-context';
+import {
+  EMPTY_COMPARE_RESULT,
+  type CompareFileInput,
+  type CompareResult,
+} from '@/lib/documents/compare/types';
+import { ROUTES } from '@/router/paths';
+import { DropZone } from '@/pages/compare-page/components/drop-zone';
+import { CompanyCard } from '@/pages/compare-page/components/company-card';
+import { CompareWorkbench } from '@/pages/compare-page/components/compare-workbench';
 
-interface RustMatchReport {
-  riskLevel: string
-  issue: string
-  fields: string[]
-  value: string
-  files: string[]
-  companies: string[]
-  score: number
-  matchTag: string
-}
-
-interface CompareFileInput {
-  id: string
-  fileName: string
-  company: string
-  author: string
-  lastModifiedBy: string
-  appCompany: string
+function text(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function toCompareInputs(
@@ -38,88 +26,88 @@ function toCompareInputs(
   companyById: Record<string, CompanyEntry>,
 ): CompareFileInput[] {
   return documents
-    .filter(doc => doc.status === "ready")
+    .filter(doc => doc.status === 'ready' && doc.companyId)
     .map(doc => {
-      const props = doc.metadata.documentProperties
-      const app = doc.metadata.appProperties
-      const companyEntry = doc.companyId ? companyById[doc.companyId] : undefined
+      const props = doc.metadata.documentProperties;
+      const app = doc.metadata.appProperties;
+      const company = doc.companyId ? companyById[doc.companyId] : undefined;
       return {
         id: doc.id,
+        companyId: doc.companyId ?? '',
+        companyName: text(company?.name),
         fileName: doc.metadata.fileName,
-        company: (companyEntry?.name ?? "").trim(),
-        author: (props?.creator ?? "").trim(),
-        lastModifiedBy: (props?.lastModifiedBy ?? "").trim(),
-        appCompany: (app?.company ?? "").trim(),
-      }
-    })
+        creator: text(props?.creator),
+        lastModifiedBy: text(props?.lastModifiedBy),
+        appCompany: text(app?.company),
+        manager: text(app?.manager),
+        template: text(app?.template),
+        application: text(app?.application),
+        appVersion: text(app?.appVersion),
+        created: text(props?.created),
+        modified: text(props?.modified),
+        revision: text(props?.revision),
+        title: text(props?.title),
+        subject: text(props?.subject),
+        keywords: text(props?.keywords),
+        description: text(props?.description),
+        category: text(props?.category),
+        contentStatus: text(props?.contentStatus),
+        version: text(props?.version),
+        language: text(props?.language),
+        totalTime: text(app?.totalTime),
+        annotationAuthors: doc.metadata.annotationAuthors ?? [],
+        revisionAuthors: doc.metadata.revisionAuthors ?? [],
+        xmpCreators: doc.metadata.xmpCreators ?? [],
+        hasHiddenMarkers: doc.metadata.hasHiddenMarkers ?? false,
+      };
+    });
 }
 
 export const ComparePage: React.FC = () => {
-  const { companyById, clearAll, companyCount } = useFileContext()
-  const { documents } = useMetadata()
-  const [findings, setFindings] = useState<RiskFinding[]>([])
-  const [comparing, setComparing] = useState(false)
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const { companyById, clearAll, companyCount } = useFileContext();
+  const { documents } = useMetadata();
+  const [result, setResult] = useState<CompareResult | null>(null);
+  const [comparing, setComparing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const readyDocs = useMemo(() => documents.filter(doc => doc.status === "ready"), [documents])
+  const readyDocs = useMemo(() => documents.filter(doc => doc.status === 'ready'), [documents]);
 
-  useEffect(() => {
-    setFindings([])
-    setDialogOpen(false)
-  }, [])
+  const docPaths = useMemo(
+    () => Object.fromEntries(readyDocs.map(doc => [doc.id, doc.filePath])),
+    [readyDocs],
+  );
 
-  const allCompanies = useMemo(() => Object.values(companyById), [companyById])
-
-  const docsByCompany = useMemo(() => {
-    const map = new Map<string, LoadedDocument[]>()
-    for (const c of allCompanies) {
-      map.set(
-        c.id,
-        readyDocs.filter(doc => doc.companyId === c.id),
-      )
-    }
-    return map
-  }, [readyDocs, allCompanies])
+  const allCompanies = useMemo(() => Object.values(companyById), [companyById]);
 
   const companiesWithFiles = useMemo(
-    () => allCompanies.filter(c => (docsByCompany.get(c.id)?.length ?? 0) > 0),
-    [allCompanies, docsByCompany],
-  )
+    () => allCompanies.filter(c => readyDocs.some(doc => doc.companyId === c.id)),
+    [allCompanies, readyDocs],
+  );
 
-  const canRun = companiesWithFiles.length >= 2 && !comparing
+  const canRun = companiesWithFiles.length >= 2 && !comparing;
 
   const handleRun = useCallback(async () => {
-    if (!canRun) return
-    setComparing(true)
-    setDialogOpen(true)
+    if (!canRun) return;
+    setComparing(true);
+    setError(null);
     try {
-      const inputs = toCompareInputs(documents, companyById)
-      const reports = await invoke<RustMatchReport[]>("compare_metadata", { files: inputs })
-      setFindings(
-        reports.map(report => ({
-          level: (report.riskLevel === "high" ? "high" : "medium") as RiskFinding["level"],
-          problem: report.issue,
-          fields: report.fields,
-          value: report.value,
-          files: report.files,
-          companies: report.companies,
-          score: report.score,
-          matchTag: report.matchTag,
-        })),
-      )
-    } catch (error) {
-      console.error("对比失败:", error)
-      setFindings([])
+      const files = toCompareInputs(documents, companyById);
+      const next = await invoke<CompareResult>('compare_metadata', { files });
+      setResult(next);
+    } catch (cause) {
+      console.error('对比失败:', cause);
+      setError('对比执行失败，请重试。');
+      setResult(EMPTY_COMPARE_RESULT);
     } finally {
-      setComparing(false)
+      setComparing(false);
     }
-  }, [canRun, documents, companyById])
+  }, [canRun, documents, companyById]);
 
-  const handleReset = () => {
-    clearAll()
-    setFindings([])
-    setDialogOpen(false)
-  }
+  const handleReset = (): void => {
+    clearAll();
+    setResult(null);
+    setError(null);
+  };
 
   return (
     <PageLayout
@@ -139,42 +127,40 @@ export const ComparePage: React.FC = () => {
               清空全部
             </Button>
           ) : null}
-          <Button
-            size="sm"
-            onClick={handleRun}
-            disabled={!canRun}
-            className="gap-1.5 rounded-lg"
-          >
+          <Button size="sm" onClick={handleRun} disabled={!canRun} className="gap-1.5 rounded-lg">
             <HugeIcon icon={PlayIcon} size={14} />
-            {comparing ? "对比中…" : "开始对比"}
+            {comparing ? '对比中…' : result ? '重新对比' : '开始对比'}
           </Button>
         </div>
       }
     >
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          <DropZone mode="directory" />
-          {allCompanies.map((company, idx) => (
-            <CompanyCard key={company.id} company={company} index={idx} />
-          ))}
-        </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {!result || error ? (
+          <div className="mx-auto w-full max-w-7xl p-4 sm:px-6">
+            {!result ? (
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+                <DropZone mode="directory" />
+                {allCompanies.map((company, idx) => (
+                  <CompanyCard key={company.id} company={company} index={idx} />
+                ))}
+              </div>
+            ) : null}
+            {error ? (
+              <p className="mt-3 rounded-md border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-fine-print text-rose-700">
+                {error}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {result ? (
+          <div className="border-t border-border/60">
+            <CompareWorkbench result={result} docPaths={docPaths} />
+          </div>
+        ) : null}
       </div>
-
-      <RiskReportView
-        open={dialogOpen}
-        onClose={() => {
-          if (comparing) return
-          setDialogOpen(false)
-        }}
-        comparing={comparing}
-        findings={findings}
-        companies={allCompanies}
-        docsByCompany={docsByCompany}
-        canRerun={canRun}
-        onRerun={handleRun}
-      />
     </PageLayout>
-  )
-}
+  );
+};
 
-export default ComparePage
+export default ComparePage;

@@ -245,7 +245,10 @@ fn format_xml_element(name: &str, value: &str) -> String {
 }
 
 fn get_output_path(options: &ExportOptions, extension: &str) -> String {
-    let dir = options.output_dir.clone().unwrap_or_else(|| ".".to_string());
+    let dir = options
+        .output_dir
+        .clone()
+        .unwrap_or_else(|| ".".to_string());
     let name = options
         .file_name
         .clone()

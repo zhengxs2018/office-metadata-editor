@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Office Metadata Editor — 系统架构",
+    "subtitle": "Tauri v2 桌面应用：React 渲染进程 · IPC 信任边界 · Rust 领域内核 · 本地文件系统",
+    "output": "system-architecture.html"
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "用户", "sublabel": "审核方 / 发布方", "pos": [40, 300], "size": [120, 62] },
+
+    { "id": "pages", "type": "frontend", "label": "pages/", "sublabel": "editor · batch · compare", "pos": [230, 190], "size": [150, 62], "tag": "路由级编排" },
+    { "id": "logic", "type": "frontend", "label": "lib/", "sublabel": "纯逻辑 · 可单测", "pos": [230, 300], "size": [150, 62] },
+    { "id": "state", "type": "frontend", "label": "contexts + stores", "sublabel": "会话态 · zustand", "pos": [230, 410], "size": [150, 62] },
+
+    { "id": "ipc", "type": "security", "label": "Tauri IPC", "sublabel": "39 个命令", "pos": [455, 300], "size": [140, 62], "tag": "信任边界" },
+
+    { "id": "cmd", "type": "backend", "label": "lib.rs", "sublabel": "校验 · 委托 · 错误映射", "pos": [670, 300], "size": [150, 62], "tag": "薄命令层" },
+
+    { "id": "formats", "type": "backend", "label": "格式适配", "sublabel": "docx · xlsx · pdf · doc", "pos": [895, 150], "size": [150, 62] },
+    { "id": "hidden", "type": "backend", "label": "hidden/", "sublabel": "隐藏痕迹提取", "pos": [895, 245], "size": [150, 62] },
+    { "id": "compare", "type": "backend", "label": "compare/", "sublabel": "比对引擎 · 8 条规则", "pos": [895, 340], "size": [150, 62], "tag": "风险线索" },
+    { "id": "export", "type": "backend", "label": "export/", "sublabel": "报告产出", "pos": [895, 435], "size": [150, 62] },
+
+    { "id": "disk", "type": "database", "label": "本地文件系统", "sublabel": "只读解析 / 显式写回", "pos": [1120, 245], "size": [150, 62], "tag": "不出本机" },
+    { "id": "config", "type": "database", "label": "本地配置", "sublabel": "用户覆盖项", "pos": [1120, 435], "size": [150, 62] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "渲染进程（低信任）", "wraps": ["pages", "logic", "state"] },
+    { "kind": "region", "label": "主进程（高信任）", "wraps": ["cmd", "formats", "hidden", "compare", "export"] },
+    { "kind": "security-group", "label": "唯一通道：invoke", "wraps": ["ipc"] }
+  ],
+  "connections": [
+    { "from": "user", "to": "pages", "label": "操作", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "from": "pages", "to": "state", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "from": "pages", "to": "logic", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "from": "logic", "to": "ipc", "label": "invoke", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "from": "ipc", "to": "cmd", "label": "反序列化 + 校验", "variant": "security", "fromSide": "right", "toSide": "left", "labelDy": -25 },
+    { "from": "cmd", "to": "formats", "variant": "default", "fromSide": "right", "toSide": "left" },
+    { "from": "cmd", "to": "hidden", "variant": "default", "fromSide": "right", "toSide": "left" },
+    { "from": "cmd", "to": "compare", "label": "compare_metadata", "variant": "emphasis", "fromSide": "right", "toSide": "left", "labelDy": 75 },
+    { "from": "cmd", "to": "export", "variant": "default", "fromSide": "right", "toSide": "left" },
+    { "from": "formats", "to": "disk", "label": "OOXML / OLE", "variant": "default", "fromSide": "right", "toSide": "left" },
+    { "from": "hidden", "to": "disk", "variant": "dashed", "fromSide": "right", "toSide": "left" },
+    { "from": "export", "to": "config", "variant": "dashed", "fromSide": "right", "toSide": "left" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "渲染进程",
+      "items": [
+        "pages/ 只做编排，算法下沉到 lib/",
+        "lib/ 为纯逻辑，无 JSX，可脱离 React 单测",
+        "样式用 CSS Modules 隔离，只用主题变量"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "信任边界",
+      "items": [
+        "前端无法直接访问文件系统 / 进程 / 网络",
+        "所有前端参数在 Rust 侧重新校验",
+        "风险定级在主进程完成，前端只做呈现",
+        "capability 仅授予必要命令与最窄 scope"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "领域内核",
+      "items": [
+        "四种格式映射到统一元数据模型",
+        "比对引擎产出线索而非结论",
+        "每个能力只有单一实现入口",
+        "文档全程留在用户本机，不上传"
+      ]
+    }
+  ]
+}

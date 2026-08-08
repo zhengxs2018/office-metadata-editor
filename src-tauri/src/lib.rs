@@ -9,14 +9,18 @@ use std::time::UNIX_EPOCH;
 
 use serde::{Deserialize, Serialize};
 use tauri::webview::PageLoadEvent;
+use tauri::Manager;
 use tauri_plugin_dialog::{DialogExt, FilePath};
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_opener::OpenerExt;
 use xmltree::{Element, XMLNode};
 use zip::{write::SimpleFileOptions, ZipArchive, ZipWriter};
 
+pub mod configuration;
 pub mod documents;
 pub mod export;
+
+use configuration::Configuration;
 
 use documents::{BatchSaveRequestItem, BatchSaveResultItem, DocumentMetadata};
 
@@ -158,7 +162,10 @@ fn create_request_id_by_paths(source: &str, file_paths: &[String]) -> String {
     format!("req_{:016x}", hasher.finish())
 }
 
-fn validate_request_for_paths(request_id: Option<&str>, file_paths: &[String]) -> Result<(), String> {
+fn validate_request_for_paths(
+    request_id: Option<&str>,
+    file_paths: &[String],
+) -> Result<(), String> {
     let Some(request_id) = request_id else {
         return Ok(());
     };
@@ -173,7 +180,10 @@ fn validate_request_for_paths(request_id: Option<&str>, file_paths: &[String]) -
         .ok_or_else(|| format!("requestId 不存在: {}", request_id))?;
 
     if request.status != "running" {
-        return Err(format!("requestId {} 状态为 {}，无法继续", request_id, request.status));
+        return Err(format!(
+            "requestId {} 状态为 {}，无法继续",
+            request_id, request.status
+        ));
     }
 
     for file_path in file_paths {
@@ -230,9 +240,12 @@ fn create_automation_request(file_paths: Vec<String>, source: String) -> Result<
         }
     }
 
-    let conflict = normalized_paths
-        .iter()
-        .find_map(|path| registry.file_to_request.get(path).map(|rid| (path.clone(), rid.clone())));
+    let conflict = normalized_paths.iter().find_map(|path| {
+        registry
+            .file_to_request
+            .get(path)
+            .map(|rid| (path.clone(), rid.clone()))
+    });
 
     if let Some((path, running_request)) = conflict {
         return Err(format!(
@@ -337,7 +350,10 @@ fn get_automation_request_status(request_id: String) -> Result<AutomationRequest
 }
 
 #[tauri::command]
-fn scan_directory(path: String, options: DirectoryScanOptions) -> Result<DirectoryScanResult, String> {
+fn scan_directory(
+    path: String,
+    options: DirectoryScanOptions,
+) -> Result<DirectoryScanResult, String> {
     let root = PathBuf::from(&path);
     if !root.exists() {
         return Err(format!("目录不存在: {}", path));
@@ -384,7 +400,8 @@ fn scan_directory(path: String, options: DirectoryScanOptions) -> Result<Directo
                 continue;
             }
 
-            let metadata = fs::metadata(&entry_path).map_err(|err| format!("读取文件信息失败: {}", err))?;
+            let metadata =
+                fs::metadata(&entry_path).map_err(|err| format!("读取文件信息失败: {}", err))?;
             let modified_at = metadata
                 .modified()
                 .ok()
@@ -394,10 +411,7 @@ fn scan_directory(path: String, options: DirectoryScanOptions) -> Result<Directo
 
             files.push(DirectoryInfo {
                 path: entry_path.to_string_lossy().to_string(),
-                name: entry
-                    .file_name()
-                    .to_string_lossy()
-                    .to_string(),
+                name: entry.file_name().to_string_lossy().to_string(),
                 extension,
                 size: metadata.len(),
                 modified_at,
@@ -418,42 +432,25 @@ fn scan_directory(path: String, options: DirectoryScanOptions) -> Result<Directo
 }
 
 #[tauri::command]
-fn parse_docx_metadata(file_name: String, file_size: u64, file_bytes: Vec<u8>) -> Result<DocumentMetadata, String> {
-    let mut metadata = DocumentMetadata::defaults(file_name, file_size);
-
-    let mut archive = ZipArchive::new(Cursor::new(file_bytes)).map_err(|err| err.to_string())?;
-
-    if let Some(core_xml) = read_zip_entry_as_string(&mut archive, "docProps/core.xml")? {
-        apply_core_properties(&mut metadata, &core_xml)?;
-    }
-
-    if let Some(app_xml) = read_zip_entry_as_string(&mut archive, "docProps/app.xml")? {
-        apply_app_properties(&mut metadata, &app_xml)?;
-    }
-
-    Ok(metadata)
-}
-
-#[tauri::command]
 fn parse_docx_metadata_from_path(file_path: String) -> Result<DocumentMetadata, String> {
-    let path = PathBuf::from(&file_path);
-    let file_name = path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("document.docx")
-        .to_string();
-
-    let file_size = fs::metadata(&path)
-        .map_err(|err| err.to_string())?
-        .len();
-    let file_bytes = fs::read(&path).map_err(|err| err.to_string())?;
-
-    parse_docx_metadata(file_name, file_size, file_bytes)
+    documents::edit::docx::parse_metadata_from_path(file_path)
 }
 
 #[tauri::command]
-fn update_docx_metadata(file_bytes: Vec<u8>, metadata: DocumentMetadata) -> Result<Vec<u8>, String> {
-    build_updated_docx_bytes(file_bytes, &metadata)
+fn parse_docx_metadata(
+    file_name: String,
+    file_size: u64,
+    file_bytes: Vec<u8>,
+) -> Result<DocumentMetadata, String> {
+    documents::edit::docx::parse_ooxml_metadata(file_name, file_size, file_bytes)
+}
+
+#[tauri::command]
+fn update_docx_metadata(
+    file_bytes: Vec<u8>,
+    metadata: DocumentMetadata,
+) -> Result<Vec<u8>, String> {
+    documents::edit::docx::build_updated_ooxml_bytes(file_bytes, &metadata)
 }
 
 #[tauri::command]
@@ -475,13 +472,14 @@ fn save_docx_metadata(
         .set_file_name(&suggested_name)
         .add_filter("Word 文档", &["docx"])
         .blocking_save_file()
-        .and_then(convert_file_path_to_pathbuf);
+        .and_then(documents::fs::convert_file_path_to_pathbuf);
 
     let Some(path) = selected_path else {
         return Ok(None);
     };
 
-    let updated_file_bytes = build_updated_docx_bytes(file_bytes, &metadata)?;
+    let updated_file_bytes =
+        documents::edit::docx::build_updated_ooxml_bytes(file_bytes, &metadata)?;
     std::fs::write(&path, updated_file_bytes).map_err(|err| err.to_string())?;
 
     Ok(Some(path.to_string_lossy().to_string()))
@@ -494,10 +492,7 @@ fn save_docx_metadata_to_source(
     request_id: Option<String>,
 ) -> Result<String, String> {
     validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))?;
-    let file_bytes = fs::read(&file_path).map_err(|err| err.to_string())?;
-    let updated_file_bytes = build_updated_docx_bytes(file_bytes, &metadata)?;
-    fs::write(&file_path, updated_file_bytes).map_err(|err| err.to_string())?;
-    Ok(file_path)
+    documents::edit::docx::save_docx_metadata_to_source(file_path, metadata)
 }
 
 #[tauri::command]
@@ -508,7 +503,11 @@ fn batch_save_docx_metadata_to_source(
     items
         .into_iter()
         .map(|item| {
-            match save_docx_metadata_to_source(item.file_path.clone(), item.metadata, request_id.clone()) {
+            match save_docx_metadata_to_source(
+                item.file_path.clone(),
+                item.metadata,
+                request_id.clone(),
+            ) {
                 Ok(path) => BatchSaveResultItem {
                     file_path: path,
                     success: true,
@@ -548,14 +547,15 @@ fn save_docx_metadata_as(
         .set_file_name(&suggested_name)
         .add_filter("Word 文档", &["docx"])
         .blocking_save_file()
-        .and_then(convert_file_path_to_pathbuf);
+        .and_then(documents::fs::convert_file_path_to_pathbuf);
 
     let Some(path) = selected_path else {
         return Ok(None);
     };
 
     let file_bytes = fs::read(&source_path).map_err(|err| err.to_string())?;
-    let updated_file_bytes = build_updated_docx_bytes(file_bytes, &metadata)?;
+    let updated_file_bytes =
+        documents::edit::docx::build_updated_ooxml_bytes(file_bytes, &metadata)?;
     fs::write(&path, updated_file_bytes).map_err(|err| err.to_string())?;
 
     Ok(Some(path.to_string_lossy().to_string()))
@@ -564,29 +564,31 @@ fn save_docx_metadata_as(
 #[tauri::command]
 fn batch_clear_and_save_docx_metadata(
     file_paths: Vec<String>,
-    options: Option<BatchClearOptions>,
-    request_id: Option<String>,
+    _options: Option<BatchClearOptions>,
+    _request_id: Option<String>,
 ) -> Vec<BatchSaveResultItem> {
     file_paths
         .into_iter()
-        .map(|file_path| match process_single_batch_clear(&file_path, options.as_ref(), request_id.as_deref()) {
-            Ok(()) => BatchSaveResultItem {
-                file_path,
-                success: true,
-                error: None,
+        .map(
+            |file_path| match documents::edit::docx::process_single_batch_clear(&file_path) {
+                Ok(()) => BatchSaveResultItem {
+                    file_path,
+                    success: true,
+                    error: None,
+                },
+                Err(err) => BatchSaveResultItem {
+                    file_path,
+                    success: false,
+                    error: Some(err),
+                },
             },
-            Err(err) => BatchSaveResultItem {
-                file_path,
-                success: false,
-                error: Some(err),
-            },
-        })
+        )
         .collect()
 }
 
 #[tauri::command]
 fn parse_xlsx_metadata_from_path(file_path: String) -> Result<DocumentMetadata, String> {
-    documents::xlsx::parse_metadata_from_path(file_path)
+    documents::edit::xlsx::parse_metadata_from_path(file_path)
 }
 
 #[tauri::command]
@@ -596,7 +598,7 @@ fn save_xlsx_metadata_to_source(
     request_id: Option<String>,
 ) -> Result<String, String> {
     validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))?;
-    documents::xlsx::write_metadata_to_path(&file_path, &metadata)?;
+    documents::edit::xlsx::write_metadata_to_path(&file_path, &metadata)?;
     Ok(file_path)
 }
 
@@ -607,17 +609,23 @@ fn batch_save_xlsx_metadata_to_source(
 ) -> Vec<BatchSaveResultItem> {
     items
         .into_iter()
-        .map(|item| match save_xlsx_metadata_to_source(item.file_path.clone(), item.metadata, request_id.clone()) {
-            Ok(path) => BatchSaveResultItem {
-                file_path: path,
-                success: true,
-                error: None,
-            },
-            Err(err) => BatchSaveResultItem {
-                file_path: item.file_path,
-                success: false,
-                error: Some(err),
-            },
+        .map(|item| {
+            match save_xlsx_metadata_to_source(
+                item.file_path.clone(),
+                item.metadata,
+                request_id.clone(),
+            ) {
+                Ok(path) => BatchSaveResultItem {
+                    file_path: path,
+                    success: true,
+                    error: None,
+                },
+                Err(err) => BatchSaveResultItem {
+                    file_path: item.file_path,
+                    success: false,
+                    error: Some(err),
+                },
+            }
         })
         .collect()
 }
@@ -646,14 +654,15 @@ fn save_xlsx_metadata_as(
         .set_file_name(&suggested_name)
         .add_filter("Excel 工作簿", &["xlsx"])
         .blocking_save_file()
-        .and_then(convert_file_path_to_pathbuf);
+        .and_then(documents::fs::convert_file_path_to_pathbuf);
 
     let Some(path) = selected_path else {
         return Ok(None);
     };
 
     let file_bytes = fs::read(&source_path).map_err(|err| err.to_string())?;
-    let updated_file_bytes = build_updated_docx_bytes(file_bytes, &metadata)?;
+    let updated_file_bytes =
+        documents::edit::docx::build_updated_ooxml_bytes(file_bytes, &metadata)?;
     fs::write(&path, updated_file_bytes).map_err(|err| err.to_string())?;
 
     Ok(Some(path.to_string_lossy().to_string()))
@@ -667,24 +676,26 @@ fn batch_clear_and_save_xlsx_metadata(
 ) -> Vec<BatchSaveResultItem> {
     file_paths
         .into_iter()
-        .map(|file_path| match process_single_batch_clear(&file_path, options.as_ref(), request_id.as_deref()) {
-            Ok(()) => BatchSaveResultItem {
-                file_path,
-                success: true,
-                error: None,
+        .map(
+            |file_path| match documents::edit::xlsx::process_single_batch_clear(&file_path) {
+                Ok(()) => BatchSaveResultItem {
+                    file_path,
+                    success: true,
+                    error: None,
+                },
+                Err(err) => BatchSaveResultItem {
+                    file_path,
+                    success: false,
+                    error: Some(err),
+                },
             },
-            Err(err) => BatchSaveResultItem {
-                file_path,
-                success: false,
-                error: Some(err),
-            },
-        })
+        )
         .collect()
 }
 
 #[tauri::command]
 fn parse_pdf_metadata_from_path(file_path: String) -> Result<DocumentMetadata, String> {
-    documents::pdf::parse_metadata_from_path(file_path)
+    documents::edit::pdf::parse_metadata_from_path(file_path)
 }
 
 #[tauri::command]
@@ -694,7 +705,7 @@ fn save_pdf_metadata_to_source(
     request_id: Option<String>,
 ) -> Result<String, String> {
     validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))?;
-    documents::pdf::write_metadata_to_path(&file_path, &metadata)?;
+    documents::edit::pdf::write_metadata_to_path(&file_path, &metadata)?;
     Ok(file_path)
 }
 
@@ -705,17 +716,23 @@ fn batch_save_pdf_metadata_to_source(
 ) -> Vec<BatchSaveResultItem> {
     items
         .into_iter()
-        .map(|item| match save_pdf_metadata_to_source(item.file_path.clone(), item.metadata, request_id.clone()) {
-            Ok(path) => BatchSaveResultItem {
-                file_path: path,
-                success: true,
-                error: None,
-            },
-            Err(err) => BatchSaveResultItem {
-                file_path: item.file_path,
-                success: false,
-                error: Some(err),
-            },
+        .map(|item| {
+            match save_pdf_metadata_to_source(
+                item.file_path.clone(),
+                item.metadata,
+                request_id.clone(),
+            ) {
+                Ok(path) => BatchSaveResultItem {
+                    file_path: path,
+                    success: true,
+                    error: None,
+                },
+                Err(err) => BatchSaveResultItem {
+                    file_path: item.file_path,
+                    success: false,
+                    error: Some(err),
+                },
+            }
         })
         .collect()
 }
@@ -744,7 +761,7 @@ fn save_pdf_metadata_as(
         .set_file_name(&suggested_name)
         .add_filter("PDF 文档", &["pdf"])
         .blocking_save_file()
-        .and_then(convert_file_path_to_pathbuf);
+        .and_then(documents::fs::convert_file_path_to_pathbuf);
 
     let Some(path) = selected_path else {
         return Ok(None);
@@ -764,7 +781,9 @@ fn batch_clear_and_save_pdf_metadata(
     file_paths
         .into_iter()
         .map(|file_path| {
-            if let Err(err) = validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path)) {
+            if let Err(err) =
+                validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))
+            {
                 return BatchSaveResultItem {
                     file_path,
                     success: false,
@@ -789,7 +808,6 @@ fn batch_clear_and_save_pdf_metadata(
             metadata.document_properties.keywords.clear();
             metadata.document_properties.description.clear();
             metadata.document_properties.last_modified_by.clear();
-            apply_batch_metadata_options(&mut metadata, options.as_ref());
 
             match save_pdf_metadata_to_source(file_path.clone(), metadata, request_id.clone()) {
                 Ok(path) => BatchSaveResultItem {
@@ -854,17 +872,23 @@ fn batch_save_doc_metadata_to_source(
 ) -> Vec<BatchSaveResultItem> {
     items
         .into_iter()
-        .map(|item| match save_doc_metadata_to_source(item.file_path.clone(), item.metadata, request_id.clone()) {
-            Ok(path) => BatchSaveResultItem {
-                file_path: path,
-                success: true,
-                error: None,
-            },
-            Err(err) => BatchSaveResultItem {
-                file_path: item.file_path,
-                success: false,
-                error: Some(err),
-            },
+        .map(|item| {
+            match save_doc_metadata_to_source(
+                item.file_path.clone(),
+                item.metadata,
+                request_id.clone(),
+            ) {
+                Ok(path) => BatchSaveResultItem {
+                    file_path: path,
+                    success: true,
+                    error: None,
+                },
+                Err(err) => BatchSaveResultItem {
+                    file_path: item.file_path,
+                    success: false,
+                    error: Some(err),
+                },
+            }
         })
         .collect()
 }
@@ -893,7 +917,7 @@ fn save_doc_metadata_as(
         .set_file_name(&suggested_name)
         .add_filter("Word 兼容文档", &["doc"])
         .blocking_save_file()
-        .and_then(convert_file_path_to_pathbuf);
+        .and_then(documents::fs::convert_file_path_to_pathbuf);
 
     let Some(path) = selected_path else {
         return Ok(None);
@@ -913,7 +937,9 @@ fn batch_clear_and_save_doc_metadata(
     file_paths
         .into_iter()
         .map(|file_path| {
-            if let Err(err) = validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path)) {
+            if let Err(err) =
+                validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))
+            {
                 return BatchSaveResultItem {
                     file_path,
                     success: false,
@@ -952,7 +978,6 @@ fn batch_clear_and_save_doc_metadata(
             metadata.core_properties.dc_source.clear();
             metadata.app_properties.company.clear();
             metadata.app_properties.manager.clear();
-            apply_batch_metadata_options(&mut metadata, options.as_ref());
 
             match save_doc_metadata_to_source(file_path.clone(), metadata, request_id.clone()) {
                 Ok(path) => BatchSaveResultItem {
@@ -972,9 +997,10 @@ fn batch_clear_and_save_doc_metadata(
 
 #[tauri::command]
 fn compare_metadata(
-    files: Vec<documents::compare::CompareFileInput>,
-) -> Vec<documents::compare::MatchReport> {
-    documents::compare::compare_files(&files)
+    files: Vec<documents::compare::model::CompareFileInput>,
+    options: Option<documents::compare::model::CompareOptions>,
+) -> documents::compare::model::CompareResult {
+    documents::compare::run_compare(&files, &options.unwrap_or_default())
 }
 
 #[tauri::command]
@@ -1019,541 +1045,99 @@ fn set_window_theme(window: tauri::Window, theme: String) -> Result<(), String> 
     window.set_theme(next_theme).map_err(|err| err.to_string())
 }
 
-fn build_updated_docx_bytes(file_bytes: Vec<u8>, metadata: &DocumentMetadata) -> Result<Vec<u8>, String> {
-    let mut source_archive =
-        ZipArchive::new(Cursor::new(file_bytes.clone())).map_err(|err| err.to_string())?;
-
-    let source_core_xml = read_zip_entry_as_string(&mut source_archive, "docProps/core.xml")?;
-    let source_app_xml = read_zip_entry_as_string(&mut source_archive, "docProps/app.xml")?;
-
-    let updated_core_xml = write_core_properties(source_core_xml.as_deref(), metadata)?;
-    let updated_app_xml = write_app_properties(source_app_xml.as_deref(), metadata)?;
-
-    let mut output = Cursor::new(Vec::new());
-    let mut writer = ZipWriter::new(&mut output);
-
-    let mut archive = ZipArchive::new(Cursor::new(file_bytes)).map_err(|err| err.to_string())?;
-
-    let mut has_core = false;
-    let mut has_app = false;
-
-    for index in 0..archive.len() {
-        let mut file = archive.by_index(index).map_err(|err| err.to_string())?;
-        let entry_name = file.name().to_string();
-
-        if file.is_dir() {
-            writer
-                .add_directory(entry_name, SimpleFileOptions::default())
-                .map_err(|err| err.to_string())?;
-            continue;
-        }
-
-        let options = SimpleFileOptions::default().compression_method(file.compression());
-        writer
-            .start_file(&entry_name, options)
-            .map_err(|err| err.to_string())?;
-
-        if entry_name == "docProps/core.xml" {
-            writer.write_all(updated_core_xml.as_bytes()).map_err(|err| err.to_string())?;
-            has_core = true;
-        } else if entry_name == "docProps/app.xml" {
-            writer.write_all(updated_app_xml.as_bytes()).map_err(|err| err.to_string())?;
-            has_app = true;
-        } else {
-            std::io::copy(&mut file, &mut writer).map_err(|err| err.to_string())?;
-        }
+/// 打开导出文件所在目录。
+///
+/// 受 `engine.export.revealCommandEnabled` 开关约束：关闭时静默跳过，
+/// 返回 `Ok(false)` 让前端知道未执行，避免误报"已打开文件夹"。
+#[tauri::command]
+fn open_export_folder(
+    app: tauri::AppHandle,
+    config: tauri::State<'_, Configuration>,
+    file_path: String,
+) -> Result<bool, String> {
+    if !config.get("engine.export.revealCommandEnabled", true) {
+        return Ok(false);
     }
 
-    if !has_core {
-        writer
-            .start_file("docProps/core.xml", SimpleFileOptions::default())
-            .map_err(|err| err.to_string())?;
-        writer.write_all(updated_core_xml.as_bytes()).map_err(|err| err.to_string())?;
-    }
-
-    if !has_app {
-        writer
-            .start_file("docProps/app.xml", SimpleFileOptions::default())
-            .map_err(|err| err.to_string())?;
-        writer.write_all(updated_app_xml.as_bytes()).map_err(|err| err.to_string())?;
-    }
-
-    writer.finish().map_err(|err| err.to_string())?;
-    Ok(output.into_inner())
+    let path = PathBuf::from(&file_path);
+    let dir = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .map(|p| p.to_path_buf())
+        .unwrap_or(path);
+    app.opener()
+        .open_path(dir.to_string_lossy().to_string(), None::<&str>)
+        .map_err(|err| err.to_string())?;
+    Ok(true)
 }
 
-fn process_single_batch_clear(
-    file_path: &str,
-    options: Option<&BatchClearOptions>,
-    request_id: Option<&str>,
-) -> Result<(), String> {
-    validate_request_for_paths(request_id, &[file_path.to_string()])?;
-
-    let path = PathBuf::from(file_path);
-    let file_name = path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("document.docx")
-        .to_string();
-    let file_size = fs::metadata(&path)
-        .map_err(|err| err.to_string())?
-        .len();
-    let file_bytes = fs::read(&path).map_err(|err| err.to_string())?;
-
-    let mut metadata = parse_docx_metadata(file_name, file_size, file_bytes.clone())?;
-    clear_metadata_fields(&mut metadata);
-    apply_batch_metadata_options(&mut metadata, options);
-
-    let updated_file_bytes = build_updated_docx_bytes(file_bytes, &metadata)?;
-    fs::write(&path, updated_file_bytes).map_err(|err| err.to_string())?;
-    Ok(())
-}
-
-fn apply_batch_metadata_options(metadata: &mut DocumentMetadata, options: Option<&BatchClearOptions>) {
-    let Some(options) = options else {
-        return;
-    };
-
-    if let Some(template_id) = options.template_id.as_ref() {
-        let trimmed = template_id.trim();
-        if !trimmed.is_empty() && metadata.app_properties.template.trim().is_empty() {
-            metadata.app_properties.template = trimmed.to_string();
-        }
+/// 在系统文件管理器中定位并选中指定文件。
+///
+/// 与 `open_export_folder` 不同，本命令直接选中目标文件而非仅打开所在目录。
+/// 同样受 `engine.export.revealCommandEnabled` 约束，关闭时返回 `Ok(false)`。
+#[tauri::command]
+fn reveal_file_in_folder(
+    app: tauri::AppHandle,
+    config: tauri::State<'_, Configuration>,
+    file_path: String,
+) -> Result<bool, String> {
+    if !config.get("engine.export.revealCommandEnabled", true) {
+        return Ok(false);
     }
 
-    let Some(overrides) = options.metadata_overrides.as_ref() else {
-        return;
-    };
-
-    if let Some(document) = overrides.document_properties.as_ref() {
-        if let Some(value) = document.title.as_ref() {
-            metadata.document_properties.title = value.clone();
-        }
-        if let Some(value) = document.subject.as_ref() {
-            metadata.document_properties.subject = value.clone();
-        }
-        if let Some(value) = document.creator.as_ref() {
-            metadata.document_properties.creator = value.clone();
-        }
-        if let Some(value) = document.keywords.as_ref() {
-            metadata.document_properties.keywords = value.clone();
-        }
-        if let Some(value) = document.description.as_ref() {
-            metadata.document_properties.description = value.clone();
-        }
-        if let Some(value) = document.last_modified_by.as_ref() {
-            metadata.document_properties.last_modified_by = value.clone();
-        }
-        if let Some(value) = document.revision.as_ref() {
-            metadata.document_properties.revision = value.clone();
-        }
-        if let Some(value) = document.created.as_ref() {
-            metadata.document_properties.created = value.clone();
-        }
-        if let Some(value) = document.modified.as_ref() {
-            metadata.document_properties.modified = value.clone();
-        }
-        if let Some(value) = document.category.as_ref() {
-            metadata.document_properties.category = value.clone();
-        }
-        if let Some(value) = document.content_status.as_ref() {
-            metadata.document_properties.content_status = value.clone();
-        }
-        if let Some(value) = document.version.as_ref() {
-            metadata.document_properties.version = value.clone();
-        }
-        if let Some(value) = document.language.as_ref() {
-            metadata.document_properties.language = value.clone();
-        }
-        if let Some(value) = document.identifier.as_ref() {
-            metadata.document_properties.identifier = value.clone();
-        }
-        if let Some(value) = document.source.as_ref() {
-            metadata.document_properties.source = value.clone();
-        }
-    }
-
-    if let Some(core) = overrides.core_properties.as_ref() {
-        if let Some(value) = core.dc_title.as_ref() {
-            metadata.core_properties.dc_title = value.clone();
-        }
-        if let Some(value) = core.dc_subject.as_ref() {
-            metadata.core_properties.dc_subject = value.clone();
-        }
-        if let Some(value) = core.dc_creator.as_ref() {
-            metadata.core_properties.dc_creator = value.clone();
-        }
-        if let Some(value) = core.dc_description.as_ref() {
-            metadata.core_properties.dc_description = value.clone();
-        }
-        if let Some(value) = core.dc_keywords.as_ref() {
-            metadata.core_properties.dc_keywords = value.clone();
-        }
-        if let Some(value) = core.dc_language.as_ref() {
-            metadata.core_properties.dc_language = value.clone();
-        }
-        if let Some(value) = core.dc_identifier.as_ref() {
-            metadata.core_properties.dc_identifier = value.clone();
-        }
-        if let Some(value) = core.dc_source.as_ref() {
-            metadata.core_properties.dc_source = value.clone();
-        }
-    }
-
-    if let Some(app) = overrides.app_properties.as_ref() {
-        if let Some(value) = app.application.as_ref() {
-            metadata.app_properties.application = value.clone();
-        }
-        if let Some(value) = app.app_version.as_ref() {
-            metadata.app_properties.app_version = value.clone();
-        }
-        if let Some(value) = app.company.as_ref() {
-            metadata.app_properties.company = value.clone();
-        }
-        if let Some(value) = app.manager.as_ref() {
-            metadata.app_properties.manager = value.clone();
-        }
-        if let Some(value) = app.template.as_ref() {
-            metadata.app_properties.template = value.clone();
-        }
-        if let Some(value) = app.total_time.as_ref() {
-            metadata.app_properties.total_time = value.clone();
-        }
-        if let Some(value) = app.pages {
-            metadata.app_properties.pages = value;
-        }
-        if let Some(value) = app.words {
-            metadata.app_properties.words = value;
-        }
-        if let Some(value) = app.characters {
-            metadata.app_properties.characters = value;
-        }
-        if let Some(value) = app.characters_with_spaces {
-            metadata.app_properties.characters_with_spaces = value;
-        }
-        if let Some(value) = app.paragraphs {
-            metadata.app_properties.paragraphs = value;
-        }
-        if let Some(value) = app.lines {
-            metadata.app_properties.lines = value;
-        }
-    }
+    app.opener()
+        .reveal_item_in_dir(PathBuf::from(&file_path))
+        .map_err(|err| err.to_string())?;
+    Ok(true)
 }
 
-fn clear_metadata_fields(metadata: &mut DocumentMetadata) {
-    let original_created = metadata.document_properties.created.clone();
-    let original_modified = metadata.document_properties.modified.clone();
-    let original_revision = metadata.document_properties.revision.clone();
-
-    metadata.document_properties.title.clear();
-    metadata.document_properties.subject.clear();
-    metadata.document_properties.creator.clear();
-    metadata.document_properties.keywords.clear();
-    metadata.document_properties.description.clear();
-    metadata.document_properties.last_modified_by.clear();
-    metadata.document_properties.category.clear();
-    metadata.document_properties.content_status.clear();
-    metadata.document_properties.version.clear();
-    metadata.document_properties.identifier.clear();
-    metadata.document_properties.source.clear();
-    metadata.document_properties.created = original_created;
-    metadata.document_properties.modified = original_modified;
-    metadata.document_properties.revision = original_revision;
-
-    metadata.core_properties.dc_title.clear();
-    metadata.core_properties.dc_subject.clear();
-    metadata.core_properties.dc_creator.clear();
-    metadata.core_properties.dc_description.clear();
-    metadata.core_properties.dc_keywords.clear();
-    metadata.core_properties.dc_identifier.clear();
-    metadata.core_properties.dc_source.clear();
-
-    metadata.app_properties.company.clear();
-    metadata.app_properties.manager.clear();
+/// 读取合并后的完整配置（内置默认 + 用户覆盖）。
+#[tauri::command]
+fn get_configuration(config: tauri::State<'_, Configuration>) -> serde_json::Value {
+    config.snapshot()
 }
 
-fn convert_file_path_to_pathbuf(file_path: FilePath) -> Option<PathBuf> {
-    match file_path {
-        FilePath::Path(path) => Some(path),
-        FilePath::Url(url) => url.to_file_path().ok(),
-    }
+/// 仅读取用户覆盖项，供设置页区分「已修改 / 默认」。
+#[tauri::command]
+fn get_configuration_overrides(config: tauri::State<'_, Configuration>) -> serde_json::Value {
+    config.user_overrides()
 }
 
-fn read_zip_entry_as_string(
-    archive: &mut ZipArchive<Cursor<Vec<u8>>>,
-    path: &str,
-) -> Result<Option<String>, String> {
-    let mut file = match archive.by_name(path) {
-        Ok(file) => file,
-        Err(_) => return Ok(None),
-    };
-
-    let mut content = String::new();
-    file.read_to_string(&mut content).map_err(|err| err.to_string())?;
-    Ok(Some(content))
+/// 按点分键写入配置；传 `null` 表示恢复默认。
+#[tauri::command]
+fn update_configuration(
+    config: tauri::State<'_, Configuration>,
+    key: String,
+    value: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    config.update(&key, value)?;
+    Ok(config.snapshot())
 }
 
-fn parse_xml_or_default(xml: Option<&str>, default_xml: &str) -> Result<Element, String> {
-    let content = xml.unwrap_or(default_xml);
-    Element::parse(content.as_bytes()).map_err(|err| err.to_string())
+/// 批量写入配置，一次落盘。
+#[tauri::command]
+fn update_configurations(
+    config: tauri::State<'_, Configuration>,
+    entries: std::collections::BTreeMap<String, serde_json::Value>,
+) -> Result<serde_json::Value, String> {
+    config.update_many(entries)?;
+    Ok(config.snapshot())
 }
 
-fn write_core_properties(source_xml: Option<&str>, metadata: &DocumentMetadata) -> Result<String, String> {
-    let mut root = parse_xml_or_default(source_xml, DEFAULT_CORE_XML)?;
-
-    set_child_text(&mut root, "dc:title", &metadata.core_properties.dc_title);
-    set_child_text(&mut root, "dc:subject", &metadata.core_properties.dc_subject);
-    set_child_text(&mut root, "dc:creator", &metadata.core_properties.dc_creator);
-    set_child_text(&mut root, "cp:keywords", &metadata.core_properties.dc_keywords);
-    set_child_text(&mut root, "dc:description", &metadata.core_properties.dc_description);
-    set_child_text(&mut root, "cp:lastModifiedBy", &metadata.document_properties.last_modified_by);
-    set_child_text(&mut root, "cp:category", &metadata.document_properties.category);
-    set_child_text(&mut root, "cp:contentStatus", &metadata.document_properties.content_status);
-    set_child_text(&mut root, "cp:version", &metadata.document_properties.version);
-    set_child_text(&mut root, "dc:language", &metadata.core_properties.dc_language);
-    set_child_text(&mut root, "dc:identifier", &metadata.core_properties.dc_identifier);
-    set_child_text(&mut root, "dc:source", &metadata.core_properties.dc_source);
-
-    if !metadata.document_properties.revision.is_empty() {
-        set_child_text(&mut root, "cp:revision", &metadata.document_properties.revision);
-    }
-
-    if !metadata.document_properties.created.is_empty() {
-        set_child_text(&mut root, "dcterms:created", &metadata.document_properties.created);
-    }
-
-    if !metadata.document_properties.modified.is_empty() {
-        set_child_text(&mut root, "dcterms:modified", &metadata.document_properties.modified);
-    }
-
-    let mut out = Vec::new();
-    root.write(&mut out).map_err(|err| err.to_string())?;
-    String::from_utf8(out).map_err(|err| err.to_string())
+/// 清空全部用户覆盖，回到内置默认。
+#[tauri::command]
+fn reset_configuration(
+    config: tauri::State<'_, Configuration>,
+) -> Result<serde_json::Value, String> {
+    config.reset()?;
+    Ok(config.snapshot())
 }
 
-fn write_app_properties(source_xml: Option<&str>, metadata: &DocumentMetadata) -> Result<String, String> {
-    let mut root = parse_xml_or_default(source_xml, DEFAULT_APP_XML)?;
-
-    set_child_text(&mut root, "Application", &metadata.app_properties.application);
-    set_child_text(&mut root, "AppVersion", &metadata.app_properties.app_version);
-    set_child_text(&mut root, "Company", &metadata.app_properties.company);
-    set_child_text(&mut root, "Manager", &metadata.app_properties.manager);
-    set_child_text(&mut root, "Template", &metadata.app_properties.template);
-    set_child_text(&mut root, "TotalTime", &metadata.app_properties.total_time);
-    set_child_text(&mut root, "Pages", &metadata.app_properties.pages.to_string());
-    set_child_text(&mut root, "Words", &metadata.app_properties.words.to_string());
-    set_child_text(&mut root, "Characters", &metadata.app_properties.characters.to_string());
-    set_child_text(
-        &mut root,
-        "CharactersWithSpaces",
-        &metadata.app_properties.characters_with_spaces.to_string(),
-    );
-    set_child_text(&mut root, "Paragraphs", &metadata.app_properties.paragraphs.to_string());
-    set_child_text(&mut root, "Lines", &metadata.app_properties.lines.to_string());
-
-    let mut out = Vec::new();
-    root.write(&mut out).map_err(|err| err.to_string())?;
-    String::from_utf8(out).map_err(|err| err.to_string())
+/// 返回 `settings.json` 的绝对路径，供设置页「在文件夹中显示」。
+#[tauri::command]
+fn get_configuration_path(config: tauri::State<'_, Configuration>) -> String {
+    config.file_path().to_string_lossy().to_string()
 }
-
-fn apply_core_properties(metadata: &mut DocumentMetadata, core_xml: &str) -> Result<(), String> {
-    let root = Element::parse(core_xml.as_bytes()).map_err(|err| err.to_string())?;
-
-    let title = get_child_text(&root, &["dc:title", "title"]);
-    let subject = get_child_text(&root, &["dc:subject", "subject"]);
-    let creator = get_child_text(&root, &["dc:creator", "creator"]);
-    let keywords = get_child_text(&root, &["cp:keywords", "keywords"]);
-    let description = get_child_text(&root, &["dc:description", "description"]);
-    let language = get_child_text(&root, &["dc:language", "language"]);
-    let identifier = get_child_text(&root, &["dc:identifier", "identifier"]);
-    let source = get_child_text(&root, &["dc:source", "source"]);
-
-    metadata.document_properties.title = title.clone();
-    metadata.document_properties.subject = subject.clone();
-    metadata.document_properties.creator = creator.clone();
-    metadata.document_properties.keywords = keywords.clone();
-    metadata.document_properties.description = description.clone();
-    metadata.document_properties.last_modified_by =
-        get_child_text(&root, &["cp:lastModifiedBy", "lastModifiedBy"]);
-    metadata.document_properties.revision = get_child_text(&root, &["cp:revision", "revision"]);
-    metadata.document_properties.created = get_child_text(&root, &["dcterms:created", "created"]);
-    metadata.document_properties.modified = get_child_text(&root, &["dcterms:modified", "modified"]);
-    metadata.document_properties.category = get_child_text(&root, &["cp:category", "category"]);
-    metadata.document_properties.content_status =
-        get_child_text(&root, &["cp:contentStatus", "contentStatus"]);
-    metadata.document_properties.version = get_child_text(&root, &["cp:version", "version"]);
-    metadata.document_properties.language = language.clone();
-    metadata.document_properties.identifier = identifier.clone();
-    metadata.document_properties.source = source.clone();
-
-    metadata.core_properties.dc_title = title;
-    metadata.core_properties.dc_subject = subject;
-    metadata.core_properties.dc_creator = creator;
-    metadata.core_properties.dc_description = description;
-    metadata.core_properties.dc_keywords = keywords;
-    metadata.core_properties.dc_language = language;
-    metadata.core_properties.dc_identifier = identifier;
-    metadata.core_properties.dc_source = source;
-
-    Ok(())
-}
-
-fn apply_app_properties(metadata: &mut DocumentMetadata, app_xml: &str) -> Result<(), String> {
-    let root = Element::parse(app_xml.as_bytes()).map_err(|err| err.to_string())?;
-
-    let application = get_child_text(&root, &["Application"]);
-    let app_version = get_child_text(&root, &["AppVersion"]);
-    let (normalized_application, normalized_version) =
-        normalize_application_metadata(&application, &app_version);
-
-    metadata.app_properties.application = normalized_application;
-    metadata.app_properties.app_version = normalized_version;
-    metadata.app_properties.company = get_child_text(&root, &["Company"]);
-    metadata.app_properties.manager = get_child_text(&root, &["Manager"]);
-    metadata.app_properties.template = get_child_text(&root, &["Template"]);
-    metadata.app_properties.total_time = get_child_text(&root, &["TotalTime"]);
-
-    metadata.app_properties.pages = parse_u32(&get_child_text(&root, &["Pages"]));
-    metadata.app_properties.words = parse_u32(&get_child_text(&root, &["Words"]));
-    metadata.app_properties.characters = parse_u32(&get_child_text(&root, &["Characters"]));
-    metadata.app_properties.characters_with_spaces =
-        parse_u32(&get_child_text(&root, &["CharactersWithSpaces"]));
-    metadata.app_properties.paragraphs = parse_u32(&get_child_text(&root, &["Paragraphs"]));
-    metadata.app_properties.lines = parse_u32(&get_child_text(&root, &["Lines"]));
-
-    Ok(())
-}
-
-fn get_child_text(root: &Element, names: &[&str]) -> String {
-    for node in &root.children {
-        if let XMLNode::Element(child) = node {
-            if names.iter().any(|name| child.name == *name) {
-                return child.get_text().map(|value| value.to_string()).unwrap_or_default();
-            }
-        }
-    }
-
-    String::new()
-}
-
-fn element_name_matches(element_name: &str, target_name: &str) -> bool {
-    if element_name == target_name {
-        return true;
-    }
-
-    let target_local = target_name.rsplit(':').next().unwrap_or(target_name);
-    let element_local = element_name.rsplit(':').next().unwrap_or(element_name);
-    element_local == target_local
-}
-
-fn set_child_text(root: &mut Element, name: &str, value: &str) {
-    let mut first_match_index: Option<usize> = None;
-
-    for index in 0..root.children.len() {
-        if let XMLNode::Element(child) = &mut root.children[index] {
-            if element_name_matches(&child.name, name) {
-                if first_match_index.is_none() {
-                    child.children.clear();
-                    child.children.push(XMLNode::Text(value.to_string()));
-                    first_match_index = Some(index);
-                }
-            }
-        }
-    }
-
-    if let Some(keep_index) = first_match_index {
-        let mut index = root.children.len();
-        while index > 0 {
-            index -= 1;
-            if index == keep_index {
-                continue;
-            }
-
-            let should_remove = matches!(
-                root.children.get(index),
-                Some(XMLNode::Element(child)) if element_name_matches(&child.name, name)
-            );
-
-            if should_remove {
-                root.children.remove(index);
-            }
-        }
-        return;
-    }
-
-    let mut element = Element::new(name);
-    element.children.push(XMLNode::Text(value.to_string()));
-    root.children.push(XMLNode::Element(element));
-}
-
-fn parse_u32(input: &str) -> u32 {
-    input.trim().parse::<u32>().unwrap_or(0)
-}
-
-fn normalize_application_metadata(application: &str, app_version: &str) -> (String, String) {
-    let normalized_application = application.trim();
-    let normalized_version = app_version.trim();
-
-    if !normalized_version.is_empty() {
-        return (
-            normalized_application.to_string(),
-            normalized_version.to_string(),
-        );
-    }
-
-    let mut segments = normalized_application.split('_');
-    let app_name = segments.next().unwrap_or("").trim();
-    let embedded_version = segments.next().unwrap_or("").trim();
-
-    if !app_name.is_empty()
-        && !embedded_version.is_empty()
-        && embedded_version
-            .chars()
-            .next()
-            .is_some_and(|character| character.is_ascii_digit())
-    {
-        return (app_name.to_string(), embedded_version.to_string());
-    }
-
-    (normalized_application.to_string(), normalized_version.to_string())
-}
-
-const DEFAULT_CORE_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <dc:title></dc:title>
-  <dc:subject></dc:subject>
-  <dc:creator></dc:creator>
-  <cp:keywords></cp:keywords>
-  <dc:description></dc:description>
-  <cp:lastModifiedBy></cp:lastModifiedBy>
-  <cp:revision>1</cp:revision>
-  <dcterms:created xsi:type="dcterms:W3CDTF"></dcterms:created>
-  <dcterms:modified xsi:type="dcterms:W3CDTF"></dcterms:modified>
-  <cp:category></cp:category>
-  <cp:contentStatus></cp:contentStatus>
-  <cp:version></cp:version>
-  <dc:language>zh-CN</dc:language>
-  <dc:identifier></dc:identifier>
-  <dc:source></dc:source>
-</cp:coreProperties>
-"#;
-
-const DEFAULT_APP_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-  <Application>Microsoft Office Word</Application>
-  <AppVersion></AppVersion>
-  <Company></Company>
-  <Manager></Manager>
-  <Template></Template>
-  <TotalTime>0</TotalTime>
-  <Pages>0</Pages>
-  <Words>0</Words>
-  <Characters>0</Characters>
-  <CharactersWithSpaces>0</CharactersWithSpaces>
-  <Paragraphs>0</Paragraphs>
-  <Lines>0</Lines>
-</Properties>
-"#;
 
 fn external_navigation_plugin<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
     tauri::plugin::Builder::<R>::new("external-navigation")
@@ -1629,8 +1213,29 @@ pub fn run() {
             compare_metadata,
             write_text_file,
             write_binary_file,
-            set_window_theme
+            set_window_theme,
+            open_export_folder,
+            reveal_file_in_folder,
+            get_configuration,
+            get_configuration_overrides,
+            update_configuration,
+            update_configurations,
+            reset_configuration,
+            get_configuration_path
         ])
+        .setup(|app| {
+            let config_dir = app
+                .path()
+                .app_config_dir()
+                .unwrap_or_else(|_| PathBuf::from("."));
+            let configuration = Configuration::load(config_dir).unwrap_or_else(|err| {
+                log::error!("加载配置失败，回退到内置默认值: {err}");
+                Configuration::load(PathBuf::from(".")).expect("内置默认配置必须可解析")
+            });
+            documents::compare::rules::install_dictionaries(&configuration);
+            app.manage(configuration);
+            Ok(())
+        })
         .on_page_load(|webview, payload| {
             if webview.label() == "main" && matches!(payload.event(), PageLoadEvent::Finished) {
                 log::info!("main webview finished loading");

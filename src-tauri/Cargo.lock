@@ -2534,7 +2534,7 @@ dependencies = [
 
 [[package]]
 name = "office-metadata-editor"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "base64 0.22.1",
  "log",
@@ -2547,6 +2547,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-log",
  "tauri-plugin-opener",
+ "walkdir",
  "xmltree",
  "zip",
 ]

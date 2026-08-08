@@ -1,9 +1,9 @@
-import React from "react"
-import { OmPropertyPreview } from "@/components/om/om-property-preview"
-import type { DocumentFileType } from "@/types/metadata"
+import React from 'react';
+import { PropertyPreview } from '@/pages/editor-page/components/property-preview';
+import type { DocumentFileType } from '@/types/metadata';
 
 export interface EditorPageUnsupportedStatusProps {
-  fileType: DocumentFileType
+  fileType: DocumentFileType;
 }
 
 export const EditorPageUnsupportedStatus: React.FC<EditorPageUnsupportedStatusProps> = ({
@@ -11,18 +11,18 @@ export const EditorPageUnsupportedStatus: React.FC<EditorPageUnsupportedStatusPr
 }) => {
   return (
     <div className="flex h-full items-center justify-center p-6">
-      <OmPropertyPreview
+      <PropertyPreview
         title="当前文件暂不支持编辑"
         properties={[
           {
-            label: "文件类型",
+            label: '文件类型',
             value: fileType,
             span: 2,
           },
         ]}
       />
     </div>
-  )
-}
+  );
+};
 
-export default EditorPageUnsupportedStatus
+export default EditorPageUnsupportedStatus;

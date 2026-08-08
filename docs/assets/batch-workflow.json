@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "批量处理工作流",
+    "subtitle": "目录扫描 → 格式分派 → 可中断执行 → 逐条结果反馈",
+    "output": "batch-workflow.html"
+  },
+  "lanes": [
+    { "id": "ui", "label": "用户界面" },
+    { "id": "ipc", "label": "IPC 边界" },
+    { "id": "core", "label": "领域内核" },
+    { "id": "failures", "label": "异常处理", "variant": "exception" },
+    { "id": "disk", "label": "文件系统" },
+    { "id": "task", "label": "任务管理" }
+  ],
+  "phases": [
+    { "id": "prepare", "label": "准备", "fromCol": 0, "toCol": 1 },
+    { "id": "dispatch", "label": "校验 + 分派", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "execute", "label": "执行 + 反馈", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "gate", "label": "参数校验", "lane": "ipc", "fromCol": 2, "toCol": 3, "variant": "security" },
+    { "id": "work", "label": "格式适配写回", "lane": "core", "fromCol": 3, "toCol": 4, "variant": "emphasis" },
+    { "id": "recover", "label": "可重试项", "lane": "failures", "fromCol": 4, "toCol": 5, "variant": "security" }
+  ],
+  "mainPath": ["pick", "select", "validate", "dispatch", "write", "report"],
+  "nodes": [
+    { "id": "pick", "lane": "ui", "col": 0, "type": "external", "label": "选择目录", "sublabel": "用户操作" },
+    { "id": "select", "lane": "ui", "col": 1, "type": "frontend", "label": "勾选文件", "sublabel": "选择清理策略" },
+    { "id": "report", "lane": "ui", "col": 5, "type": "frontend", "label": "结果面板", "sublabel": "成功 / 失败分组" },
+
+    { "id": "validate", "lane": "ipc", "col": 2, "type": "security", "label": "参数校验", "sublabel": "路径安全 + 字段", "tag": "不信任前端" },
+    { "id": "dispatch", "lane": "ipc", "col": 3, "type": "backend", "label": "按格式分派", "sublabel": "docx/xlsx/pdf/doc" },
+
+    { "id": "scan", "lane": "core", "col": 1, "type": "backend", "label": "scan_directory", "sublabel": "递归扫描" },
+    { "id": "write", "lane": "core", "col": 4, "type": "backend", "label": "批量清理写回", "sublabel": "batch_clear_and_save", "tag": "逐条处理" },
+
+    { "id": "failed", "lane": "failures", "col": 4, "type": "security", "label": "失败项", "sublabel": "占用 / 只读 / 损坏" },
+    { "id": "retry", "lane": "failures", "col": 5, "type": "messagebus", "label": "重试路径", "sublabel": "不影响成功项" },
+
+    { "id": "files", "lane": "disk", "col": 1, "type": "database", "label": "源文件", "sublabel": "本地文档" },
+    { "id": "saved", "lane": "disk", "col": 4, "type": "database", "label": "已写回", "sublabel": "元数据已清理" },
+
+    { "id": "req", "lane": "task", "col": 3, "type": "messagebus", "label": "任务登记", "sublabel": "requestId", "tag": "可中断" },
+    { "id": "cancel", "lane": "task", "col": 5, "type": "security", "label": "取消 / 完成", "sublabel": "状态轮询" }
+  ],
+  "edges": [
+    { "from": "pick", "to": "select", "variant": "default" },
+    { "from": "select", "to": "validate", "label": "提交批量请求", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "route": "drop", "labelSegment": 1 },
+    { "from": "scan", "to": "select", "label": "文件条目", "variant": "dashed", "fromSide": "top", "toSide": "bottom", "route": "drop", "labelSegment": 1 },
+    { "from": "files", "to": "scan", "variant": "dashed", "role": "branch" },
+    { "from": "validate", "to": "dispatch", "variant": "security" },
+    { "from": "dispatch", "to": "req", "label": "登记长任务", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "route": "drop", "labelSegment": 1, "labelDy": -5 },
+    { "from": "dispatch", "to": "write", "variant": "emphasis", "fromSide": "left", "toSide": "left", "route": "return-left" },
+    { "from": "write", "to": "saved", "label": "原子写入", "variant": "default", "fromSide": "right", "toSide": "right", "route": "outside-right", "labelDy": 50 },
+    { "from": "write", "to": "failed", "label": "部分失败", "variant": "security", "role": "error", "fromSide": "bottom", "toSide": "top", "route": "straight", "labelDy": 24 },
+    { "from": "failed", "to": "retry", "variant": "dashed", "role": "branch" },
+    { "from": "write", "to": "report", "variant": "emphasis", "role": "return", "fromSide": "right", "toSide": "right", "route": "outside-right", "width": 1.2 },
+    { "from": "req", "to": "cancel", "label": "进度 / 中止", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom", "route": "bottom-channel", "labelSegment": 1 }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "分派设计",
+      "items": [
+        "按格式分派而非统一入口",
+        "四种格式写回语义差异大，强行抽象会让错误处理含糊",
+        "新增格式按命令模式补齐 5 个命令即可接入",
+        "上层页面与比对引擎无需改动"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "中断与容错",
+      "items": [
+        "长任务通过 requestId 轮询，可随时取消",
+        "逐条返回结果而非整体成功或失败",
+        "单个文件被占用不影响其余文件处理",
+        "失败项可单独重试"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "写回安全",
+      "items": [
+        "原子写入，失败不破坏源文件",
+        "路径与字段在 Rust 侧重新校验",
+        "只读文件引导改用另存为",
+        "工具会修改原始文件，安全不可妥协"
+      ]
+    }
+  ]
+}

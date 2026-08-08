@@ -3,16 +3,9 @@
   "version": "0.2",
   "language": "en",
   "languageId": "typescript,javascript",
-  "dictionaries": [
-    "powershell",
-    "typescript",
-    "node"
-  ],
+  "dictionaries": ["powershell", "typescript", "node"],
   "useGitignore": true,
-  "ignorePaths": [
-    ".gitignore",
-    "*.d.ts"
-  ],
+  "ignorePaths": [".gitignore", "*.d.ts"],
   "words": [
     "dcmitype",
     "dcterms",

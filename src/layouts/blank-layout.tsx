@@ -1,9 +1,9 @@
-import React from "react"
-import { ChromeWindowToolbar } from "../components/chrome/chrome-window-toolbar"
+import React from 'react';
+import { ChromeWindowToolbar } from '../components/chrome/chrome-window-toolbar';
 
 export interface BlankLayoutProps {
-  header?: React.ReactNode
-  enableWindowDragOverlay?: boolean
+  header?: React.ReactNode;
+  enableWindowDragOverlay?: boolean;
 }
 
 export const BlankLayout: React.FC<React.PropsWithChildren<BlankLayoutProps>> = ({
@@ -11,7 +11,7 @@ export const BlankLayout: React.FC<React.PropsWithChildren<BlankLayoutProps>> = 
   enableWindowDragOverlay,
   children,
 }) => {
-  const showWindowDragOverlay = enableWindowDragOverlay ?? !header
+  const showWindowDragOverlay = enableWindowDragOverlay ?? !header;
 
   return (
     <main className="h-full w-full bg-background">
@@ -21,7 +21,7 @@ export const BlankLayout: React.FC<React.PropsWithChildren<BlankLayoutProps>> = 
         <div className="flex min-h-0 flex-1 overflow-hidden bg-muted/55">{children}</div>
       </div>
     </main>
-  )
-}
+  );
+};
 
-export default BlankLayout
+export default BlankLayout;

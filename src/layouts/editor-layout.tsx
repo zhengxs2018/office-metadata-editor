@@ -1,15 +1,15 @@
-import React from "react"
+import React from 'react';
 
-import { OmFileTypeIcon } from "@/components/om/om-file-type-icon"
-import { PageLayout } from "@/layouts/page-layout"
-import { formatFileSize } from "@/lib/utils"
-import { useMetadata } from "@/contexts/metadata-context"
-import { ROUTES } from "@/router/paths"
+import { FileTypeIcon } from '@/components/base/file-type-icon';
+import { PageLayout } from '@/layouts/page-layout';
+import { formatFileSize } from '@/lib/utils';
+import { useMetadata } from '@/contexts/metadata-context';
+import { ROUTES } from '@/router/paths';
 
 export interface EditorLayoutProps {
-  showSidebarTrigger?: boolean
-  actions?: React.ReactNode
-  sidebar?: React.ReactNode
+  showSidebarTrigger?: boolean;
+  actions?: React.ReactNode;
+  sidebar?: React.ReactNode;
 }
 
 export const EditorLayout: React.FC<React.PropsWithChildren<EditorLayoutProps>> = ({
@@ -18,10 +18,10 @@ export const EditorLayout: React.FC<React.PropsWithChildren<EditorLayoutProps>> 
   actions,
   sidebar,
 }) => {
-  const { metadata } = useMetadata()
-  const fileType = metadata?.fileType ?? ""
-  const fileName = metadata?.fileName ?? ""
-  const fileSize = metadata?.fileSize ?? 0
+  const { metadata } = useMetadata();
+  const fileType = metadata?.fileType ?? '';
+  const fileName = metadata?.fileName ?? '';
+  const fileSize = metadata?.fileSize ?? 0;
 
   return (
     <PageLayout
@@ -32,7 +32,7 @@ export const EditorLayout: React.FC<React.PropsWithChildren<EditorLayoutProps>> 
       sidebar={sidebar}
       header={
         <div className="flex min-w-0 items-center gap-2">
-          <OmFileTypeIcon type={fileType} />
+          <FileTypeIcon extension={fileType} />
           <div className="flex min-w-0 flex-col leading-tight">
             <span className="truncate text-caption font-medium text-foreground">{fileName}</span>
             <span className="text-fine-print text-muted-foreground">
@@ -44,7 +44,7 @@ export const EditorLayout: React.FC<React.PropsWithChildren<EditorLayoutProps>> 
     >
       {children}
     </PageLayout>
-  )
-}
+  );
+};
 
-export default EditorLayout
+export default EditorLayout;

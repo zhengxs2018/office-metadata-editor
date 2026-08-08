@@ -1,6 +1,6 @@
-import React from "react"
-import { HugeIcon } from "@/components/icons/huge-icon"
-import { FileSpreadsheetIcon, File01Icon, Delete01Icon } from "@hugeicons/core-free-icons"
+import React from 'react';
+import { HugeIcon } from '@/components/icons/huge-icon';
+import { FileSpreadsheetIcon, File01Icon, Delete01Icon } from '@hugeicons/core-free-icons';
 
 import {
   Sidebar,
@@ -12,16 +12,16 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { cn } from "@/lib/utils"
-import type { LoadedDocument } from "@/contexts/metadata-context"
+} from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
+import type { LoadedDocument } from '@/contexts/metadata-context';
 
 export interface EditorPageSidebarProps {
-  files: Array<{ id: string; filePath: string; status?: string }>
-  documents: LoadedDocument[]
-  activeFileId: string | null
-  onSelectFile: (id: string) => void
-  onRemoveFile: (id: string) => void
+  files: Array<{ id: string; filePath: string; status?: string }>;
+  documents: LoadedDocument[];
+  activeFileId: string | null;
+  onSelectFile: (id: string) => void;
+  onRemoveFile: (id: string) => void;
 }
 
 /**
@@ -40,9 +40,9 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
       collapsible="icon"
       className="top-22 bottom-0 h-auto border-r"
       style={{
-        top: "var(--chrome-titlebar-height, 44px)",
+        top: 'var(--chrome-titlebar-height, 44px)',
         bottom: 0,
-        height: "calc(100svh - var(--chrome-titlebar-height, 44px))",
+        height: 'calc(100svh - var(--chrome-titlebar-height, 44px))',
       }}
     >
       <SidebarContent>
@@ -50,24 +50,28 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
           <SidebarGroupLabel>文件列表</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {uniqueByBasename(files).map(file => {
-                const doc = documents.find(d => d.id === file.id)
+              {uniqueByBasename(files).map((file, i) => {
+                const doc = documents.find(d => d.id === file.id);
                 const fileName =
-                  doc?.metadata.fileName || file.filePath.split(/[\\/]/).pop() || file.filePath
-                const iconObj = file.filePath.toLowerCase().endsWith(".xlsx")
+                  doc?.metadata.fileName || file.filePath.split(/[\\/]/).pop() || file.filePath;
+                const iconObj = file.filePath.toLowerCase().endsWith('.xlsx')
                   ? FileSpreadsheetIcon
-                  : File01Icon
-                const isActive = file.id === activeFileId
-                const status = file.status ?? doc?.status ?? "idle"
+                  : File01Icon;
+                const isActive = file.id === activeFileId;
+                const status = file.status ?? doc?.status ?? 'idle';
                 return (
-                  <SidebarMenuItem key={file.id}>
+                  <SidebarMenuItem
+                    key={file.id}
+                    className="animate-fade-in-up"
+                    style={{ ['--md-index' as string]: i, animationDelay: `calc(${i} * 28ms)` }}
+                  >
                     <SidebarMenuButton
                       isActive={isActive}
                       onClick={() => onSelectFile(file.id)}
                       tooltip={fileName}
                       className={cn(
-                        "w-full items-center justify-between gap-2",
-                        status === "error" && "text-destructive",
+                        'w-full items-center justify-between gap-2',
+                        status === 'error' && 'text-destructive',
                       )}
                     >
                       <HugeIcon icon={iconObj} size={16} />
@@ -80,39 +84,39 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
                       showOnHover
                       aria-label="删除文件"
                       onClick={e => {
-                        e.stopPropagation()
-                        onRemoveFile(file.id)
+                        e.stopPropagation();
+                        onRemoveFile(file.id);
                       }}
                     >
                       <HugeIcon icon={Delete01Icon} size={14} />
                     </SidebarMenuAction>
                   </SidebarMenuItem>
-                )
+                );
               })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  )
-}
+  );
+};
 
 function statusLabel(status: string): string {
-  if (status === "ready") return "就绪"
-  if (status === "error") return "失败"
-  if (status === "loading") return "加载中"
-  return "待处理"
+  if (status === 'ready') return '就绪';
+  if (status === 'error') return '失败';
+  if (status === 'loading') return '加载中';
+  return '待处理';
 }
 
 /** 按 basename 去重（同名文件保留第一个），避免跨目录同名重复显示。 */
 function uniqueByBasename<T extends { filePath: string }>(items: T[]): T[] {
-  const seen = new Set<string>()
-  const out: T[] = []
+  const seen = new Set<string>();
+  const out: T[] = [];
   for (const item of items) {
-    const base = item.filePath.split(/[\\/]/).pop() ?? item.filePath
-    if (seen.has(base)) continue
-    seen.add(base)
-    out.push(item)
+    const base = item.filePath.split(/[\\/]/).pop() ?? item.filePath;
+    if (seen.has(base)) continue;
+    seen.add(base);
+    out.push(item);
   }
-  return out
+  return out;
 }
