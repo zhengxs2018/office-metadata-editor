@@ -51,3 +51,22 @@ export async function trackedEmit<T>(event: string, payload?: T) {
 }
 
 export { isTauri };
+
+import type { ImageExif } from '@/types/image-exif';
+
+export async function parseImageExifFromPath(filePath: string): Promise<ImageExif> {
+  return trackedInvoke<ImageExif>('parse_image_exif_from_path', { filePath });
+}
+
+export async function saveImageExifToSource(
+  filePath: string,
+  requestId?: string,
+): Promise<string> {
+  return trackedInvoke<string>('save_image_exif_to_source', { filePath, requestId });
+}
+
+export async function saveImageExifAs(
+  filePath: string,
+): Promise<string | null> {
+  return trackedInvoke<string | null>('save_image_exif_as', { filePath });
+}

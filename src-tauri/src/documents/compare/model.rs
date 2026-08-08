@@ -56,6 +56,18 @@ pub struct CompareFileInput {
     pub xmp_creators: Vec<String>,
     #[serde(default)]
     pub has_hidden_markers: bool,
+    // 图片 EXIF 指纹（比对下一版启用）：从 `DocumentMetadata.image_exif` 派生，
+    // 当前由调用方在构造输入时填入，内核规则未消费。
+    #[serde(default)]
+    pub exif_camera_make: String,
+    #[serde(default)]
+    pub exif_camera_model: String,
+    #[serde(default)]
+    pub exif_camera_serial: String,
+    #[serde(default)]
+    pub exif_gps_hash: String,
+    #[serde(default)]
+    pub exif_capture_time: String,
 }
 
 /// 单条规则的运行时覆盖，供规则产品化（白名单 / 灵敏度）预留接口使用。

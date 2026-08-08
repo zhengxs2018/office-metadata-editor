@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layers01Icon, GitCompareIcon, ScanEyeIcon } from '@hugeicons/core-free-icons';
+import { Layers01Icon, GitCompareIcon, ScanEyeIcon, Camera01Icon } from '@hugeicons/core-free-icons';
 
 import { useFileContext } from '@/contexts/file-context';
 import { ThemeSwitch } from '@/components/chrome/theme-switch';
@@ -49,7 +49,7 @@ export const HomePage: React.FC = () => {
             </div>
           </section>
 
-          <section className="grid shrink-0 grid-cols-1 gap-3 md:grid-cols-3">
+          <section className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
             <EntryCard
               index={0}
               tone="orange"
@@ -80,6 +80,16 @@ export const HomePage: React.FC = () => {
               cta="查看隐藏信息"
               onClick={() => navigate(ROUTES.hidden)}
             />
+            <EntryCard
+              index={3}
+              tone="sky"
+              icon={Camera01Icon}
+              title="图片 EXIF"
+              description="读取与清理照片的拍摄设备、时间、GPS 定位等原始信息。"
+              badge="新增"
+              cta="查看 EXIF"
+              onClick={() => navigate(ROUTES.imageExif)}
+            />
           </section>
         </div>
       </div>
@@ -103,11 +113,16 @@ const TONE_STYLES: Record<string, { card: string; icon: string; badge: string }>
     icon: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
     badge: 'bg-emerald-600 text-white',
   },
+  sky: {
+    card: 'from-sky-500/15 to-sky-500/0 border-sky-500/20',
+    icon: 'bg-sky-500/10 text-sky-600 dark:text-sky-300',
+    badge: 'bg-sky-600 text-white',
+  },
 };
 
 const EntryCard: React.FC<{
   index: number;
-  tone: 'orange' | 'violet' | 'emerald';
+  tone: 'orange' | 'violet' | 'emerald' | 'sky';
   icon: React.ComponentProps<typeof HugeIcon>['icon'];
   title: string;
   description: string;

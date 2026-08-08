@@ -11,6 +11,7 @@ import { HomePage } from './pages/home-page';
 import { BatchPage } from './pages/batch-page';
 import { ComparePage } from './pages/compare-page';
 import { HiddenPage } from './pages/hidden-page';
+import { ImageExifPage } from './pages/image-exif-page';
 import { ROUTES } from './router/paths';
 
 export default function App() {
@@ -36,6 +37,7 @@ export default function App() {
                 <Route path={ROUTES.batch} element={<BatchPage />} />
                 <Route path={ROUTES.compare} element={<ComparePage />} />
                 <Route path={ROUTES.hidden} element={<HiddenPage />} />
+                <Route path={ROUTES.imageExif} element={<ImageExifPage />} />
               </Route>
             </Routes>
           </BrowserRouter>

@@ -122,6 +122,37 @@ pub const FIELDS: &[FieldSpec] = &[
         tier: FieldTier::Display,
         extract: |f| &f.total_time,
     },
+    // 图片 EXIF 指纹（比对下一版启用）：占位字段，当前规则未消费。
+    FieldSpec {
+        key: "exifCameraMake",
+        label: "相机厂商",
+        tier: FieldTier::Risk,
+        extract: |f| &f.exif_camera_make,
+    },
+    FieldSpec {
+        key: "exifCameraModel",
+        label: "相机型号",
+        tier: FieldTier::Risk,
+        extract: |f| &f.exif_camera_model,
+    },
+    FieldSpec {
+        key: "exifCameraSerial",
+        label: "机身序列号",
+        tier: FieldTier::Risk,
+        extract: |f| &f.exif_camera_serial,
+    },
+    FieldSpec {
+        key: "exifGpsHash",
+        label: "GPS 指纹",
+        tier: FieldTier::Risk,
+        extract: |f| &f.exif_gps_hash,
+    },
+    FieldSpec {
+        key: "exifCaptureTime",
+        label: "拍摄时间",
+        tier: FieldTier::Display,
+        extract: |f| &f.exif_capture_time,
+    },
 ];
 
 pub fn spec(key: &str) -> Option<&'static FieldSpec> {

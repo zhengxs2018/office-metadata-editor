@@ -23,6 +23,7 @@ pub mod export;
 use configuration::Configuration;
 
 use documents::{BatchSaveRequestItem, BatchSaveResultItem, DocumentMetadata};
+use documents::image::model::ImageExif;
 
 #[derive(Debug, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
@@ -1045,6 +1046,79 @@ fn set_window_theme(window: tauri::Window, theme: String) -> Result<(), String> 
     window.set_theme(next_theme).map_err(|err| err.to_string())
 }
 
+/// 读取图片 EXIF 元信息，供首页 / 编辑 / 隐私提取入口复用。
+#[tauri::command]
+fn parse_image_exif_from_path(file_path: String) -> Result<ImageExif, String> {
+    validate_request_for_paths(None, std::slice::from_ref(&file_path))?;
+    documents::image::parse_exif_from_path(file_path)
+}
+
+/// 原地清理图片 EXIF 元数据段（当前支持 JPEG/HEIC）。
+#[tauri::command]
+fn save_image_exif_to_source(
+    file_path: String,
+    request_id: Option<String>,
+) -> Result<String, String> {
+    validate_request_for_paths(request_id.as_deref(), std::slice::from_ref(&file_path))?;
+    documents::image::clear_exif_to_source(&file_path)?;
+    Ok(file_path)
+}
+
+/// 批量清理图片 EXIF 元数据段，逐条返回结果，失败项不影响成功项。
+#[tauri::command]
+fn batch_clear_and_save_image_exif(
+    items: Vec<BatchSaveRequestItem>,
+    request_id: Option<String>,
+) -> Vec<BatchSaveResultItem> {
+    items
+        .into_iter()
+        .map(|item| match save_image_exif_to_source(item.file_path.clone(), request_id.clone()) {
+            Ok(path) => BatchSaveResultItem {
+                file_path: path,
+                success: true,
+                error: None,
+            },
+            Err(err) => BatchSaveResultItem {
+                file_path: item.file_path,
+                success: false,
+                error: Some(err),
+            },
+        })
+        .collect()
+}
+
+/// 清理后另存图片副本，保留原图。
+#[tauri::command]
+fn save_image_exif_as(
+    app_handle: tauri::AppHandle,
+    file_path: String,
+) -> Result<Option<String>, String> {
+    let source_path = PathBuf::from(&file_path);
+    let source_file_name = source_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("image.jpg");
+
+    let selected = app_handle
+        .dialog()
+        .file()
+        .set_title("另存为（已清理 EXIF）")
+        .set_file_name(source_file_name)
+        .blocking_save_file();
+
+    let target = match selected {
+        Some(FilePath::Path(p)) => p.to_string_lossy().to_string(),
+        Some(FilePath::Url(u)) => u.path().to_string(),
+        None => return Ok(None),
+    };
+
+    let bytes = fs::read(&file_path).map_err(|e| e.to_string())?;
+    let stripped = documents::image::clear_exif_to_source_bytes(&bytes)
+        .map_err(|e| format!("清理失败: {e}"))?;
+    fs::write(&target, &stripped).map_err(|e| e.to_string())?;
+    Ok(Some(target))
+}
+
 /// 打开导出文件所在目录。
 ///
 /// 受 `engine.export.revealCommandEnabled` 开关约束：关闭时静默跳过，
@@ -1221,7 +1295,11 @@ pub fn run() {
             update_configuration,
             update_configurations,
             reset_configuration,
-            get_configuration_path
+            get_configuration_path,
+            parse_image_exif_from_path,
+            save_image_exif_to_source,
+            batch_clear_and_save_image_exif,
+            save_image_exif_as
         ])
         .setup(|app| {
             let config_dir = app

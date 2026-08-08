@@ -45,6 +45,8 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
   const [hovering, setHovering] = useState(false);
   const zoneRef = useRef<HTMLDivElement | null>(null);
 
+  const extensions = Array.isArray(accept) ? accept : DEFAULT_ACCEPT;
+
   const busy = externalBusy ?? internalBusy;
   const hint = externalHint ?? internalHint;
 
@@ -66,7 +68,7 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
       setInternalBusy(true);
       setInternalHint(null);
 
-      const extSet = new Set(accept.map(e => e.toLowerCase()));
+      const extSet = new Set(extensions.map(e => e.toLowerCase()));
       const collected: string[] = [];
 
       for (const p of paths) {
@@ -77,7 +79,7 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
           continue;
         }
         // not a supported file → try as directory
-        const listed = await scanFolder(p, accept);
+        const listed = await scanFolder(p, extensions);
         collected.push(...listed);
       }
 
@@ -90,7 +92,7 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
       await onFilesSelected(collected);
       setInternalBusy(false);
     },
-    [accept, onFilesSelected],
+    [extensions, onFilesSelected],
   );
 
   const handleHover = useCallback(
@@ -112,7 +114,7 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
     try {
       const selected = await open({
         multiple: true,
-        filters: [{ name: '支持的文档', extensions: accept }],
+        filters: [{ name: '支持的文档', extensions: extensions }],
       });
       if (!selected) {
         setInternalBusy(false);
@@ -124,7 +126,7 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
       setInternalHint('选择文件失败');
       setInternalBusy(false);
     }
-  }, [accept, ingestPaths]);
+  }, [extensions, ingestPaths]);
 
   const handleZoneClick = () => {
     if (busy) return;
@@ -171,7 +173,7 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
               {hovering ? '松开以导入文件' : '点击或拖拽文件/文件夹至此处'}
             </p>
             <p className={cn('text-fine-print aux-text')}>
-              支持 {accept.map(e => e.toUpperCase()).join(' / ')}
+              支持 {extensions.map(e => e.toUpperCase()).join(' / ')}
             </p>
           </div>
         </>

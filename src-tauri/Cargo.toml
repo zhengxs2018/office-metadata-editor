@@ -31,6 +31,7 @@ lopdf = "0.34"
 pinyin = "0.11"
 base64 = "0.22"
 walkdir = "2.5"
+kamadak-exif = "0.6"
 
 
 [profile.dev]

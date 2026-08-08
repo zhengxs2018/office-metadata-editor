@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::documents::image::model::ImageExif;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DocumentProperties {
@@ -67,6 +69,9 @@ pub struct DocumentMetadata {
     pub xmp_creators: Vec<String>,
     #[serde(default)]
     pub has_hidden_markers: bool,
+    /// 图片 EXIF 提取结果（仅图片文件有值），向后兼容旧文档为 None。
+    #[serde(default)]
+    pub image_exif: Option<ImageExif>,
 }
 
 #[derive(Debug, Serialize)]
@@ -153,6 +158,7 @@ impl DocumentMetadata {
             revision_authors: Vec::new(),
             xmp_creators: Vec::new(),
             has_hidden_markers: false,
+            image_exif: None,
         }
     }
 

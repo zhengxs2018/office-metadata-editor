@@ -5,6 +5,7 @@ export const ROUTES = {
   batch: '/batch',
   compare: '/compare',
   hidden: '/hidden',
+  imageExif: '/image-exif',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

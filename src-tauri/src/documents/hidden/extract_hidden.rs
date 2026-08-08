@@ -19,8 +19,28 @@ pub fn extract_hidden_metadata(meta: &mut DocumentMetadata, file_path: &str) {
     match ext.as_str() {
         "pdf" => extract_pdf_hidden(meta, file_path),
         "xlsx" | "xls" | "docx" | "doc" => extract_ooxml_hidden(meta, file_path),
+        "jpg" | "jpeg" | "heic" | "heif" | "png" | "webp" => {
+            extract_image_hidden(meta, file_path)
+        }
         _ => {}
     }
+}
+
+/// 图片隐私提取：识别 GPS 定位、机身序列号、相机/软件指纹等高危痕迹。
+/// 不清理，仅标记，供隐私页展示与比对内核使用。
+fn extract_image_hidden(meta: &mut DocumentMetadata, file_path: &str) {
+    let Ok(exif) = crate::documents::image::parse_exif_from_path(file_path.to_string()) else {
+        return;
+    };
+
+    let has_gps = exif.gps.is_some();
+    let has_serial = !exif.camera.serial_number.is_empty();
+    let has_camera_id = !exif.camera.make.is_empty() || !exif.camera.model.is_empty();
+    if has_gps || has_serial || has_camera_id {
+        meta.has_hidden_markers = true;
+    }
+
+    meta.image_exif = Some(exif);
 }
 
 fn extract_pdf_hidden(meta: &mut DocumentMetadata, file_path: &str) {
