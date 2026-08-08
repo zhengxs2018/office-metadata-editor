@@ -21,7 +21,7 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
   actions,
   children,
 }) => (
-  <section className="mb-8 scroll-mt-24">
+  <section className="mb-8 animate-fade-in-up scroll-mt-24">
     <header className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border/40 pb-2">
       <h2 className="text-ink flex items-baseline gap-3 font-heading text-caption font-semibold tracking-wide uppercase">
         {index ? (

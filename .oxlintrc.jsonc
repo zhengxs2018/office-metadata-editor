@@ -25,9 +25,9 @@
   "ignorePatterns": [
     "**/node_modules/**",
     "**/dist/**",
-    "**/dist-types/**",
-    "**/uni.js",
-    "**/uni.d.ts",
-    "**/pont-template.ts",
+    "**/docs/**/*.html",
+    "**/docs/**/*.json",
+    "**/docs/**/*.json",
+    "**/src/components/ui/**",
   ],
 }

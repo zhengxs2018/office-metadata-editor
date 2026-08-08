@@ -72,6 +72,11 @@ export const ComparePage: React.FC = () => {
 
   const readyDocs = useMemo(() => documents.filter(doc => doc.status === 'ready'), [documents]);
 
+  const docPaths = useMemo(
+    () => Object.fromEntries(readyDocs.map(doc => [doc.id, doc.filePath])),
+    [readyDocs],
+  );
+
   const allCompanies = useMemo(() => Object.values(companyById), [companyById]);
 
   const companiesWithFiles = useMemo(
@@ -80,8 +85,6 @@ export const ComparePage: React.FC = () => {
   );
 
   const canRun = companiesWithFiles.length >= 2 && !comparing;
-  // 有对比结果时隐藏上传卡片，避免用户误以为「没结果」；清空后回到上传态。
-  const showUpload = !result;
 
   const handleRun = useCallback(async () => {
     if (!canRun) return;
@@ -132,9 +135,9 @@ export const ComparePage: React.FC = () => {
       }
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {showUpload || error ? (
+        {!result || error ? (
           <div className="mx-auto w-full max-w-7xl p-4 sm:px-6">
-            {showUpload ? (
+            {!result ? (
               <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
                 <DropZone mode="directory" />
                 {allCompanies.map((company, idx) => (
@@ -152,7 +155,7 @@ export const ComparePage: React.FC = () => {
 
         {result ? (
           <div className="border-t border-border/60">
-            <CompareWorkbench result={result} />
+            <CompareWorkbench result={result} docPaths={docPaths} />
           </div>
         ) : null}
       </div>

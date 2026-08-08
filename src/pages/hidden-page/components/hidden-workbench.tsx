@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { FileSpreadsheetIcon } from '@hugeicons/core-free-icons';
 import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
+import { toast } from 'sonner';
 
 import { HugeIcon } from '@/components/icons/huge-icon';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import {
   buildHiddenWorkbookFileName,
 } from '@/lib/documents/hidden/export';
 import { buildStats, buildTraceRows, collectAuthors } from '@/lib/documents/hidden/selectors';
+import { notifyExportSuccess } from '@/lib/configuration/reveal';
 import { HiddenSummary } from './hidden-summary';
 import { HiddenTraceList } from './hidden-trace-list';
 
@@ -46,6 +48,11 @@ export const HiddenWorkbench: React.FC<HiddenWorkbenchProps> = ({ documents }) =
         filePath: target,
         base64Data: base64,
       });
+      await notifyExportSuccess(target);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('导出隐藏信息报告失败:', error);
+      toast.error('导出失败', { description: message });
     } finally {
       setExporting(false);
     }

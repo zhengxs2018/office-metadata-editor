@@ -1,6 +1,5 @@
 pub mod align;
 pub mod diff;
-pub mod extract_hidden;
 pub mod fields;
 pub mod model;
 pub mod normalize;
@@ -13,7 +12,6 @@ use model::{
     DiffState, FieldTier, RiskLevel, DISCLAIMER, SCHEMA_VERSION,
 };
 
-/// 对比内核入口：对齐 → 字段差异 → 规则判定 → 证据链聚合。
 pub fn run_compare(files: &[CompareFileInput], options: &CompareOptions) -> CompareResult {
     let (raw_groups, unmatched) = align::align_files(files, options.fuzzy_match_floor());
 
@@ -102,14 +100,36 @@ pub fn run_compare(files: &[CompareFileInput], options: &CompareOptions) -> Comp
         file_count: files.len() as u32,
         group_count: groups.len() as u32,
         unmatched_count: unmatched.len() as u32,
-        high_count: pair_risks.iter().filter(|p| p.level == RiskLevel::High).count() as u32,
+        high_count: pair_risks
+            .iter()
+            .filter(|p| p.level == RiskLevel::High)
+            .count() as u32,
         medium_count: pair_risks
             .iter()
             .filter(|p| p.level == RiskLevel::Medium)
             .count() as u32,
-        low_count: pair_risks.iter().filter(|p| p.level == RiskLevel::Low).count() as u32,
+        low_count: pair_risks
+            .iter()
+            .filter(|p| p.level == RiskLevel::Low)
+            .count() as u32,
         diff_field_count,
     };
+
+    let files = files
+        .iter()
+        .map(|f| model::FileMetaSnapshot {
+            doc_id: f.id.clone(),
+            company_id: f.company_id.clone(),
+            company_name: f.company_name.clone(),
+            file_name: f.file_name.clone(),
+            creator: f.creator.clone(),
+            last_modified_by: f.last_modified_by.clone(),
+            app_company: f.app_company.clone(),
+            manager: f.manager.clone(),
+            application: f.application.clone(),
+            has_hidden_markers: f.has_hidden_markers,
+        })
+        .collect();
 
     CompareResult {
         schema_version: SCHEMA_VERSION,
@@ -121,11 +141,12 @@ pub fn run_compare(files: &[CompareFileInput], options: &CompareOptions) -> Comp
         findings,
         pair_risks,
         stats,
+        files,
     }
 }
 
-/// 判定某字段是否参与风险规则，供前端着色策略使用。
 pub fn is_risk_field(key: &str) -> bool {
-    fields::spec(key).map(|s| s.tier == FieldTier::Risk).unwrap_or(false)
+    fields::spec(key)
+        .map(|s| s.tier == FieldTier::Risk)
+        .unwrap_or(false)
 }
-

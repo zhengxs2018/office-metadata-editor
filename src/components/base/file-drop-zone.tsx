@@ -152,7 +152,7 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
       )}
     >
       {busy ? (
-        <div className="flex flex-col items-center gap-3">
+        <div className="animate-fade-in flex flex-col items-center gap-3">
           <HugeIcon icon={Loading02Icon} size={28} className="animate-spin text-muted-foreground" />
           <p className="text-fine-print text-muted-foreground">正在解析文件…</p>
         </div>
@@ -176,7 +176,9 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
           </div>
         </>
       )}
-      {hint ? <p className="text-fine-print text-muted-foreground">{hint}</p> : null}
+      {hint ? (
+        <p className="animate-fade-in text-fine-print text-muted-foreground">{hint}</p>
+      ) : null}
     </div>
   );
 };

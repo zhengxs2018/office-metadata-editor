@@ -34,7 +34,10 @@ pub fn align_files(
     // 阶段一：按精确文件名分桶，同公司重名按出现序拆到不同组。
     let mut exact_buckets: BTreeMap<&str, Vec<usize>> = BTreeMap::new();
     for (idx, file) in files.iter().enumerate() {
-        exact_buckets.entry(file.file_name.as_str()).or_default().push(idx);
+        exact_buckets
+            .entry(file.file_name.as_str())
+            .or_default()
+            .push(idx);
     }
 
     for (name, indices) in exact_buckets {
@@ -158,4 +161,3 @@ pub fn align_files(
     groups.sort_by(|a, b| a.label.cmp(&b.label));
     (groups, unmatched)
 }
-

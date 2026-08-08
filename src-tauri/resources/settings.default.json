@@ -1,0 +1,94 @@
+{
+  "ui": {
+    "export": {
+      "revealAfterExport": true,
+      "showSuccessToast": true
+    }
+  },
+  "engine": {
+    "export": {
+      "revealCommandEnabled": true
+    },
+    "compare": {
+      "closeTimestampMinutes": 30,
+      "personThreshold": 0.8,
+      "companySimilarThreshold": 0.7,
+      "fields": {
+        "stopWords": [
+          "",
+          "admin",
+          "administrator",
+          "user",
+          "users",
+          "用户",
+          "null",
+          "none",
+          "n/a",
+          "na",
+          "未知",
+          "无",
+          "office",
+          "microsoftoffice",
+          "wps",
+          "wpsoffice",
+          "microsoft",
+          "windows",
+          "lenovo",
+          "dell",
+          "hp",
+          "asus",
+          "acer",
+          "pc",
+          "test",
+          "temp",
+          "default",
+          "owner",
+          "guest",
+          "author",
+          "作者"
+        ],
+        "templateStopWords": [
+          "normal.dotm",
+          "normal.dot",
+          "normal.dotx",
+          "normal",
+          "book.xltx",
+          "book.xlt",
+          ""
+        ],
+        "genericAuthors": ["administrator", "admin", "root", "guest", "user", "system", "owner"]
+      },
+      "labels": {
+        "stopWords": [
+          "模板",
+          "template",
+          "通用",
+          "standard",
+          "稿",
+          "终稿",
+          "最终版",
+          "clean",
+          "final",
+          "正式",
+          "版"
+        ]
+      },
+      "folders": {
+        "stopWords": [
+          "甄选",
+          "公开",
+          "应答",
+          "招标",
+          "合同",
+          "模板",
+          "附件",
+          "唱标",
+          "技术规范",
+          "标段",
+          "报价一览",
+          "项目"
+        ]
+      }
+    }
+  }
+}

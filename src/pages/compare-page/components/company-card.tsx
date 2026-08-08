@@ -106,7 +106,7 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({ company, index }) => {
   return (
     <div
       className={cn(
-        'flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border-2',
+        'flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border-2 transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md',
         borderColor,
       )}
     >
@@ -165,13 +165,13 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({ company, index }) => {
               </Button>
             </div>
             <ScrollArea className="min-h-0 flex-1">
-              <ul className="space-y-0.5">
-                {slotDocs.map(doc => {
+              <ul className="stagger space-y-0.5" style={{ ['--md-stagger' as string]: 22 }}>
+                {slotDocs.map((doc, i) => {
                   const Icon = iconForExt(doc.filePath);
                   const isReady = doc.status === 'ready';
                   const isError = doc.status === 'error';
                   return (
-                    <li key={doc.id}>
+                    <li key={doc.id} style={{ ['--md-index' as string]: i }}>
                       <div
                         className={cn(
                           'flex items-center gap-2 rounded-lg px-2 py-1 text-fine-print',
@@ -196,7 +196,7 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({ company, index }) => {
         )}
 
         {hint ? (
-          <p className="mt-2 inline-flex items-center gap-1 text-fine-print text-warning-foreground">
+          <p className="mt-2 inline-flex animate-fade-in items-center gap-1 text-fine-print text-warning-foreground">
             <HugeIcon icon={AlertCircleIcon} size={12} />
             {hint}
           </p>

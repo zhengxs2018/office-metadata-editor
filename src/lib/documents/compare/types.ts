@@ -137,6 +137,19 @@ export interface CompanyPairRisk {
   summary: string;
 }
 
+export interface FileMetaSnapshot {
+  docId: string;
+  companyId: string;
+  companyName: string;
+  fileName: string;
+  creator: string;
+  lastModifiedBy: string;
+  appCompany: string;
+  manager: string;
+  application: string;
+  hasHiddenMarkers: boolean;
+}
+
 export interface CompareStats {
   companyCount: number;
   fileCount: number;
@@ -158,6 +171,7 @@ export interface CompareResult {
   findings: RiskFinding[];
   pairRisks: CompanyPairRisk[];
   stats: CompareStats;
+  files: FileMetaSnapshot[];
 }
 
 export const EMPTY_COMPARE_RESULT: CompareResult = {
@@ -169,6 +183,7 @@ export const EMPTY_COMPARE_RESULT: CompareResult = {
   unmatched: [],
   findings: [],
   pairRisks: [],
+  files: [],
   stats: {
     companyCount: 0,
     fileCount: 0,

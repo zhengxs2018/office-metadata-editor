@@ -37,3 +37,16 @@ export const MATCH_TONE: Record<string, string> = {
   fuzzy: 'text-amber-700',
   manual: 'text-violet-700',
 };
+
+/** 缺失单元格计数着色（对齐矩阵中「缺」的反向提示）。 */
+export const MISSING_TONE = 'text-orange-700';
+
+/** 积极态（全部对齐、无风险）的中性绿，避免裸写 emerald 散落。 */
+export const POSITIVE_TONE = {
+  wrap: 'border-emerald-300/50 bg-emerald-50/40',
+  text: 'text-emerald-700',
+  icon: 'text-emerald-600',
+};
+
+/** 中性信息填充（卡片/面板底色），替代装饰性彩虹索引色。 */
+export const NEUTRAL_TONE = 'border-border/50 bg-muted/30';

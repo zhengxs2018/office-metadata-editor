@@ -28,6 +28,7 @@ import {
   buildFileName,
 } from '@/lib/documents/export/utils';
 import type { ExportFormat, ExportResult, ExportFieldOption } from '@/types/export';
+import { notifyExportSuccess } from '@/lib/configuration/reveal';
 
 export type { ExportFormat, ExportResult, ExportFieldOption } from '@/types/export';
 
@@ -115,10 +116,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
         await invoke('write_text_file', { filePath: target, content });
       }
       setResult({ success: true, outputPath: target, exportedCount: documents.length });
-      toast.success('导出成功', {
-        description: `已导出 ${documents.length} 个文件的元数据至 ${target}`,
-      });
-      await invoke('open_export_folder', { filePath: target }).catch(() => {});
+      await notifyExportSuccess(target, `已导出 ${documents.length} 个文件的元数据`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error('导出失败:', error);

@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use lopdf::{Dictionary, Document, Object, ObjectId, StringFormat};
 
+use crate::documents::hidden::extract_hidden::extract_hidden_metadata;
 use crate::export::{pdf as pdf_types, DocumentMetadata};
 
 pub fn parse_metadata_from_path(file_path: String) -> Result<DocumentMetadata, String> {
@@ -27,7 +28,6 @@ pub fn parse_metadata_from_path(file_path: String) -> Result<DocumentMetadata, S
         properties.creator = read_text(info, b"Author");
         properties.keywords = read_text(info, b"Keywords");
         properties.description = read_text(info, b"Description");
-        properties.last_modified_by = read_text(info, b"Producer");
         properties.created = date_to_iso(&read_text(info, b"CreationDate"));
         properties.modified = date_to_iso(&read_text(info, b"ModDate"));
 
@@ -37,20 +37,22 @@ pub fn parse_metadata_from_path(file_path: String) -> Result<DocumentMetadata, S
         metadata.core_properties.dc_keywords = properties.keywords.clone();
         metadata.core_properties.dc_description = properties.description.clone();
 
-        let producer = read_text(info, b"Creator");
+        let creator_app = read_text(info, b"Creator");
+        if !creator_app.trim().is_empty() {
+            metadata.app_properties.application = creator_app;
+        }
+
+        let producer = read_text(info, b"Producer");
         if !producer.trim().is_empty() {
-            metadata.app_properties.application = producer;
+            metadata.app_properties.company = producer;
         }
     }
 
-    crate::documents::extract_hidden_metadata(&mut metadata, &file_path);
+    extract_hidden_metadata(&mut metadata, &file_path);
     Ok(metadata)
 }
 
-pub fn write_metadata_to_path(
-    file_path: &str,
-    metadata: &DocumentMetadata,
-) -> Result<(), String> {
+pub fn write_metadata_to_path(file_path: &str, metadata: &DocumentMetadata) -> Result<(), String> {
     let mut document = Document::load(file_path).map_err(|err| err.to_string())?;
     let properties = &metadata.document_properties;
     let info = info_dict_mut(&mut document)?;
@@ -60,9 +62,15 @@ pub fn write_metadata_to_path(
     write_text(info, b"Author", &properties.creator);
     write_text(info, b"Keywords", &properties.keywords);
     write_text(info, b"Description", &properties.description);
-    write_text(info, b"Producer", &properties.last_modified_by);
     write_text(info, b"CreationDate", &iso_to_date(&properties.created));
     write_text(info, b"ModDate", &iso_to_date(&properties.modified));
+
+    if !metadata.app_properties.application.trim().is_empty() {
+        write_text(info, b"Creator", &metadata.app_properties.application);
+    }
+    if !metadata.app_properties.company.trim().is_empty() {
+        write_text(info, b"Producer", &metadata.app_properties.company);
+    }
 
     document.save(file_path).map_err(|err| err.to_string())?;
     Ok(())
@@ -77,7 +85,9 @@ fn info_dict(document: &Document) -> Result<Option<&Dictionary>, String> {
         return Ok(None);
     };
 
-    let object = document.get_object(info_id).map_err(|err| err.to_string())?;
+    let object = document
+        .get_object(info_id)
+        .map_err(|err| err.to_string())?;
     let Object::Dictionary(info) = object else {
         return Ok(None);
     };

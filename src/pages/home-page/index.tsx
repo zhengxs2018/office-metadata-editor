@@ -51,6 +51,7 @@ export const HomePage: React.FC = () => {
 
           <section className="grid shrink-0 grid-cols-1 gap-3 md:grid-cols-3">
             <EntryCard
+              index={0}
               tone="orange"
               icon={GitCompareIcon}
               title="对比视图"
@@ -60,6 +61,7 @@ export const HomePage: React.FC = () => {
               onClick={() => navigate(ROUTES.compare)}
             />
             <EntryCard
+              index={1}
               tone="violet"
               icon={Layers01Icon}
               title="批量处理"
@@ -69,6 +71,7 @@ export const HomePage: React.FC = () => {
               onClick={() => navigate(ROUTES.batch)}
             />
             <EntryCard
+              index={2}
               tone="emerald"
               icon={ScanEyeIcon}
               title="隐藏信息提取"
@@ -103,6 +106,7 @@ const TONE_STYLES: Record<string, { card: string; icon: string; badge: string }>
 };
 
 const EntryCard: React.FC<{
+  index: number;
   tone: 'orange' | 'violet' | 'emerald';
   icon: React.ComponentProps<typeof HugeIcon>['icon'];
   title: string;
@@ -110,7 +114,7 @@ const EntryCard: React.FC<{
   badge: string;
   cta: string;
   onClick: () => void;
-}> = ({ tone, icon: Icon, title, description, badge, cta, onClick }) => {
+}> = ({ index, tone, icon: Icon, title, description, badge, cta, onClick }) => {
   const style = TONE_STYLES[tone];
 
   return (
@@ -118,9 +122,10 @@ const EntryCard: React.FC<{
       type="button"
       onClick={onClick}
       className={cn(
-        'group relative flex flex-col rounded-xl border bg-linear-to-br p-4 text-left transition-shadow hover:shadow-md',
+        'group relative flex flex-col rounded-xl border bg-linear-to-br p-4 text-left transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md animate-fade-in-up',
         style.card,
       )}
+      style={{ animationDelay: `calc(${index} * 50ms)` }}
     >
       <div className="flex items-start justify-between">
         <span className={cn('flex h-8 w-8 items-center justify-center rounded-md', style.icon)}>

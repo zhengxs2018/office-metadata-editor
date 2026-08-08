@@ -12,85 +12,87 @@ use super::normalize::{
 pub const HIGH_SCORE: f64 = 70.0;
 pub const MEDIUM_SCORE: f64 = 35.0;
 
-/// 比对模块的分类停用词词典（cspell 风格字典表）。
+/// 比对模块的分类停用词词典。
 ///
-/// 把散落在各处的"遇到即忽略/排除"词组集中为可扩展的字典，
-/// 配置键采用 vscode settings.json 风格（如 `compare.fields.stop_words`），
-/// 便于后续在设置页面中以配置项形式呈现与编辑。
-/// 新增一类停用词只需在此追加一项，引用方通过 [`stop_words_for`] 读取。
-pub struct StopWordDict {
-    /// 配置键，设置页面直接复用
+/// 词条本身已迁移到配置中心（`resources/settings.default.json` 的
+/// `engine.compare.*.stopWords`），用户可通过 `settings.json` 覆盖。
+/// 这里只保留「字典元信息 + 运行期缓存」，由 [`install_dictionaries`]
+/// 在应用启动时从 [`Configuration`] 装载一次。
+use std::sync::OnceLock;
+
+use crate::configuration::Configuration;
+
+/// 字典元信息：配置键 ↔ 展示名 ↔ 作用域。
+pub struct StopWordDictMeta {
+    /// 配置键（点分路径），设置页面直接复用
     pub id: &'static str,
     /// 展示名，设置页面用
     pub label: &'static str,
     /// 作用域：字段级归一化 / 目录级识别
     pub scope: &'static str,
-    /// 停用词词组（小写存储，匹配时忽略大小写）
-    pub words: &'static [&'static str],
 }
 
-/// 分类停用词词典表。
-pub const STOP_WORD_DICTS: &[StopWordDict] = &[
-    StopWordDict {
-        id: "compare.fields.stop_words",
+/// 字典登记表。新增一类停用词：此处加一项 + 默认配置加一段。
+pub const STOP_WORD_DICTS: &[StopWordDictMeta] = &[
+    StopWordDictMeta {
+        id: "engine.compare.fields.stopWords",
         label: "字段归一化停用词",
         scope: "field",
-        words: &[
-            "",
-            "admin",
-            "administrator",
-            "user",
-            "users",
-            "用户",
-            "null",
-            "none",
-            "n/a",
-            "na",
-            "未知",
-            "无",
-            "office",
-            "microsoftoffice",
-            "wps",
-            "wpsoffice",
-            "microsoft",
-            "windows",
-            "lenovo",
-            "dell",
-            "hp",
-            "asus",
-            "acer",
-            "pc",
-            "test",
-            "temp",
-            "default",
-            "owner",
-            "guest",
-            "author",
-            "作者",
-        ],
     },
-    StopWordDict {
-        id: "compare.fields.template",
+    StopWordDictMeta {
+        id: "engine.compare.fields.templateStopWords",
         label: "通用模板名",
         scope: "field",
-        words: &[
-            "normal.dotm",
-            "normal.dot",
-            "normal.dotx",
-            "normal",
-            "book.xltx",
-            "book.xlt",
-            "",
-        ],
+    },
+    StopWordDictMeta {
+        id: "engine.compare.fields.genericAuthors",
+        label: "通用作者名",
+        scope: "field",
+    },
+    StopWordDictMeta {
+        id: "engine.compare.labels.stopWords",
+        label: "标签停用词",
+        scope: "label",
+    },
+    StopWordDictMeta {
+        id: "engine.compare.folders.stopWords",
+        label: "目录识别停用词",
+        scope: "folder",
     },
 ];
 
+/// 运行期词典缓存：配置键 → 词条集合。
+static DICTIONARIES: OnceLock<BTreeMap<String, Vec<String>>> = OnceLock::new();
+
+/// 从配置中心装载全部停用词词典。应用启动时调用一次。
+///
+/// 重复调用会被忽略（[`OnceLock`] 语义），保证引擎在整个进程生命周期内
+/// 看到一致的词典，避免比对过程中词典突变导致结果不可复现。
+pub fn install_dictionaries(config: &Configuration) {
+    let _ = DICTIONARIES.set(
+        STOP_WORD_DICTS
+            .iter()
+            .map(|meta| {
+                let words: Vec<String> = config
+                    .get(meta.id, Vec::<String>::new())
+                    .into_iter()
+                    .map(|w| w.trim().to_lowercase())
+                    .collect();
+                (meta.id.to_string(), words)
+            })
+            .collect(),
+    );
+}
+
 /// 读取指定字典的停用词列表（已转为小写）。
-pub fn stop_words_for(id: &str) -> &'static [&'static str] {
-    STOP_WORD_DICTS
-        .iter()
-        .find(|d| d.id == id)
-        .map(|d| d.words)
+///
+/// 若 [`install_dictionaries`] 尚未调用（如单元测试直接调用引擎），
+/// 返回空表而非 panic，此时归一化退化为「不剔除停用词」。
+pub fn stop_words_for(id: &str) -> &'static [String] {
+    DICTIONARIES
+        .get()
+        .and_then(|dicts| dicts.get(id))
+        .map(Vec::as_slice)
         .unwrap_or(&[])
 }
 
@@ -282,8 +284,14 @@ pub fn evaluate(
                 continue;
             }
 
-            for (fa, va) in [("creator", &a.creator), ("lastModifiedBy", &a.last_modified_by)] {
-                for (fb, vb) in [("creator", &b.creator), ("lastModifiedBy", &b.last_modified_by)] {
+            for (fa, va) in [
+                ("creator", &a.creator),
+                ("lastModifiedBy", &a.last_modified_by),
+            ] {
+                for (fb, vb) in [
+                    ("creator", &b.creator),
+                    ("lastModifiedBy", &b.last_modified_by),
+                ] {
                     if let Some((score, tag, entity_key)) = check_person_match(va, vb) {
                         ctx.emit(
                             &R_SAME_PERSON,
@@ -370,9 +378,10 @@ pub fn evaluate(
                 }
             }
 
-            if let (Some(ta), Some(tb)) =
-                (normalize_template(&a.template), normalize_template(&b.template))
-            {
+            if let (Some(ta), Some(tb)) = (
+                normalize_template(&a.template),
+                normalize_template(&b.template),
+            ) {
                 if ta == tb {
                     ctx.emit(
                         &R_SAME_TEMPLATE,
@@ -529,18 +538,16 @@ fn shared_trace_authors(a: &CompareFileInput, b: &CompareFileInput) -> Vec<Strin
     };
     let sa = collect(a);
     let sb = collect(b);
-    sa.keys()
-        .filter(|k| sb.contains_key(*k))
-        .cloned()
-        .collect()
+    sa.keys().filter(|k| sb.contains_key(*k)).cloned().collect()
 }
 
-/// 通用账户名不具鉴别力（与 author 停用词一致，但此处仅用于痕迹作者）。
+/// 通用账户名不具鉴别力（仅用于痕迹作者），词条来自
+/// `engine.compare.fields.genericAuthors`。
 fn is_generic_author(name: &str) -> bool {
-    matches!(
-        name,
-        "administrator" | "admin" | "root" | "guest" | "user" | "system" | "owner"
-    )
+    let lowered = name.trim().to_lowercase();
+    stop_words_for("engine.compare.fields.genericAuthors")
+        .iter()
+        .any(|w| w == &lowered)
 }
 
 /// 证据链聚合：按公司对累加权重，多规则交叉才升到 high。
@@ -587,8 +594,16 @@ fn aggregate(findings: &mut [RiskFinding], files: &[CompareFileInput]) -> Vec<Co
         level_of.insert((a.clone(), b.clone()), level);
 
         let rule_ids: Vec<String> = data.rules.keys().cloned().collect();
-        let name_a = name_of.get(a.as_str()).copied().unwrap_or(a.as_str()).to_string();
-        let name_b = name_of.get(b.as_str()).copied().unwrap_or(b.as_str()).to_string();
+        let name_a = name_of
+            .get(a.as_str())
+            .copied()
+            .unwrap_or(a.as_str())
+            .to_string();
+        let name_b = name_of
+            .get(b.as_str())
+            .copied()
+            .unwrap_or(b.as_str())
+            .to_string();
         let summary = format!(
             "{name_a} 与 {name_b} 命中 {} 类线索，合计 {:.0} 分",
             rule_ids.len(),
@@ -624,4 +639,3 @@ fn aggregate(findings: &mut [RiskFinding], files: &[CompareFileInput]) -> Vec<Co
     });
     pairs
 }
-

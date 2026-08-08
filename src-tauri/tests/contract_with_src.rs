@@ -16,11 +16,6 @@ use tauri_native_lib::documents::compare::model::{
 };
 use tauri_native_lib::documents::compare::run_compare;
 
-/// 构造一份与前端 trackedInvoke('compare_metadata', { files }) 形态一致的 payload。
-///
-/// 字段严格对照 src/lib/documents/compare/types.ts 的 CompareFileInput（camelCase），
-/// 覆盖必填字段与隐藏痕迹可选字段，验证 serde rename + default 行为。
-/// 前端实际调用不传 options（见 src/pages/compare-page/index.tsx）。
 fn frontend_files_payload() -> serde_json::Value {
     json!([
         {
@@ -71,8 +66,8 @@ fn frontend_files_payload() -> serde_json::Value {
 /// 前端 → 后端反序列化契约：files 数组必须能被 serde 完整解析为命令参数。
 #[test]
 fn contract_frontend_files_deserialize_to_command_args() {
-    let files: Vec<CompareFileInput> =
-        serde_json::from_value(frontend_files_payload()).expect("files 应能被反序列化为 CompareFileInput[]");
+    let files: Vec<CompareFileInput> = serde_json::from_value(frontend_files_payload())
+        .expect("files 应能被反序列化为 CompareFileInput[]");
 
     assert_eq!(files.len(), 2, "应解析出 2 个文件");
     // camelCase 键 → snake_case 字段
@@ -81,7 +76,10 @@ fn contract_frontend_files_deserialize_to_command_args() {
     assert_eq!(files[0].app_version, "16.0");
     assert_eq!(files[0].app_company, "甲建设集团");
     // 可选字段正确落入
-    assert_eq!(files[0].revision_authors, vec!["张三".to_string(), "李四".to_string()]);
+    assert_eq!(
+        files[0].revision_authors,
+        vec!["张三".to_string(), "李四".to_string()]
+    );
     assert_eq!(files[0].annotation_authors, vec!["王五".to_string()]);
     assert!(!files[0].has_hidden_markers);
     assert!(files[1].has_hidden_markers);
@@ -107,8 +105,6 @@ fn contract_options_camel_case_roundtrip() {
     assert!(!overrides.get("SAME_PERSON").unwrap().enabled.unwrap());
 }
 
-/// 后端 → 前端序列化契约：CompareResult 序列化后的字段名必须与
-/// src/lib/documents/compare/types.ts 的 CompareResult 声明完全一致。
 #[test]
 fn contract_backend_result_matches_ts_types() {
     let files: Vec<CompareFileInput> = serde_json::from_value(frontend_files_payload()).unwrap();

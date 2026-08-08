@@ -1,9 +1,3 @@
-//! 真实样本集成测试：直接读取 `samples/<数据集>/<公司>/*` 下的真实 PDF/XLSX 文件，
-//! 用既有元数据提取器解析 → 组装 CompareFileInput → 跑 run_compare，验证：
-//!   1. `正常数据`：两公司之间不应出现 high / medium 的「同一主体」跨公司线索（即不应误报串标）。
-//!   2. `同一人`：两公司之间应命中 SAME_PERSON 且级别为 high（即应正确识别同作者）。
-//! 同时把 CompareResult 写成 `.crew/docs/sample-<数据集>.json`，供 TS 侧 selectors 验证。
-
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -24,7 +18,6 @@ const SAME_ENTITY_RULES: &[&str] = &[
     "SIMILAR_APP_COMPANY",
 ];
 
-/// 「同一主体」类线索（跨公司串标核心信号），其 high/medium 级在正常样本中应完全不出现。
 fn load_dataset(root: &Path) -> CompareResult {
     let mut files: Vec<CompareFileInput> = Vec::new();
     let mut seq = 0u32;
@@ -36,10 +29,7 @@ fn load_dataset(root: &Path) -> CompareResult {
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_dir())
     {
-        let company_name = company_entry
-            .file_name()
-            .to_string_lossy()
-            .to_string();
+        let company_name = company_entry.file_name().to_string_lossy().to_string();
         let company_id = format!("co-{}", company_name);
 
         for file_entry in WalkDir::new(company_entry.path())
@@ -102,7 +92,6 @@ fn load_dataset(root: &Path) -> CompareResult {
 }
 
 fn write_json(dataset: &str, result: &CompareResult) {
-    // 统一落到仓库根的 .crew/docs/，供 TS 侧 verify-selectors.ts 读取。
     let manifest = env!("CARGO_MANIFEST_DIR"); // src-tauri
     let root = Path::new(manifest).parent().unwrap();
     let out_dir = root.join(".crew").join("docs");
@@ -114,15 +103,10 @@ fn write_json(dataset: &str, result: &CompareResult) {
 }
 
 fn samples_root() -> std::path::PathBuf {
-    // 测试在 src-tauri/tests 下运行，仓库根为 src-tauri 的上两级。
     let manifest = env!("CARGO_MANIFEST_DIR"); // src-tauri
-    Path::new(manifest)
-        .parent()
-        .unwrap()
-        .join("samples")
+    Path::new(manifest).parent().unwrap().join("samples")
 }
 
-/// 合并加载：遍历 `samples/*/<公司>/*`，即把「正常数据」与「同一人」两组全部公司一起跑。
 fn load_merged(root: &Path) -> CompareResult {
     let mut files: Vec<CompareFileInput> = Vec::new();
     let mut seq = 0u32;
@@ -134,7 +118,6 @@ fn load_merged(root: &Path) -> CompareResult {
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_dir())
         .filter(|e| {
-            // 跳过 samples/.crew 这类元数据目录，只保留真实公司目录。
             e.path()
                 .components()
                 .any(|c| c.as_os_str().to_string_lossy() == "samples")
@@ -144,10 +127,7 @@ fn load_merged(root: &Path) -> CompareResult {
                 })
         })
     {
-        let company_name = company_entry
-            .file_name()
-            .to_string_lossy()
-            .to_string();
+        let company_name = company_entry.file_name().to_string_lossy().to_string();
         let company_id = format!("co-{}", company_name);
 
         for file_entry in WalkDir::new(company_entry.path())
@@ -219,10 +199,7 @@ fn normal_data_has_no_high_same_entity_signal() {
     let high_entity: Vec<&String> = result
         .findings
         .iter()
-        .filter(|f| {
-            SAME_ENTITY_RULES.contains(&f.rule_id.as_str())
-                && f.level == RiskLevel::High
-        })
+        .filter(|f| SAME_ENTITY_RULES.contains(&f.rule_id.as_str()) && f.level == RiskLevel::High)
         .map(|f| &f.rule_id)
         .collect();
     assert!(
@@ -233,10 +210,7 @@ fn normal_data_has_no_high_same_entity_signal() {
     let medium_entity: Vec<&String> = result
         .findings
         .iter()
-        .filter(|f| {
-            SAME_ENTITY_RULES.contains(&f.rule_id.as_str())
-                && f.level == RiskLevel::Medium
-        })
+        .filter(|f| SAME_ENTITY_RULES.contains(&f.rule_id.as_str()) && f.level == RiskLevel::Medium)
         .map(|f| &f.rule_id)
         .collect();
     assert!(
@@ -252,9 +226,10 @@ fn same_person_detected_as_high() {
     let result = load_dataset(&root);
     write_json("同一人", &result);
 
-    let person_high = result.findings.iter().any(|f| {
-        f.rule_id == "SAME_PERSON" && f.level == RiskLevel::High
-    });
+    let person_high = result
+        .findings
+        .iter()
+        .any(|f| f.rule_id == "SAME_PERSON" && f.level == RiskLevel::High);
     assert!(
         person_high,
         "同一人样本应命中 SAME_PERSON 且为 high，实际 findings: {:?}",
@@ -301,10 +276,7 @@ fn merged_four_companies_no_cross_contamination() {
 
     // 3. 不应把同一人信号误判到正常数据公司身上（即 SAME_PERSON 的双方必属「同一人」组）。
     let person_wrong_target = result.findings.iter().any(|f| {
-        f.rule_id == "SAME_PERSON"
-            && f.refs
-                .iter()
-                .any(|r| is_normal_company(&r.company_id))
+        f.rule_id == "SAME_PERSON" && f.refs.iter().any(|r| is_normal_company(&r.company_id))
     });
     assert!(
         !person_wrong_target,
@@ -316,7 +288,9 @@ fn is_normal_company(company_id: &str) -> bool {
     company_id.contains("禾通阳") || company_id.contains("研嘉")
 }
 
-fn involves_normal_company(refs: &[tauri_native_lib::documents::compare::model::FindingRef]) -> bool {
+fn involves_normal_company(
+    refs: &[tauri_native_lib::documents::compare::model::FindingRef],
+) -> bool {
     refs.iter().any(|r| is_normal_company(&r.company_id))
 }
 
@@ -400,7 +374,10 @@ fn rule_override_can_disable_revision_traces() {
     };
     let result = run_compare(&files, &options);
     assert!(
-        !result.findings.iter().any(|f| f.rule_id == "REVISION_TRACES"),
+        !result
+            .findings
+            .iter()
+            .any(|f| f.rule_id == "REVISION_TRACES"),
         "禁用后不应产出 REVISION_TRACES"
     );
 }

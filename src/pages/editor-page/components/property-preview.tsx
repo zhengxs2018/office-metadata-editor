@@ -11,11 +11,16 @@ export type Property = {
 export type PropertyPreviewProps = {
   title: string;
   properties: Property[];
+  style?: React.CSSProperties;
 };
 
-export const PropertyPreview: React.FC<PropertyPreviewProps> = ({ title, properties }) => {
+export const PropertyPreview: React.FC<PropertyPreviewProps> = ({ title, properties, style }) => {
   return (
-    <Card size="sm" className="rounded-lg border border-border bg-card/60 shadow-none">
+    <Card
+      size="sm"
+      className="animate-fade-in-up rounded-lg border border-border bg-card/60 shadow-none"
+      style={style}
+    >
       <CardHeader className="pb-1.5">
         <CardTitle className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
           {title}

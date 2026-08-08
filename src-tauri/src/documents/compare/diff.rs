@@ -10,10 +10,7 @@ const SIMILAR_THRESHOLD: f64 = 0.85;
 ///
 /// 注意：`identical` 只描述事实，不代表"安全"。多公司横向对比中，
 /// 风险字段取值一致恰恰可能是疑点，级别由规则层单独给出。
-pub fn diff_group(
-    files: &[CompareFileInput],
-    members: &BTreeMap<String, usize>,
-) -> Vec<FieldDiff> {
+pub fn diff_group(files: &[CompareFileInput], members: &BTreeMap<String, usize>) -> Vec<FieldDiff> {
     let mut diffs = Vec::with_capacity(FIELDS.len());
 
     for spec in FIELDS {
@@ -76,4 +73,3 @@ pub fn diff_group(
 
     diffs
 }
-

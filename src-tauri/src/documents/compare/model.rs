@@ -280,6 +280,21 @@ pub struct CompareStats {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct FileMetaSnapshot {
+    pub doc_id: String,
+    pub company_id: String,
+    pub company_name: String,
+    pub file_name: String,
+    pub creator: String,
+    pub last_modified_by: String,
+    pub app_company: String,
+    pub manager: String,
+    pub application: String,
+    pub has_hidden_markers: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CompareResult {
     pub schema_version: u32,
     pub dimension: String,
@@ -290,6 +305,7 @@ pub struct CompareResult {
     pub findings: Vec<RiskFinding>,
     pub pair_risks: Vec<CompanyPairRisk>,
     pub stats: CompareStats,
+    pub files: Vec<FileMetaSnapshot>,
 }
 
 pub const DISCLAIMER: &str = "本报告基于文档元数据自动分析，所列项均为辅助线索，不构成串通投标的认定结论。\n\n元数据可能因模板复用、计算机名默认值、软件预填等原因产生偶然一致。\n\n依据《招标投标法实施条例》第四十条，认定串通投标需结合投标文件内容、报价规律、硬件信息（MAC/硬盘序列号/IP）等证据综合判断，并由有权机关作出。";

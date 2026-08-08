@@ -50,7 +50,7 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
           <SidebarGroupLabel>文件列表</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {uniqueByBasename(files).map(file => {
+              {uniqueByBasename(files).map((file, i) => {
                 const doc = documents.find(d => d.id === file.id);
                 const fileName =
                   doc?.metadata.fileName || file.filePath.split(/[\\/]/).pop() || file.filePath;
@@ -60,7 +60,11 @@ export const EditorPageSidebar: React.FC<EditorPageSidebarProps> = ({
                 const isActive = file.id === activeFileId;
                 const status = file.status ?? doc?.status ?? 'idle';
                 return (
-                  <SidebarMenuItem key={file.id}>
+                  <SidebarMenuItem
+                    key={file.id}
+                    className="animate-fade-in-up"
+                    style={{ ['--md-index' as string]: i, animationDelay: `calc(${i} * 28ms)` }}
+                  >
                     <SidebarMenuButton
                       isActive={isActive}
                       onClick={() => onSelectFile(file.id)}

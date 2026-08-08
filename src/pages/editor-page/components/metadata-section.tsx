@@ -12,7 +12,7 @@ export const MetadataSection: React.FC<React.PropsWithChildren<MetadataSectionPr
   children,
 }) => {
   return (
-    <Card size="sm" className="rounded-lg border border-border bg-card shadow-none">
+    <Card size="sm" className="animate-fade-in rounded-lg border border-border bg-card shadow-none">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold tracking-tight text-foreground">
           {title}

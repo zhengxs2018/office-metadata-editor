@@ -127,4 +127,3 @@ pub const FIELDS: &[FieldSpec] = &[
 pub fn spec(key: &str) -> Option<&'static FieldSpec> {
     FIELDS.iter().find(|f| f.key == key)
 }
-

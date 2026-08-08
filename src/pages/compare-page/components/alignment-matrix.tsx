@@ -8,7 +8,7 @@ import {
   type CompanySnapshot,
 } from '@/lib/documents/compare/types';
 
-import { MATCH_TONE, RISK_TONE } from './compare-tokens';
+import { MATCH_TONE, MISSING_TONE, RISK_TONE } from './compare-tokens';
 
 interface AlignmentMatrixProps {
   groups: AlignedGroup[];
@@ -32,11 +32,11 @@ export const AlignmentMatrix: React.FC<AlignmentMatrixProps> = ({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border/60">
+    <div className="max-h-[520px] overflow-auto rounded-lg border border-border/60">
       <table className="w-full min-w-3xl border-collapse text-fine-print">
-        <thead>
-          <tr className="bg-muted/40">
-            <th className="sticky left-0 z-10 bg-muted/40 px-3 py-2 text-left font-medium text-muted-foreground">
+        <thead className="sticky top-0 z-20">
+          <tr className="bg-canvas">
+            <th className="sticky left-0 z-10 bg-canvas px-3 py-2 text-left font-medium text-muted-foreground">
               对齐组
             </th>
             <th className="px-2 py-2 text-left font-medium text-muted-foreground">线索</th>
@@ -54,8 +54,8 @@ export const AlignmentMatrix: React.FC<AlignmentMatrixProps> = ({
             ))}
           </tr>
         </thead>
-        <tbody>
-          {groups.map(group => {
+        <tbody className="stagger" style={{ ['--md-stagger' as string]: 26 }}>
+          {groups.map((group, i) => {
             const byCompany = new Map(group.cells.map(cell => [cell.companyId, cell]));
             const selected = group.groupId === selectedGroupId;
             return (
@@ -66,11 +66,12 @@ export const AlignmentMatrix: React.FC<AlignmentMatrixProps> = ({
                   'cursor-pointer border-t border-border/40 transition-colors',
                   selected ? 'bg-primary/5' : 'hover:bg-muted/30',
                 )}
+                style={{ ['--md-index' as string]: i }}
               >
                 <td
                   className={cn(
                     'sticky left-0 z-10 max-w-64 px-3 py-2',
-                    selected ? 'bg-primary/5' : 'bg-background',
+                    selected ? 'bg-primary/5' : 'bg-canvas',
                   )}
                 >
                   <span className="block truncate font-medium" title={group.label}>
@@ -103,7 +104,7 @@ export const AlignmentMatrix: React.FC<AlignmentMatrixProps> = ({
                 </td>
                 <td className="px-2 py-2 text-right tabular-nums">
                   {group.missingCount > 0 ? (
-                    <span className="text-orange-700">{group.missingCount}</span>
+                    <span className={MISSING_TONE}>{group.missingCount}</span>
                   ) : (
                     <span className="text-muted-foreground/60">0</span>
                   )}

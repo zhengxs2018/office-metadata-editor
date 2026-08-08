@@ -8,12 +8,22 @@ pub const COMPANY_SIMILAR_THRESHOLD: f64 = 0.7;
 
 fn stop_words() -> &'static HashSet<&'static str> {
     static CELL: OnceLock<HashSet<&'static str>> = OnceLock::new();
-    CELL.get_or_init(|| super::rules::stop_words_for("compare.fields.stop_words").iter().copied().collect())
+    CELL.get_or_init(|| {
+        super::rules::stop_words_for("engine.compare.fields.stopWords")
+            .iter()
+            .map(String::as_str)
+            .collect()
+    })
 }
 
 fn generic_templates() -> &'static HashSet<&'static str> {
     static CELL: OnceLock<HashSet<&'static str>> = OnceLock::new();
-    CELL.get_or_init(|| super::rules::stop_words_for("compare.fields.template").iter().copied().collect())
+    CELL.get_or_init(|| {
+        super::rules::stop_words_for("engine.compare.fields.templateStopWords")
+            .iter()
+            .map(String::as_str)
+            .collect()
+    })
 }
 
 /// 归一化文本用于比对：小写、去除标点与空白、命中停用词返回 None。
@@ -71,7 +81,11 @@ pub fn levenshtein(a: &str, b: &str) -> usize {
     for i in 1..=m {
         curr[0] = i;
         for j in 1..=n {
-            let cost = if a_chars[i - 1] == b_chars[j - 1] { 0 } else { 1 };
+            let cost = if a_chars[i - 1] == b_chars[j - 1] {
+                0
+            } else {
+                1
+            };
             curr[j] = (prev[j] + 1).min(curr[j - 1] + 1).min(prev[j - 1] + cost);
         }
         std::mem::swap(&mut prev, &mut curr);
@@ -96,7 +110,11 @@ fn name_fingerprint(s: &str) -> String {
 }
 
 fn person_entity_key(s1: &str, s2: &str) -> String {
-    let longer = if s1.chars().count() >= s2.chars().count() { s1 } else { s2 };
+    let longer = if s1.chars().count() >= s2.chars().count() {
+        s1
+    } else {
+        s2
+    };
     name_fingerprint(longer)
 }
 
@@ -148,10 +166,13 @@ pub fn check_person_match(v1: &str, v2: &str) -> Option<(f64, &'static str, Stri
     let min_len = s1.chars().count().min(s2.chars().count());
     let max_len = s1.chars().count().max(s2.chars().count());
     if min_len >= 2 && (min_len as f64 / max_len as f64) >= 0.5 {
-        let is_placeholder = |s: &str| {
-            s.chars().count() <= 3 && s.chars().all(|c| c.is_ascii_alphabetic())
+        let is_placeholder =
+            |s: &str| s.chars().count() <= 3 && s.chars().all(|c| c.is_ascii_alphabetic());
+        let short = if s1.chars().count() <= s2.chars().count() {
+            &s1
+        } else {
+            &s2
         };
-        let short = if s1.chars().count() <= s2.chars().count() { &s1 } else { &s2 };
         if !is_placeholder(short) {
             if s1.len() <= s2.len() && s2.contains(&s1) {
                 return Some((0.88, "SUBSET_NORM", key));
@@ -228,7 +249,9 @@ pub fn format_timestamp(seconds: i64) -> Option<String> {
     let (year, month, day) = civil_from_days(days);
     let hour = secs_of_day / 3_600;
     let minute = (secs_of_day % 3_600) / 60;
-    Some(format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}"))
+    Some(format!(
+        "{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}"
+    ))
 }
 
 /// 把两个时间归到同一个桶，桶大小与判定窗口一致。
@@ -303,4 +326,3 @@ pub fn parse_timestamp(text: &str) -> Option<i64> {
 
     Some(days_from_civil(year, month, day) * 86_400 + hour * 3_600 + minute * 60 + second)
 }
-

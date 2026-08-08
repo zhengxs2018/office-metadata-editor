@@ -4,10 +4,10 @@ import { useMetadata } from '@/contexts/metadata-context';
 import { resolveFieldLabel } from '@/lib/documents/export/utils';
 import { open } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
-import { invoke } from '@tauri-apps/api/core';
 import { HugeIcon } from '@/components/icons/huge-icon';
 import { CheckCircle, Cancel01Icon } from '@hugeicons/core-free-icons';
 import type { ExportFormat, ExportOptions, ExportResult, ExportFieldOption } from '@/types/export';
+import { notifyExportSuccess } from '@/lib/configuration/reveal';
 
 export type { ExportFieldOption } from '@/types/export';
 
@@ -131,10 +131,7 @@ export const ExportCenter: React.FC<ExportCenterProps> = ({ fileIds = [], availa
       setExportResult(result);
 
       if (result.success) {
-        toast.success('导出成功', {
-          description: `已导出 ${result.exportedCount} 个文件的元数据至 ${result.outputPath}`,
-        });
-        await invoke('open_export_folder', { filePath: result.outputPath }).catch(() => {});
+        await notifyExportSuccess(filePath, `已导出 ${result.exportedCount} 个文件的元数据`);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

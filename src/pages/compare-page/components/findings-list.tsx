@@ -32,7 +32,7 @@ export const FindingsList: React.FC<FindingsListProps> = ({
   if (clusters.length === 0) {
     if (positive) {
       return (
-        <div className="flex flex-col items-center gap-2 rounded-lg border border-emerald-300/50 bg-emerald-50/40 p-6 text-center">
+        <div className="flex flex-col animate-scale-in items-center gap-2 rounded-lg border border-emerald-300/50 bg-emerald-50/40 p-6 text-center">
           <HugeIcon icon={CheckCircle} size={28} className="text-emerald-600" />
           <p className="text-fine-print font-medium text-emerald-700">未发现任何高风险关联线索</p>
           <p className="text-fine-print text-muted-foreground">
@@ -49,14 +49,15 @@ export const FindingsList: React.FC<FindingsListProps> = ({
   }
 
   return (
-    <ul className="space-y-1.5">
-      {clusters.map(cluster => (
+    <ul className="stagger space-y-1.5" style={{ ['--md-stagger' as string]: 40 }}>
+      {clusters.map((cluster, i) => (
         <FindingClusterItem
           key={cluster.clusterId}
           cluster={cluster}
           nameOf={new Map(companies.map(c => [c.companyId, c.companyName]))}
           active={cluster.groupIds.length > 0 && cluster.groupIds.includes(activeGroupId ?? '')}
           onLocate={onLocate}
+          index={i}
         />
       ))}
     </ul>
@@ -68,6 +69,7 @@ interface FindingClusterItemProps {
   nameOf: Map<string, string>;
   active: boolean;
   onLocate: (cluster: FindingCluster) => void;
+  index: number;
 }
 
 const FindingClusterItem: React.FC<FindingClusterItemProps> = ({
@@ -75,6 +77,7 @@ const FindingClusterItem: React.FC<FindingClusterItemProps> = ({
   nameOf,
   active,
   onLocate,
+  index,
 }) => {
   const [open, setOpen] = useState(false);
   const tone = RISK_TONE[cluster.level];
@@ -83,10 +86,10 @@ const FindingClusterItem: React.FC<FindingClusterItemProps> = ({
     .join(' - ');
 
   return (
-    <li>
+    <li style={{ ['--md-index' as string]: index }}>
       <div
         className={cn(
-          'rounded-lg border px-2.5 py-2 transition-colors',
+          'rounded-lg border px-2.5 py-2 transition-[colors,box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-sm',
           active ? 'border-primary/40 bg-primary/5' : 'border-border/60',
         )}
       >
@@ -132,7 +135,7 @@ const FindingClusterItem: React.FC<FindingClusterItemProps> = ({
             来源文件（{cluster.files.length}）
           </button>
           {open ? (
-            <ul className="mt-1 space-y-1">
+            <ul className="mt-1 animate-fade-in space-y-1">
               {cluster.files.map(file => (
                 <SourceFileRow key={file.docId} file={file} />
               ))}

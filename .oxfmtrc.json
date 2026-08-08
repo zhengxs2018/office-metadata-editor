@@ -3,5 +3,13 @@
   "semi": true,
   "singleQuote": true,
   "arrowParens": "avoid",
-  "trailingComma": "all"
+  "trailingComma": "all",
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/docs/**/*.html",
+    "**/docs/**/*.json",
+    "**/docs/**/*.json",
+    "**/src/components/ui/**"
+  ]
 }

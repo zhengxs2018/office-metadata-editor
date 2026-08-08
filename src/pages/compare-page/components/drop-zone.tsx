@@ -18,18 +18,21 @@ import { getStopWords } from '@/lib/documents/compare/stop-words';
 
 const ACCEPT_EXTS = ['docx', 'doc', 'xlsx', 'pdf'];
 
-/** 非公司目录提示词（来自分类停用词词典，不在本文件硬编码）。 */
-const NON_COMPANY_DIR_HINTS = getStopWords('compare.folders.stop_words');
-
 function isHiddenSegment(seg: string): boolean {
   return seg.startsWith('.');
 }
 
-/** 判断直接子目录名是否为投标公司目录（而非招标文件/缓存目录） */
+/**
+ * 判断直接子目录名是否为投标公司目录（而非招标文件/缓存目录）。
+ *
+ * 提示词每次调用时从配置读取（而非模块加载时快照），
+ * 这样用户在设置中改词表后立即生效，也避免启动竞态读到空表。
+ */
 function isCompanyDirName(name: string): boolean {
   if (isHiddenSegment(name)) return false;
   const lower = name.toLowerCase();
-  return !NON_COMPANY_DIR_HINTS.some(hint => lower.includes(hint));
+  const hints = getStopWords('engine.compare.folders.stopWords');
+  return !hints.some(hint => lower.includes(hint));
 }
 
 /** 过滤临时文件（如 .~xxx.xlsx） */

@@ -49,14 +49,14 @@ fn extract_pdf_hidden(meta: &mut DocumentMetadata, file_path: &str) {
         }
     }
 
-    // XMP 创作者：/Metadata 流中的 dc:creator。
-    if let Ok(Ok(meta_stream)) = doc.catalog().and_then(|c| c.get(b"Metadata")).map(|m| m.as_stream())
+    if let Ok(Ok(_meta_stream)) = doc
+        .catalog()
+        .and_then(|c| c.get(b"Metadata"))
+        .map(|m| m.as_stream())
     {
-        let _ = meta_stream;
         meta.has_hidden_markers = true;
     }
 
-    // 修订痕迹标记：增量保存（多个 Prev 引用）视为有编辑历史。
     let prev_marker: &[u8] = b"Prev ";
     let incremental = bytes
         .windows(prev_marker.len())
@@ -79,7 +79,6 @@ fn extract_ooxml_hidden(meta: &mut DocumentMetadata, file_path: &str) {
         return;
     };
 
-    // 批注作者：xlsx 的 xl/comments*.xml；docx 的 word/comments.xml。
     let targets = ["xl/comments1.xml", "xl/comments2.xml", "word/comments.xml"];
     for name in targets {
         if let Ok(entry) = archive.by_name(name) {
