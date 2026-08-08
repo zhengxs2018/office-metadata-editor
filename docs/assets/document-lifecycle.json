@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "文档处理生命周期",
+    "subtitle": "从扫描到写回的状态机：解析、编辑、保存与各类失败恢复路径",
+    "output": "document-lifecycle.html",
+    "viewBox": [980, 660]
+  },
+  "lanes": [
+    { "id": "main", "label": "主流程" },
+    { "id": "editing", "label": "编辑态" },
+    { "id": "failures", "label": "失败与恢复" },
+    { "id": "terminal", "label": "终态" }
+  ],
+  "states": [
+    { "id": "listed", "type": "start", "label": "已列出", "sublabel": "scan_directory", "lane": "main", "col": 0, "step": "01", "tag": "入口" },
+    { "id": "parsing", "type": "active", "label": "解析中", "sublabel": "parse_*_from_path", "lane": "main", "col": 1, "step": "02", "tag": "只读" },
+    { "id": "parsed", "type": "active", "label": "已解析", "sublabel": "统一元数据模型", "lane": "main", "col": 2, "step": "03", "tag": "可编辑" },
+    { "id": "writing", "type": "decision", "label": "写回中", "sublabel": "原子写入", "lane": "main", "col": 3, "step": "04", "tag": "关键区" },
+    { "id": "saved", "type": "success", "label": "已保存", "sublabel": "源文件已更新", "lane": "main", "col": 4, "step": "05", "tag": "完成" },
+
+    { "id": "dirty", "type": "waiting", "label": "已修改", "sublabel": "草稿 + 撤销栈", "lane": "editing", "col": 0, "tag": "脏标记" },
+    { "id": "batch", "type": "waiting", "label": "批量任务", "sublabel": "可中断轮询", "lane": "editing", "col": 2, "tag": "逐条结果" },
+
+    { "id": "parsefail", "type": "failure", "label": "解析失败", "sublabel": "损坏 / 加密", "lane": "failures", "col": 1, "tag": "跳过" },
+    { "id": "writefail", "type": "failure", "label": "写回失败", "sublabel": "占用 / 只读", "lane": "failures", "col": 2, "yOffset": 78, "tag": "可重试" },
+
+    { "id": "savedas", "type": "success", "label": "另存完成", "sublabel": "save_*_as", "lane": "terminal", "col": 0, "tag": "终态" },
+    { "id": "aborted", "type": "failure", "label": "已取消", "sublabel": "用户中止", "lane": "terminal", "col": 1, "tag": "终态" }
+  ],
+  "transitions": [
+    { "from": "parsed", "to": "dirty", "variant": "default", "fromSide": "bottom", "toSide": "top", "route": "straight" },
+    { "from": "writing", "to": "batch", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "route": "straight" },
+    { "from": "parsing", "to": "parsefail", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "straight" },
+    { "from": "writing", "to": "writefail", "variant": "security", "fromSide": "left", "toSide": "top", "via": [[340, 342], [402, 342]] },
+    { "from": "batch", "to": "aborted", "variant": "security", "fromSide": "bottom", "toSide": "top", "route": "straight" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "主路径",
+      "items": [
+        "扫描列出后按需解析，不预加载全部文件",
+        "解析为只读操作，绝不触碰源文件",
+        "写回采用原子写入，失败不破坏原文件",
+        "保存后可重新读取校验结果"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "编辑与批量",
+      "items": [
+        "编辑态维护草稿与撤销栈，可回退",
+        "批量任务通过 requestId 轮询进度",
+        "用户可随时取消长任务",
+        "批量逐条返回结果，单个失败不中断整批"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "失败处理",
+      "items": [
+        "解析失败：损坏或加密文档跳过并记录",
+        "写回失败：文件被占用或只读时可重试",
+        "错误消息含发生了什么 + 怎么解决",
+        "只读文件建议改用另存为路径"
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="archify 2.10.0">
-  <title>比对引擎数据流 Diagram</title>
+  <title>批量处理工作流 Diagram</title>
   <script>
     // Resolve the theme before first paint so light-preference users don't
     // see a dark flash. The toolbar script below re-applies with UI state.
@@ -525,14 +525,14 @@
     <div class="header">
       <div class="header-row">
         <div class="pulse-dot"></div>
-        <h1>比对引擎数据流</h1>
+        <h1>批量处理工作流</h1>
       </div>
-      <p class="subtitle">对齐 → 差分 → 规则 → 聚合：从多主体元数据到可复核的风险线索</p>
+      <p class="subtitle">目录扫描 → 格式分派 → 可中断执行 → 逐条结果反馈</p>
     </div>
 
     <!-- Main Diagram -->
     <div class="diagram-container">
-      <svg viewBox="0 0 1080 760" role="img" aria-label="比对引擎数据流 — 对齐 → 差分 → 规则 → 聚合：从多主体元数据到可复核的风险线索 (data-flow diagram)">
+      <svg viewBox="0 0 720 900" role="img" aria-label="批量处理工作流 — 目录扫描 → 格式分派 → 可中断执行 → 逐条结果反馈 (workflow diagram)">
         <!-- Definitions -->
         <defs>
           <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -555,147 +555,160 @@
         <!-- Background Grid -->
         <rect width="100%" height="100%" fill="url(#grid)" />
 
-        <!-- Data Stages -->
-        <rect x="16" y="46" width="168" height="640" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="100" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">01 / 输入</text>
+        <!-- Swimlanes -->
+        <rect x="40" y="52" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
+        <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / 用户界面</text>
 
-        <rect x="231" y="46" width="168" height="640" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="315" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">02 / 对齐</text>
+        <rect x="40" y="176" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
+        <text x="54" y="198" class="t-dim" font-size="10" font-weight="600">02 / IPC 边界</text>
 
-        <rect x="446" y="46" width="168" height="640" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="530" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">03 / 差分 + 规则</text>
+        <rect x="40" y="300" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
+        <text x="54" y="322" class="t-dim" font-size="10" font-weight="600">03 / 领域内核</text>
 
-        <rect x="661" y="46" width="168" height="640" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="745" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">04 / 聚合</text>
+        <rect x="40" y="424" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
+        <rect x="46" y="430" width="628" height="92" rx="8" class="c-security-group" stroke-width="1"/>
+        <text x="54" y="446" class="t-security" font-size="10" font-weight="600">EX / 异常处理</text>
 
-        <rect x="876" y="46" width="168" height="640" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="960" y="68" class="t-dim" font-size="9" font-weight="600" text-anchor="middle">05 / 产出</text>
+        <rect x="40" y="548" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
+        <text x="54" y="570" class="t-dim" font-size="10" font-weight="600">05 / 文件系统</text>
 
-        <!-- Flow paths -->
-        <path d="M 156 157 L 184 157 L 184 214 L 259 271" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path d="M 156 613 L 222 385 L 222 214 L 259 271" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
-        <path d="M 315 300 L 315 584" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
-        <path d="M 371 271 L 420 214 L 420 157 L 474 157" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path d="M 371 271 L 420 214 L 420 271 L 474 385" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path d="M 530 584 L 530 414" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
-        <path d="M 586 385 L 638 271 L 638 214 L 689 271" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path d="M 745 300 L 745 470" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
-        <path d="M 586 157 L 904 157" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path d="M 801 499 L 878 328 L 878 212 L 960 212 L 960 186" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path d="M 960 186 L 960 470" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+        <rect x="40" y="672" width="640" height="104" rx="10" class="c-lane" stroke-width="1"/>
+        <text x="54" y="694" class="t-dim" font-size="10" font-weight="600">06 / 任务管理</text>
+
+        <!-- Phase headers -->
+        <line x1="42" y1="35" x2="266" y2="35" class="a-default" stroke-width="1.1"/>
+        <rect x="42" y="27" width="224" height="16" rx="4" class="c-mask"/>
+        <text x="154" y="39" class="t-muted" font-size="8" font-weight="600" text-anchor="middle">准备</text>
+        <line x1="254" y1="35" x2="476" y2="35" class="a-emphasis" stroke-width="1.1"/>
+        <rect x="254" y="27" width="222" height="16" rx="4" class="c-mask"/>
+        <text x="365" y="39" class="t-backend" font-size="8" font-weight="600" text-anchor="middle">校验 + 分派</text>
+        <line x1="454" y1="35" x2="671" y2="35" class="a-dashed" stroke-width="1.1"/>
+        <rect x="454" y="27" width="217" height="16" rx="4" class="c-mask"/>
+        <text x="562.5" y="39" class="t-messagebus" font-size="8" font-weight="600" text-anchor="middle">执行 + 反馈</text>
+
+        <!-- Workflow groups -->
+        <rect x="250" y="214" width="230" height="58" rx="9" class="c-security-group" stroke-width="1"/>
+        <text x="260" y="228" class="t-security" font-size="7" font-weight="600">参数校验</text>
+        <rect x="380" y="338" width="170" height="58" rx="9" class="c-lane" stroke-width="1"/>
+        <text x="390" y="352" class="t-backend" font-size="7" font-weight="600">格式适配写回</text>
+        <rect x="450" y="462" width="225" height="58" rx="9" class="c-security-group" stroke-width="1"/>
+        <text x="460" y="476" class="t-security" font-size="7" font-weight="600">可重试项</text>
+
+        <!-- Edge paths -->
+        <path d="M 134 119 L 174 119" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path d="M 220 145 L 220 166 L 300 166 L 300 209" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path d="M 220 341 L 220 228 L 220 228 L 220 145" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+        <path d="M 220 589 L 220 476 L 220 476 L 220 393" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+        <path d="M 346 243 L 384 243" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
+        <path d="M 430 269 L 430 476 L 430 476 L 430 705" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+        <path d="M 384 243 L 356 243 L 356 367 L 454 367" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path d="M 546 367 L 692 367 L 692 615 L 546 615" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path d="M 500 401 L 500 465" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
+        <path d="M 546 491 L 579 491" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+        <path d="M 546 367 L 692 367 L 692 119 L 671 119" class="a-emphasis" stroke-width="1.2" marker-end="url(#arrowhead-emphasis)"/>
+        <path d="M 430 773 L 430 805 L 625 805 L 625 765" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
 
         <!-- Nodes -->
-        <rect x="44" y="128" width="112" height="58" rx="6" class="c-mask"/>
-        <rect x="44" y="128" width="112" height="58" rx="6" class="c-external" stroke-width="1.5"/>
-        <text x="100" y="149" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">CompareFileInput[]</text>
-        <text x="100" y="165" class="t-muted" font-size="7" text-anchor="middle">多主体元数据</text>
-        <text x="100" y="175" class="t-external" font-size="7" text-anchor="middle">含痕迹字段</text>
+        <rect x="42" y="93" width="92" height="52" rx="6" class="c-mask"/>
+        <rect x="42" y="93" width="92" height="52" rx="6" class="c-external" stroke-width="1.5"/>
+        <text x="88" y="114" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">选择目录</text>
+        <text x="88" y="131" class="t-muted" font-size="8" text-anchor="middle">用户操作</text>
 
-        <rect x="44" y="584" width="112" height="58" rx="6" class="c-mask"/>
-        <rect x="44" y="584" width="112" height="58" rx="6" class="c-security" stroke-width="1.5"/>
-        <text x="100" y="605" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">CompareOptions</text>
-        <text x="100" y="621" class="t-muted" font-size="7" text-anchor="middle">阈值 + 规则覆盖</text>
-        <text x="100" y="631" class="t-security" font-size="7" text-anchor="middle">可调参</text>
+        <rect x="174" y="93" width="92" height="52" rx="6" class="c-mask"/>
+        <rect x="174" y="93" width="92" height="52" rx="6" class="c-frontend" stroke-width="1.5"/>
+        <text x="220" y="114" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">勾选文件</text>
+        <text x="220" y="131" class="t-muted" font-size="8" text-anchor="middle">选择清理策略</text>
 
-        <rect x="259" y="242" width="112" height="58" rx="6" class="c-mask"/>
-        <rect x="259" y="242" width="112" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
-        <text x="315" y="263" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">align</text>
-        <text x="315" y="279" class="t-muted" font-size="7" text-anchor="middle">精确 → 规范化 → 模糊</text>
-        <text x="315" y="289" class="t-backend" font-size="7" text-anchor="middle">三级降级</text>
+        <rect x="579" y="93" width="92" height="52" rx="6" class="c-mask"/>
+        <rect x="579" y="93" width="92" height="52" rx="6" class="c-frontend" stroke-width="1.5"/>
+        <text x="625" y="114" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">结果面板</text>
+        <text x="625" y="131" class="t-muted" font-size="8" text-anchor="middle">成功 / 失败分组</text>
 
-        <rect x="259" y="584" width="112" height="58" rx="6" class="c-mask"/>
-        <rect x="259" y="584" width="112" height="58" rx="6" class="c-external" stroke-width="1.5"/>
-        <text x="315" y="605" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Unmatched</text>
-        <text x="315" y="621" class="t-muted" font-size="7" text-anchor="middle">落选并附原因</text>
-        <text x="315" y="631" class="t-external" font-size="7" text-anchor="middle">交人工</text>
+        <rect x="254" y="209" width="92" height="68" rx="6" class="c-mask"/>
+        <rect x="254" y="209" width="92" height="68" rx="6" class="c-security" stroke-width="1.5"/>
+        <text x="300" y="230" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">参数校验</text>
+        <text x="300" y="247" class="t-muted" font-size="8" text-anchor="middle">路径安全 + 字段</text>
+        <text x="300" y="265" class="t-security" font-size="7" text-anchor="middle">不信任前端</text>
 
-        <rect x="474" y="128" width="112" height="58" rx="6" class="c-mask"/>
-        <rect x="474" y="128" width="112" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
-        <text x="530" y="149" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">diff</text>
-        <text x="530" y="165" class="t-muted" font-size="7" text-anchor="middle">组内逐字段差分</text>
-        <text x="530" y="175" class="t-backend" font-size="7" text-anchor="middle">DiffState</text>
+        <rect x="384" y="217" width="92" height="52" rx="6" class="c-mask"/>
+        <rect x="384" y="217" width="92" height="52" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="430" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">按格式分派</text>
+        <text x="430" y="255" class="t-muted" font-size="8" text-anchor="middle">docx/xlsx/pdf/doc</text>
 
-        <rect x="474" y="356" width="112" height="58" rx="6" class="c-mask"/>
-        <rect x="474" y="356" width="112" height="58" rx="6" class="c-security" stroke-width="1.5"/>
-        <text x="530" y="377" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">rules</text>
-        <text x="530" y="393" class="t-muted" font-size="7" text-anchor="middle">8 条规则判定</text>
-        <text x="530" y="403" class="t-security" font-size="7" text-anchor="middle">加权命中</text>
+        <rect x="174" y="341" width="92" height="52" rx="6" class="c-mask"/>
+        <rect x="174" y="341" width="92" height="52" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="220" y="362" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">scan_directory</text>
+        <text x="220" y="379" class="t-muted" font-size="8" text-anchor="middle">递归扫描</text>
 
-        <rect x="474" y="584" width="112" height="58" rx="6" class="c-mask"/>
-        <rect x="474" y="584" width="112" height="58" rx="6" class="c-database" stroke-width="1.5"/>
-        <text x="530" y="605" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">停用词</text>
-        <text x="530" y="621" class="t-muted" font-size="7" text-anchor="middle">通用值降噪</text>
-        <text x="530" y="631" class="t-database" font-size="7" text-anchor="middle">防误报</text>
+        <rect x="454" y="333" width="92" height="68" rx="6" class="c-mask"/>
+        <rect x="454" y="333" width="92" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="500" y="354" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">批量清理写回</text>
+        <text x="500" y="371" class="t-muted" font-size="8" text-anchor="middle">batch_clear_and_save</text>
+        <text x="500" y="389" class="t-backend" font-size="7" text-anchor="middle">逐条处理</text>
 
-        <rect x="689" y="242" width="112" height="58" rx="6" class="c-mask"/>
-        <rect x="689" y="242" width="112" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
-        <text x="745" y="263" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">主体对聚合</text>
-        <text x="745" y="279" class="t-muted" font-size="7" text-anchor="middle">累加分 → 定级</text>
-        <text x="745" y="289" class="t-backend" font-size="7" text-anchor="middle">定级单位</text>
+        <rect x="454" y="465" width="92" height="52" rx="6" class="c-mask"/>
+        <rect x="454" y="465" width="92" height="52" rx="6" class="c-security" stroke-width="1.5"/>
+        <text x="500" y="486" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">失败项</text>
+        <text x="500" y="503" class="t-muted" font-size="8" text-anchor="middle">占用 / 只读 / 损坏</text>
 
-        <rect x="689" y="470" width="112" height="58" rx="6" class="c-mask"/>
-        <rect x="689" y="470" width="112" height="58" rx="6" class="c-security" stroke-width="1.5"/>
-        <text x="745" y="491" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">等级钳制</text>
-        <text x="745" y="507" class="t-muted" font-size="7" text-anchor="middle">min(pair, ruleMax)</text>
-        <text x="745" y="517" class="t-security" font-size="7" text-anchor="middle">弱证据不越界</text>
+        <rect x="579" y="465" width="92" height="52" rx="6" class="c-mask"/>
+        <rect x="579" y="465" width="92" height="52" rx="6" class="c-messagebus" stroke-width="1.5"/>
+        <text x="625" y="486" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">重试路径</text>
+        <text x="625" y="503" class="t-muted" font-size="8" text-anchor="middle">不影响成功项</text>
 
-        <rect x="904" y="128" width="112" height="58" rx="6" class="c-mask"/>
-        <rect x="904" y="128" width="112" height="58" rx="6" class="c-database" stroke-width="1.5"/>
-        <text x="960" y="149" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">CompareResult</text>
-        <text x="960" y="165" class="t-muted" font-size="7" text-anchor="middle">线索 + 差异 + 统计</text>
-        <text x="960" y="175" class="t-database" font-size="7" text-anchor="middle">含免责声明</text>
+        <rect x="174" y="589" width="92" height="52" rx="6" class="c-mask"/>
+        <rect x="174" y="589" width="92" height="52" rx="6" class="c-database" stroke-width="1.5"/>
+        <text x="220" y="610" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">源文件</text>
+        <text x="220" y="627" class="t-muted" font-size="8" text-anchor="middle">本地文档</text>
 
-        <rect x="904" y="470" width="112" height="58" rx="6" class="c-mask"/>
-        <rect x="904" y="470" width="112" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
-        <text x="960" y="491" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">报告导出</text>
-        <text x="960" y="507" class="t-muted" font-size="7" text-anchor="middle">可复核产物</text>
-        <text x="960" y="517" class="t-backend" font-size="7" text-anchor="middle">线索非结论</text>
+        <rect x="454" y="589" width="92" height="52" rx="6" class="c-mask"/>
+        <rect x="454" y="589" width="92" height="52" rx="6" class="c-database" stroke-width="1.5"/>
+        <text x="500" y="610" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">已写回</text>
+        <text x="500" y="627" class="t-muted" font-size="8" text-anchor="middle">元数据已清理</text>
 
-        <!-- Flow labels -->
-        <rect x="175.5" y="167" width="61" height="27" rx="4" class="c-mask"/>
-        <text x="206" y="178" class="t-backend" font-size="8" text-anchor="middle">待对齐文件</text>
-        <text x="206" y="189" class="t-dim" font-size="7" text-anchor="middle">元数据</text>
-        <rect x="183.25" y="319" width="85.5" height="27" rx="4" class="c-mask"/>
-        <text x="226" y="330" class="t-messagebus" font-size="8" text-anchor="middle">fuzzyMatchFloor</text>
-        <text x="226" y="341" class="t-dim" font-size="7" text-anchor="middle">阈值</text>
-        <rect x="426.4" y="309" width="51.2" height="27" rx="4" class="c-mask"/>
-        <text x="452" y="320" class="t-security" font-size="8" text-anchor="middle">低于阈值</text>
-        <text x="452" y="331" class="t-dim" font-size="7" text-anchor="middle">需人工</text>
-        <rect x="402.6" y="161" width="70.80000000000001" height="27" rx="4" class="c-mask"/>
-        <text x="438" y="172" class="t-backend" font-size="8" text-anchor="middle">AlignedGroup</text>
-        <text x="438" y="183" class="t-dim" font-size="7" text-anchor="middle">分组</text>
-        <rect x="404.6" y="239" width="70.80000000000001" height="27" rx="4" class="c-mask"/>
-        <text x="440" y="250" class="t-muted" font-size="8" text-anchor="middle">groupOf 映射</text>
-        <text x="440" y="261" class="t-dim" font-size="7" text-anchor="middle">索引</text>
-        <rect x="629.5" y="329" width="61" height="27" rx="4" class="c-mask"/>
-        <text x="660" y="340" class="t-messagebus" font-size="8" text-anchor="middle">过滤通用值</text>
-        <text x="660" y="351" class="t-dim" font-size="7" text-anchor="middle">降噪</text>
-        <rect x="619.05" y="235" width="65.9" height="27" rx="4" class="c-mask"/>
-        <text x="652" y="246" class="t-backend" font-size="8" text-anchor="middle">RiskFinding</text>
-        <text x="652" y="257" class="t-dim" font-size="7" text-anchor="middle">加权线索</text>
-        <rect x="742.4" y="303" width="51.2" height="27" rx="4" class="c-mask"/>
-        <text x="768" y="314" class="t-security" font-size="8" text-anchor="middle">回写等级</text>
-        <text x="768" y="325" class="t-dim" font-size="7" text-anchor="middle">定级</text>
-        <rect x="826.4" y="133" width="51.2" height="27" rx="4" class="c-mask"/>
-        <text x="852" y="144" class="t-muted" font-size="8" text-anchor="middle">字段差异</text>
-        <text x="852" y="155" class="t-dim" font-size="7" text-anchor="middle">对比表</text>
-        <rect x="841.25" y="189" width="85.5" height="27" rx="4" class="c-mask"/>
-        <text x="884" y="200" class="t-backend" font-size="8" text-anchor="middle">CompanyPairRisk</text>
-        <text x="884" y="211" class="t-dim" font-size="7" text-anchor="middle">风险线索</text>
-        <rect x="962.15" y="257" width="75.7" height="27" rx="4" class="c-mask"/>
-        <text x="1000" y="268" class="t-messagebus" font-size="8" text-anchor="middle">导出</text>
-        <text x="1000" y="279" class="t-dim" font-size="7" text-anchor="middle">含 disclaimer</text>
+        <rect x="384" y="705" width="92" height="68" rx="6" class="c-mask"/>
+        <rect x="384" y="705" width="92" height="68" rx="6" class="c-messagebus" stroke-width="1.5"/>
+        <text x="430" y="726" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">任务登记</text>
+        <text x="430" y="743" class="t-muted" font-size="8" text-anchor="middle">requestId</text>
+        <text x="430" y="761" class="t-messagebus" font-size="7" text-anchor="middle">可中断</text>
+
+        <rect x="579" y="713" width="92" height="52" rx="6" class="c-mask"/>
+        <rect x="579" y="713" width="92" height="52" rx="6" class="c-security" stroke-width="1.5"/>
+        <text x="625" y="734" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">取消 / 完成</text>
+        <text x="625" y="751" class="t-muted" font-size="8" text-anchor="middle">状态轮询</text>
+
+        <!-- Edge labels -->
+
+        <rect x="226.2" y="146" width="67.6" height="14" rx="3" class="c-mask"/>
+        <text x="260" y="156" class="t-backend" font-size="8" text-anchor="middle">提交批量请求</text>
+        <rect x="195.8" y="208" width="48.4" height="14" rx="3" class="c-mask"/>
+        <text x="220" y="218" class="t-database" font-size="8" text-anchor="middle">文件条目</text>
+
+
+        <rect x="401" y="451" width="58" height="14" rx="3" class="c-mask"/>
+        <text x="430" y="461" class="t-database" font-size="8" text-anchor="middle">登记长任务</text>
+
+        <rect x="667.8" y="521" width="48.4" height="14" rx="3" class="c-mask"/>
+        <text x="692" y="531" class="t-muted" font-size="8" text-anchor="middle">原子写入</text>
+        <rect x="475.8" y="405" width="48.4" height="14" rx="3" class="c-mask"/>
+        <text x="500" y="415" class="t-security" font-size="8" text-anchor="middle">部分失败</text>
+
+
+        <rect x="496.1" y="785" width="62.8" height="14" rx="3" class="c-mask"/>
+        <text x="527.5" y="795" class="t-database" font-size="8" text-anchor="middle">进度 / 中止</text>
 
         <!-- Legend -->
-        <text x="214" y="704" class="t-primary" font-size="10" font-weight="600">Legend</text>
-        <path d="M 214 724 L 248 724" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <text x="257" y="727" class="t-muted" font-size="8">primary data</text>
-        <path d="M 340 724 L 374 724" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
-        <text x="383" y="727" class="t-muted" font-size="8">policy / PII</text>
-        <path d="M 480 724 L 514 724" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
-        <text x="523" y="727" class="t-muted" font-size="8">async batch</text>
-        <rect x="625" y="716" width="14" height="9" rx="2" class="c-database" stroke-width="1"/>
-        <text x="646" y="724" class="t-muted" font-size="8">data store</text>
+        <text x="175" y="800" class="t-primary" font-size="10" font-weight="600">Legend</text>
+        <rect x="175" y="812" width="14" height="9" rx="2" class="c-frontend" stroke-width="1"/>
+        <text x="195" y="820" class="t-muted" font-size="7">User UI</text>
+        <rect x="260" y="812" width="14" height="9" rx="2" class="c-backend" stroke-width="1"/>
+        <text x="280" y="820" class="t-muted" font-size="7">Agent logic</text>
+        <rect x="370" y="812" width="14" height="9" rx="2" class="c-security" stroke-width="1"/>
+        <text x="390" y="820" class="t-muted" font-size="7">Policy</text>
+        <rect x="455" y="812" width="14" height="9" rx="2" class="c-messagebus" stroke-width="1"/>
+        <text x="475" y="820" class="t-muted" font-size="7">Tool action</text>
+        <rect x="565" y="812" width="14" height="9" rx="2" class="c-database" stroke-width="1"/>
+        <text x="585" y="820" class="t-muted" font-size="7">Context / trace</text>
       </svg>
     </div>
 
@@ -704,46 +717,46 @@
       <div class="card">
         <div class="card-header">
           <div class="card-dot cyan"></div>
-          <h3>对齐策略</h3>
+          <h3>分派设计</h3>
         </div>
         <ul>
-          <li>&bull; 三级降级：精确 → 规范化 → 模糊匹配</li>
-          <li>&bull; 低于 fuzzyMatchFloor 的文件不强行入组</li>
-          <li>&bull; matchSource 与 matchConfidence 一并输出</li>
-          <li>&bull; 宁可不匹配，也不错匹配</li>
+          <li>&bull; 按格式分派而非统一入口</li>
+          <li>&bull; 四种格式写回语义差异大，强行抽象会让错误处理含糊</li>
+          <li>&bull; 新增格式按命令模式补齐 5 个命令即可接入</li>
+          <li>&bull; 上层页面与比对引擎无需改动</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot rose"></div>
-          <h3>风险判定</h3>
+          <h3>中断与容错</h3>
         </div>
         <ul>
-          <li>&bull; 权重体现鉴别力：同一作者 50 分，同软件版本仅 5 分</li>
-          <li>&bull; 每条规则设 max_level，弱证据不被强证据带高</li>
-          <li>&bull; 停用词过滤 Administrator、Normal.dotm 等通用值</li>
-          <li>&bull; 主体对是定级单位，多条线索叠加才构成信号</li>
+          <li>&bull; 长任务通过 requestId 轮询，可随时取消</li>
+          <li>&bull; 逐条返回结果而非整体成功或失败</li>
+          <li>&bull; 单个文件被占用不影响其余文件处理</li>
+          <li>&bull; 失败项可单独重试</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot emerald"></div>
-          <h3>可复核性</h3>
+          <h3>写回安全</h3>
         </div>
         <ul>
-          <li>&bull; explain 字段记录判定依据，非黑箱结论</li>
-          <li>&bull; refs 保留原始字段值可溯源</li>
-          <li>&bull; 排序三级确定，相同输入产出相同结果</li>
-          <li>&bull; disclaimer 随结果下发：线索非结论</li>
+          <li>&bull; 原子写入，失败不破坏源文件</li>
+          <li>&bull; 路径与字段在 Rust 侧重新校验</li>
+          <li>&bull; 只读文件引导改用另存为</li>
+          <li>&bull; 工具会修改原始文件，安全不可妥协</li>
         </ul>
       </div>
     </div>
 
     <!-- Footer -->
     <p class="footer">
-      Data-flow diagram &bull; Built with Archify<span class="no-print"> &bull; Press <kbd>T</kbd> for theme and <kbd>E</kbd> for export</span>
+      Workflow diagram &bull; Built with Archify<span class="no-print"> &bull; Press <kbd>T</kbd> for theme and <kbd>E</kbd> for export</span>
     </p>
   </div>
 

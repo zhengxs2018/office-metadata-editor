@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="archify 2.10.0">
-  <title>Office Metadata Editor · 系统架构 Diagram</title>
+  <title>Office Metadata Editor — 系统架构 Diagram</title>
   <script>
     // Resolve the theme before first paint so light-preference users don't
     // see a dark flash. The toolbar script below re-applies with UI state.
@@ -525,14 +525,14 @@
     <div class="header">
       <div class="header-row">
         <div class="pulse-dot"></div>
-        <h1>Office Metadata Editor · 系统架构</h1>
+        <h1>Office Metadata Editor — 系统架构</h1>
       </div>
-      <p class="subtitle">Tauri v2 桌面客户端 — 前端瘦 / 后端重 / IPC 最小契约面</p>
+      <p class="subtitle">Tauri v2 桌面应用：React 渲染进程 · IPC 信任边界 · Rust 领域内核 · 本地文件系统</p>
     </div>
 
     <!-- Main Diagram -->
     <div class="diagram-container">
-      <svg viewBox="0 0 1060 544" role="img" aria-label="Office Metadata Editor · 系统架构 — Tauri v2 桌面客户端 — 前端瘦 / 后端重 / IPC 最小契约面 (architecture diagram)">
+      <svg viewBox="0 0 1310 585" role="img" aria-label="Office Metadata Editor — 系统架构 — Tauri v2 桌面应用：React 渲染进程 · IPC 信任边界 · Rust 领域内核 · 本地文件系统 (architecture diagram)">
         <!-- Definitions -->
         <defs>
           <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -556,128 +556,126 @@
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Boundaries (behind everything) -->
-        <rect x="0" y="170" width="390" height="306" rx="12" class="c-region" stroke-width="1"/>
-        <text x="8" y="188" class="t-cloud" font-size="9" font-weight="600">Frontend (React / TS)</text>
+        <rect x="200" y="160" width="210" height="332" rx="12" class="c-region" stroke-width="1"/>
+        <text x="208" y="178" class="t-cloud" font-size="9" font-weight="600">渲染进程（低信任）</text>
 
-        <rect x="390" y="230" width="200" height="140" rx="8" class="c-security-group" stroke-width="1"/>
-        <text x="398" y="248" class="t-security" font-size="9" font-weight="600">Trust Boundary — IPC</text>
+        <rect x="640" y="120" width="435" height="397" rx="12" class="c-region" stroke-width="1"/>
+        <text x="648" y="138" class="t-cloud" font-size="9" font-weight="600">主进程（高信任）</text>
 
-        <rect x="590" y="150" width="430" height="264" rx="12" class="c-region" stroke-width="1"/>
-        <text x="598" y="168" class="t-cloud" font-size="9" font-weight="600">Rust Backend (Tauri Core)</text>
+        <rect x="425" y="270" width="200" height="112" rx="8" class="c-security-group" stroke-width="1"/>
+        <text x="433" y="288" class="t-security" font-size="9" font-weight="600">唯一通道：invoke</text>
 
         <!-- Connection paths (before components for correct z-order) -->
-        <path d="M 160 228 L 103 228 Q 95 228 95 236 L 95 320 Q 95 328 87 328 L 30 328" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path d="M 105 356 L 105 400" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path d="M 180 428 L 192 428 Q 200 428 200 420 L 200 385 Q 200 377 208 377 L 220 377" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path d="M 180 428 L 292 428 Q 300 428 300 420 L 300 313 Q 300 305 308 305 L 420 305" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path d="M 560 305 L 582 305 Q 590 305 590 297 L 590 238 Q 590 230 598 230 L 620 230" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path d="M 780 230 L 708 230 Q 700 230 700 238 L 700 321 Q 700 329 692 329 L 620 329" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path d="M 780 230 L 802 230 Q 810 230 810 222 L 810 215 Q 810 207 818 207 L 840 207" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path d="M 780 230 L 802 230 Q 810 230 810 238 L 810 279 Q 810 287 818 287 L 840 287" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path d="M 780 230 L 802 230 Q 810 230 810 238 L 810 359 Q 810 367 818 367 L 840 367" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path d="M 770 436 L 703 436 Q 695 436 695 428 L 695 238 Q 695 230 687 230 L 620 230" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
-        <path d="M 620 230 L 598 230 Q 590 230 590 238 L 590 418 Q 590 426 582 426 L 560 426" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path d="M 790 329 L 683 329 Q 675 329 675 321 L 675 313 Q 675 305 667 305 L 560 305" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
-        <path d="M 420 305 L 398 305 Q 390 305 390 313 L 390 369 Q 390 377 382 377 L 360 377" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
-        <path d="M 220 377 L 198 377 Q 190 377 190 369 L 190 236 Q 190 228 182 228 L 160 228" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M 160 331 L 187 331 Q 195 331 195 323 L 195 229 Q 195 221 203 221 L 230 221" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path d="M 305 252 L 305 410" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        <path d="M 305 252 L 305 300" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        <path d="M 380 331 L 455 331" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path d="M 595 331 L 670 331" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
+        <path d="M 820 331 L 849.5 331 Q 857.5 331 857.5 323 L 857.5 189 Q 857.5 181 865.5 181 L 895 181" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M 820 331 L 849.5 331 Q 857.5 331 857.5 323 L 857.5 284 Q 857.5 276 865.5 276 L 895 276" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M 820 331 L 849.5 331 Q 857.5 331 857.5 339 L 857.5 363 Q 857.5 371 865.5 371 L 895 371" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path d="M 820 331 L 849.5 331 Q 857.5 331 857.5 339 L 857.5 458 Q 857.5 466 865.5 466 L 895 466" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M 1045 181 L 1074.5 181 Q 1082.5 181 1082.5 189 L 1082.5 268 Q 1082.5 276 1090.5 276 L 1120 276" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M 1045 276 L 1120 276" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        <path d="M 1045 466 L 1120 466" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
 
         <!-- Components -->
-        <rect x="30" y="200" width="130" height="56" rx="6" class="c-mask"/>
-        <rect x="30" y="200" width="130" height="56" rx="6" class="c-frontend" stroke-width="1.5"/>
-        <text x="95" y="226" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">React UI</text>
-        <text x="95" y="242" class="t-muted" font-size="9" text-anchor="middle">Vite + TypeScript / 页面壳</text>
+        <rect x="40" y="300" width="120" height="62" rx="6" class="c-mask"/>
+        <rect x="40" y="300" width="120" height="62" rx="6" class="c-external" stroke-width="1.5"/>
+        <text x="100" y="329" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">用户</text>
+        <text x="100" y="345" class="t-muted" font-size="9" text-anchor="middle">审核方 / 发布方</text>
 
-        <rect x="30" y="300" width="150" height="56" rx="6" class="c-mask"/>
-        <rect x="30" y="300" width="150" height="56" rx="6" class="c-frontend" stroke-width="1.5"/>
-        <text x="105" y="326" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Context 层</text>
-        <text x="105" y="342" class="t-muted" font-size="9" text-anchor="middle">FileContext → MetadataContext</text>
-        <text x="105" y="348" class="t-frontend" font-size="7" text-anchor="middle">状态收敛中枢</text>
+        <rect x="230" y="190" width="150" height="62" rx="6" class="c-mask"/>
+        <rect x="230" y="190" width="150" height="62" rx="6" class="c-frontend" stroke-width="1.5"/>
+        <text x="305" y="219" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">pages/</text>
+        <text x="305" y="235" class="t-muted" font-size="9" text-anchor="middle">editor · batch · compare</text>
+        <text x="305" y="244" class="t-frontend" font-size="7" text-anchor="middle">路由级编排</text>
 
-        <rect x="30" y="400" width="150" height="56" rx="6" class="c-mask"/>
-        <rect x="30" y="400" width="150" height="56" rx="6" class="c-frontend" stroke-width="1.5"/>
-        <text x="105" y="426" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Resource 层</text>
-        <text x="105" y="442" class="t-muted" font-size="9" text-anchor="middle">documentsResource 格式多态</text>
+        <rect x="230" y="300" width="150" height="62" rx="6" class="c-mask"/>
+        <rect x="230" y="300" width="150" height="62" rx="6" class="c-frontend" stroke-width="1.5"/>
+        <text x="305" y="329" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">lib/</text>
+        <text x="305" y="345" class="t-muted" font-size="9" text-anchor="middle">纯逻辑 · 可单测</text>
 
-        <rect x="220" y="350" width="140" height="54" rx="6" class="c-mask"/>
-        <rect x="220" y="350" width="140" height="54" rx="6" class="c-frontend" stroke-width="1.5"/>
-        <text x="290" y="375" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Selectors</text>
-        <text x="290" y="391" class="t-muted" font-size="9" text-anchor="middle">纯函数投影（只重组）</text>
+        <rect x="230" y="410" width="150" height="62" rx="6" class="c-mask"/>
+        <rect x="230" y="410" width="150" height="62" rx="6" class="c-frontend" stroke-width="1.5"/>
+        <text x="305" y="439" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">contexts + stores</text>
+        <text x="305" y="455" class="t-muted" font-size="9" text-anchor="middle">会话态 · zustand</text>
 
-        <rect x="420" y="260" width="140" height="90" rx="6" class="c-mask"/>
-        <rect x="420" y="260" width="140" height="90" rx="6" class="c-security" stroke-width="1.5"/>
-        <text x="490" y="303" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">IPC Boundary</text>
-        <text x="490" y="319" class="t-muted" font-size="9" text-anchor="middle">invoke() ←→ command</text>
+        <rect x="455" y="300" width="140" height="62" rx="6" class="c-mask"/>
+        <rect x="455" y="300" width="140" height="62" rx="6" class="c-security" stroke-width="1.5"/>
+        <text x="525" y="329" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Tauri IPC</text>
+        <text x="525" y="345" class="t-muted" font-size="9" text-anchor="middle">39 个命令</text>
+        <text x="525" y="354" class="t-security" font-size="7" text-anchor="middle">信任边界</text>
 
-        <rect x="620" y="200" width="160" height="60" rx="6" class="c-mask"/>
-        <rect x="620" y="200" width="160" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
-        <text x="700" y="228" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">lib.rs 门面</text>
-        <text x="700" y="244" class="t-muted" font-size="9" text-anchor="middle">~40 命令 / 任务锁 / 调度</text>
+        <rect x="670" y="300" width="150" height="62" rx="6" class="c-mask"/>
+        <rect x="670" y="300" width="150" height="62" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="745" y="329" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">lib.rs</text>
+        <text x="745" y="345" class="t-muted" font-size="9" text-anchor="middle">校验 · 委托 · 错误映射</text>
+        <text x="745" y="354" class="t-backend" font-size="7" text-anchor="middle">薄命令层</text>
 
-        <rect x="620" y="300" width="170" height="58" rx="6" class="c-mask"/>
-        <rect x="620" y="300" width="170" height="58" rx="6" class="c-backend" stroke-width="1.5"/>
-        <text x="705" y="327" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">compare 引擎</text>
-        <text x="705" y="343" class="t-muted" font-size="9" text-anchor="middle">align → diff → rules → normalize</text>
+        <rect x="895" y="150" width="150" height="62" rx="6" class="c-mask"/>
+        <rect x="895" y="150" width="150" height="62" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="970" y="179" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">格式适配</text>
+        <text x="970" y="195" class="t-muted" font-size="9" text-anchor="middle">docx · xlsx · pdf · doc</text>
 
-        <rect x="840" y="180" width="150" height="54" rx="6" class="c-mask"/>
-        <rect x="840" y="180" width="150" height="54" rx="6" class="c-backend" stroke-width="1.5"/>
-        <text x="915" y="205" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">hidden 引擎</text>
-        <text x="915" y="221" class="t-muted" font-size="9" text-anchor="middle">隐藏痕迹提取</text>
+        <rect x="895" y="245" width="150" height="62" rx="6" class="c-mask"/>
+        <rect x="895" y="245" width="150" height="62" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="970" y="274" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">hidden/</text>
+        <text x="970" y="290" class="t-muted" font-size="9" text-anchor="middle">隐藏痕迹提取</text>
 
-        <rect x="840" y="260" width="150" height="54" rx="6" class="c-mask"/>
-        <rect x="840" y="260" width="150" height="54" rx="6" class="c-backend" stroke-width="1.5"/>
-        <text x="915" y="285" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">export 引擎</text>
-        <text x="915" y="301" class="t-muted" font-size="9" text-anchor="middle">Excel / PDF 导出</text>
+        <rect x="895" y="340" width="150" height="62" rx="6" class="c-mask"/>
+        <rect x="895" y="340" width="150" height="62" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="970" y="369" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">compare/</text>
+        <text x="970" y="385" class="t-muted" font-size="9" text-anchor="middle">比对引擎 · 8 条规则</text>
+        <text x="970" y="394" class="t-backend" font-size="7" text-anchor="middle">风险线索</text>
 
-        <rect x="840" y="340" width="150" height="54" rx="6" class="c-mask"/>
-        <rect x="840" y="340" width="150" height="54" rx="6" class="c-backend" stroke-width="1.5"/>
-        <text x="915" y="365" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">edit 引擎</text>
-        <text x="915" y="381" class="t-muted" font-size="9" text-anchor="middle">元数据写入保存</text>
+        <rect x="895" y="435" width="150" height="62" rx="6" class="c-mask"/>
+        <rect x="895" y="435" width="150" height="62" rx="6" class="c-backend" stroke-width="1.5"/>
+        <text x="970" y="464" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">export/</text>
+        <text x="970" y="480" class="t-muted" font-size="9" text-anchor="middle">报告产出</text>
 
-        <rect x="620" y="410" width="150" height="52" rx="6" class="c-mask"/>
-        <rect x="620" y="410" width="150" height="52" rx="6" class="c-database" stroke-width="1.5"/>
-        <text x="695" y="434" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Configuration</text>
-        <text x="695" y="450" class="t-muted" font-size="9" text-anchor="middle">settings.json 点分键</text>
+        <rect x="1120" y="245" width="150" height="62" rx="6" class="c-mask"/>
+        <rect x="1120" y="245" width="150" height="62" rx="6" class="c-database" stroke-width="1.5"/>
+        <text x="1195" y="274" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">本地文件系统</text>
+        <text x="1195" y="290" class="t-muted" font-size="9" text-anchor="middle">只读解析 / 显式写回</text>
+        <text x="1195" y="299" class="t-database" font-size="7" text-anchor="middle">不出本机</text>
 
-        <rect x="420" y="400" width="140" height="52" rx="6" class="c-mask"/>
-        <rect x="420" y="400" width="140" height="52" rx="6" class="c-cloud" stroke-width="1.5"/>
-        <text x="490" y="424" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Host Filesystem</text>
-        <text x="490" y="440" class="t-muted" font-size="9" text-anchor="middle">本地磁盘 I/O</text>
+        <rect x="1120" y="435" width="150" height="62" rx="6" class="c-mask"/>
+        <rect x="1120" y="435" width="150" height="62" rx="6" class="c-database" stroke-width="1.5"/>
+        <text x="1195" y="464" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">本地配置</text>
+        <text x="1195" y="480" class="t-muted" font-size="9" text-anchor="middle">用户覆盖项</text>
 
         <!-- Connection labels -->
+        <rect x="180" y="256" width="30" height="14" rx="3" class="c-mask"/>
+        <text x="195" y="266" class="t-backend" font-size="8" text-anchor="middle">操作</text>
 
 
-
-        <rect x="259" y="332.5" width="82" height="14" rx="3" class="c-mask"/>
-        <text x="300" y="342.5" class="t-backend" font-size="8" text-anchor="middle">trackedInvoke()</text>
-        <rect x="565.8" y="231.5" width="48.4" height="14" rx="3" class="c-mask"/>
-        <text x="590" y="241.5" class="t-backend" font-size="8" text-anchor="middle">commands</text>
-        <rect x="668.6" y="273.5" width="62.8" height="14" rx="3" class="c-mask"/>
-        <text x="700" y="283.5" class="t-muted" font-size="8" text-anchor="middle">run_compare</text>
+        <rect x="398.1" y="311" width="38.8" height="14" rx="3" class="c-mask"/>
+        <text x="417.5" y="321" class="t-backend" font-size="8" text-anchor="middle">invoke</text>
+        <rect x="591.5" y="286" width="82" height="14" rx="3" class="c-mask"/>
+        <text x="632.5" y="296" class="t-security" font-size="8" text-anchor="middle">反序列化 + 校验</text>
 
 
+        <rect x="814.1" y="406" width="86.8" height="14" rx="3" class="c-mask"/>
+        <text x="857.5" y="416" class="t-backend" font-size="8" text-anchor="middle">compare_metadata</text>
 
-        <rect x="663.6" y="362" width="62.8" height="14" rx="3" class="c-mask"/>
-        <text x="695" y="372" class="t-messagebus" font-size="8" text-anchor="middle">停用词/规则</text>
-        <rect x="561" y="312" width="58" height="14" rx="3" class="c-mask"/>
-        <text x="590" y="322" class="t-muted" font-size="8" text-anchor="middle">read/write</text>
-        <rect x="638.8" y="277" width="72.4" height="14" rx="3" class="c-mask"/>
-        <text x="675" y="287" class="t-messagebus" font-size="8" text-anchor="middle">CompareResult</text>
-        <rect x="365.8" y="343" width="48.4" height="14" rx="3" class="c-mask"/>
-        <text x="390" y="353" class="t-messagebus" font-size="8" text-anchor="middle">回程结果</text>
+        <rect x="1051.1" y="208.5" width="62.8" height="14" rx="3" class="c-mask"/>
+        <text x="1082.5" y="218.5" class="t-muted" font-size="8" text-anchor="middle">OOXML / OLE</text>
+
 
 
         <!-- Legend -->
-        <text x="40" y="515" class="t-primary" font-size="9" font-weight="600">Legend</text>
-        <rect x="40" y="520" width="14" height="9" rx="2" class="c-frontend" stroke-width="1"/>
-        <text x="60" y="528" class="t-muted" font-size="8">Frontend</text>
-        <rect x="138" y="520" width="14" height="9" rx="2" class="c-security" stroke-width="1"/>
-        <text x="158" y="528" class="t-muted" font-size="8">Security</text>
-        <rect x="236" y="520" width="14" height="9" rx="2" class="c-backend" stroke-width="1"/>
-        <text x="256" y="528" class="t-muted" font-size="8">Backend</text>
-        <rect x="329" y="520" width="14" height="9" rx="2" class="c-database" stroke-width="1"/>
-        <text x="349" y="528" class="t-muted" font-size="8">Database</text>
-        <rect x="427" y="520" width="14" height="9" rx="2" class="c-cloud" stroke-width="1"/>
-        <text x="447" y="528" class="t-muted" font-size="8">Cloud</text>
+        <text x="40" y="556" class="t-primary" font-size="9" font-weight="600">Legend</text>
+        <rect x="40" y="561" width="14" height="9" rx="2" class="c-external" stroke-width="1"/>
+        <text x="60" y="569" class="t-muted" font-size="8">External</text>
+        <rect x="138" y="561" width="14" height="9" rx="2" class="c-frontend" stroke-width="1"/>
+        <text x="158" y="569" class="t-muted" font-size="8">Frontend</text>
+        <rect x="236" y="561" width="14" height="9" rx="2" class="c-security" stroke-width="1"/>
+        <text x="256" y="569" class="t-muted" font-size="8">Security</text>
+        <rect x="334" y="561" width="14" height="9" rx="2" class="c-backend" stroke-width="1"/>
+        <text x="354" y="569" class="t-muted" font-size="8">Backend</text>
+        <rect x="427" y="561" width="14" height="9" rx="2" class="c-database" stroke-width="1"/>
+        <text x="447" y="569" class="t-muted" font-size="8">Database</text>
       </svg>
     </div>
 
@@ -686,36 +684,38 @@
       <div class="card">
         <div class="card-header">
           <div class="card-dot cyan"></div>
-          <h3>Frontend</h3>
+          <h3>渲染进程</h3>
         </div>
         <ul>
-          <li>&bull; 状态收敛到双 Context：FileContext(文件源) → MetadataContext(解析)</li>
-          <li>&bull; 资源层按格式多态分发(docx/xlsx/pdf/doc)，内核不感知格式</li>
-          <li>&bull; selectors.ts 只做过滤/排序/折叠，不重新计算事实</li>
+          <li>&bull; pages/ 只做编排，算法下沉到 lib/</li>
+          <li>&bull; lib/ 为纯逻辑，无 JSX，可脱离 React 单测</li>
+          <li>&bull; 样式用 CSS Modules 隔离，只用主题变量</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot rose"></div>
-          <h3>Trust Boundary</h3>
+          <h3>信任边界</h3>
         </div>
         <ul>
-          <li>&bull; 唯一 IPC 入口：invoke(&#39;cmd&#39;) ↔ #[tauri::command]</li>
-          <li>&bull; 前端只提交已解析语义字段，不传路径/二进制</li>
-          <li>&bull; 内核 run_compare 是纯函数，无 IO、可单测</li>
+          <li>&bull; 前端无法直接访问文件系统 / 进程 / 网络</li>
+          <li>&bull; 所有前端参数在 Rust 侧重新校验</li>
+          <li>&bull; 风险定级在主进程完成，前端只做呈现</li>
+          <li>&bull; capability 仅授予必要命令与最窄 scope</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot emerald"></div>
-          <h3>Rust Backend</h3>
+          <h3>领域内核</h3>
         </div>
         <ul>
-          <li>&bull; lib.rs 薄门面：参数校验+委托+错误映射，~40 命令</li>
-          <li>&bull; compare 四阶段：align → diff(rules) → normalize(工具层)</li>
-          <li>&bull; 配置中心 settings.json 驱动停用词/规则/模板白名单</li>
+          <li>&bull; 四种格式映射到统一元数据模型</li>
+          <li>&bull; 比对引擎产出线索而非结论</li>
+          <li>&bull; 每个能力只有单一实现入口</li>
+          <li>&bull; 文档全程留在用户本机，不上传</li>
         </ul>
       </div>
     </div>
