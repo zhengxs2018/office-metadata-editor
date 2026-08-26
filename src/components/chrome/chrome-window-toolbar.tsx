@@ -1,4 +1,4 @@
-export const WINDOW_CHROME_HEIGHT = 32;
+export const WINDOW_CHROME_HEIGHT = 38;
 
 export function ChromeWindowToolbar() {
   return (

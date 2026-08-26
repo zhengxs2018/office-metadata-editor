@@ -5,7 +5,7 @@
   --chrome-safe-left: env(safe-area-inset-left, 0px);
 
   /* Height of the app title bar itself, excluding any OS inset. */
-  --chrome-titlebar-height: 44px;
+  --chrome-titlebar-height: 38px;
 
   /* Width reserved for the macOS traffic lights rendered over the webview. */
   --chrome-traffic-light-inset: 0px;

@@ -37,7 +37,7 @@ export const AppShell: React.FC<React.PropsWithChildren<AppShellProps>> = ({
     <div className="flex min-h-0 w-full flex-1 flex-col bg-canvas text-foreground">
       <header
         data-tauri-drag-region
-        className="hairline-b relative z-30 flex h-(--chrome-titlebar-height) shrink-0 items-center gap-2 bg-parchment/80 pr-3 backdrop-blur-xl"
+        className="hairline-b relative z-30 flex h-(--chrome-titlebar-height) shrink-0 items-center gap-2 bg-parchment pr-3"
         style={{ paddingLeft: 'calc(var(--chrome-traffic-light-inset) + 0.75rem)' }}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">{leading}</div>
